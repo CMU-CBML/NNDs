@@ -1,0 +1,4 @@
+*.o
+!2D_solver/
+!spline2D_src/
+!THS2D/
