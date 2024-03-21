@@ -198,7 +198,7 @@ public:
 	bool isInBox(const Vertex2D& point, const Vertex2D& center, float dx, float dy);
 	vector<float> calculatePhiSum(const std::vector<Vertex2D>& cpts, float dx, float dy, vector<float> id);
 
-	void DetectTipsMulti(vector<float> id, int numNeuron, vector<float> &tip, int NX, int NY); // for multiple neurons
+	void DetectTipsMulti(vector<float> id, int numNeuron, vector<float> &tp, int NX, int NY); // for multiple neurons
 	void bfs(const std::vector<float>& matrix, int rows, int cols, int row, int col,
 		std::vector<bool>& visited, std::vector<std::pair<int, int>>& cluster);
 	std::vector<std::vector<std::pair<int, int>>> FindClusters(const std::vector<float>& matrix, int rows, int cols);

@@ -86,7 +86,7 @@ NeuronGrowth::NeuronGrowth(){
 
 	// integer variable setup
 	expandCK_invl		= 100; 		// var_save_invl
-	var_save_invl		= 50; 		// var_save_invl
+	var_save_invl		= 100; 		// var_save_invl
 	numNeuron 		= 1;	     	// numNeuron
 	gc_sz			= 2;	     	// gc_sz
 	aniso 			= 6;   		// aniso
@@ -1772,11 +1772,11 @@ void NeuronGrowth::preparePhaseField() {
 				// adjust rg (assembly rate) and sg (disassembly rate) based on detected tips
 				if (n < 50) {
 					eleE = alphaOverPi*atan(gamma * (1 - eleS));
-					pre_eleMp.push_back(30);
+					pre_eleMp.push_back(50);
 				} else {
 					if (eleTp > 0) {
 						eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(50 * eleTb - 0) * (1 - eleS));
-						pre_eleMp.push_back(30);
+						pre_eleMp.push_back(50);
 					} else {
 						eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(r * eleTb - g) * (1 - eleS));
 						pre_eleMp.push_back(5);
@@ -2934,15 +2934,16 @@ void NeuronGrowth::DetectTipsMulti(vector<float> id, int numNeuron, vector<float
 	for (int i = 0; i < tip.size(); i++) {
 		tip[i] = tip[i]/maxVal;
 	}
+
 	// maxVal = RmOutlier(tip);
 	for (int i = 1+NY; i < length-NY-1; i++) {
 		// if (tip[i] < (threshold * maxVal)) {
 		if (tip[i] < (threshold)) {
 			tip[i] = 0;
 		} 
-		else {
-			tip[i] = 1;
-		}
+		// else {
+		// 	tip[i] = 1;
+		// }
 	}
 }
 
@@ -3881,7 +3882,8 @@ int RunNG(int n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D> cpt
 			// NG.tips = tip;
 			NG.DetectTipsMulti(id, NG.numNeuron, tip, NX, NY);
 			localMaximaMatrix = NG.FindLocalMaximaInClusters(tip, NX+1, NY+1);
-
+			NG.tips.clear();
+			
 			// // NG.PrintOutNeurons(neurons);
 			// // NG.DetectTipsMulti(id, NG.numNeuron, tip, NX, NY);
 			// // NG.tips = InterpolateVars(tip, cpts_initial, cpts, 2);
@@ -3890,6 +3892,9 @@ int RunNG(int n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D> cpt
 			// 	NG.tips[j] += localMaximaMatrix[j-NY-1];
 
 			// }
+			for (int j = 0; j < localMaximaMatrix.size()-1; j++) {
+				NG.tips[j] += localMaximaMatrix[j+1];
+			}
 			
 			// NG.tips.clear(); NG.tips.resize(cpts.size(), 0);
 			// for (int i = 0; i < seed.size(); i++) {
@@ -3976,10 +3981,10 @@ int RunNG(int n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D> cpt
 			NG.VisualizeVTK_ControlMesh(cpts_initial, tmesh_initial, NG.n, path_out, NG.tips, varName); // solution on control points
 			varName = "tip_running_";
 			NG.VisualizeVTK_ControlMesh(cpts_initial, tmesh_initial, NG.n, path_out, tip, varName); // solution on control points
-			varName = "id_running_";
-			NG.VisualizeVTK_ControlMesh(cpts_initial, tmesh_initial, NG.n, path_out, id, varName); // solution on control points
-			varName = "phi_running_";
-			NG.VisualizeVTK_ControlMesh(cpts_initial, tmesh_initial, NG.n, path_out, NG.phi, varName); // solution on control points
+			// varName = "id_running_";
+			// NG.VisualizeVTK_ControlMesh(cpts_initial, tmesh_initial, NG.n, path_out, id, varName); // solution on control points
+			// varName = "phi_running_";
+			// NG.VisualizeVTK_ControlMesh(cpts_initial, tmesh_initial, NG.n, path_out, NG.phi, varName); // solution on control points
 			// varName = "id_lf_running_";
 			// NG.VisualizeVTK_ControlMesh(cpts, tmesh, NG.n, path_out, id_lf, varName); // solution on control points
 			// varName = "Mphi_running_";
