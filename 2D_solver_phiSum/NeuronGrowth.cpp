@@ -2903,7 +2903,7 @@ vector<float> NeuronGrowth::calculatePhiSum(const std::vector<Vertex2D>& cpts, f
 void NeuronGrowth::DetectTipsMulti(vector<float> id, int numNeuron, vector<float> &tip, int NX, int NY)
 {
 	// float threshold(0.9997), maxVal(0);
-	float threshold(0.9), maxVal(0);
+	float threshold(0.85), maxVal(0);
 	int ind, length((NX+1)*(NY+1));
 	tip.clear();
 	tip.resize(length);
@@ -2915,7 +2915,7 @@ void NeuronGrowth::DetectTipsMulti(vector<float> id, int numNeuron, vector<float
 			for (int j = -4; j < 5; j++) {
 				for (int k = -4; k < 5; k++) {
 					for (int l = 0; l < numNeuron; l++) {
-						if ((l+1) == static_cast<int>(round(id[i+j*(NY+1)+k]))) {
+						if ((l+1) == id[i+j*(NY+1)+k]) {
 							tip[i] += CellBoundary(phi[i+j*(NY+1)+k], 0.1);
 							// tip[i] += CellBoundary(phi[i+j*(NY+1)+k], 0.5);
 						} 
@@ -3886,10 +3886,10 @@ int RunNG(int n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D> cpt
 			// // NG.DetectTipsMulti(id, NG.numNeuron, tip, NX, NY);
 			// // NG.tips = InterpolateVars(tip, cpts_initial, cpts, 2);
 			
-			// for (int j = NY+1; j < localMaximaMatrix.size(); j++) {
-			// 	NG.tips[j] += localMaximaMatrix[j-NY-1];
+			for (int j = NY+1; j < localMaximaMatrix.size(); j++) {
+				NG.tips[j] += localMaximaMatrix[j-NY-1];
 
-			// }
+			}
 			
 			// NG.tips.clear(); NG.tips.resize(cpts.size(), 0);
 			// for (int i = 0; i < seed.size(); i++) {
