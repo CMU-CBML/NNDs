@@ -2696,13 +2696,13 @@ float NeuronGrowth::RmOutlier(vector<float> &data)
 
 	standardDeviation = sqrt(standardDeviation / data.size());
 
-	// std::cout << mean + 2*standardDeviation << " " << maxVal << std::endl;
-	for(int i = 0; i < data.size(); i++) {
-		if (data[i] > (mean + 3*standardDeviation)) {
-			data[i] = mean + 3*standardDeviation;
-		} 
-	}
-	return (mean + 3*standardDeviation);
+	// // std::cout << mean + 2*standardDeviation << " " << maxVal << std::endl;
+	// for(int i = 0; i < data.size(); i++) {
+	// 	if (data[i] > (mean + 3.29*standardDeviation)) {
+	// 		data[i] = mean + 3.29*standardDeviation;
+	// 	} 
+	// }
+	return (mean + 3.29*standardDeviation);
 }
 
 float NeuronGrowth::CellBoundary(float phi, float threshold) {
@@ -2900,46 +2900,47 @@ vector<float> NeuronGrowth::calculatePhiSum(const std::vector<Vertex2D>& cpts, f
 
 // }
 
-void NeuronGrowth::DetectTipsMulti(vector<float> id, int numNeuron, vector<float> &tip, int NX, int NY)
+void NeuronGrowth::DetectTipsMulti(vector<float> id, int numNeuron, vector<float> &phiSum, int NX, int NY)
 {
-	// float threshold(0.9997), maxVal(0);
-	float threshold(0.9), maxVal(0);
-	int ind, length((NX+1)*(NY+1));
-	tip.clear();
-	tip.resize(length);
+	float threshold(0.9997), maxVal(0);
+	// float threshold(0.9), maxVal(0);
+	int ind, length(phi.size());
+	phiSum.clear();
+	phiSum.resize(length);
 
 	for (int i = (5*NY+5); i < (length-4*NY-4); i++) {
-		tip[i] = 0;
+		phiSum[i] = 0;
 		if (CellBoundary(phi[i], 0.25) > 0) {
 		// if (CellBoundary(phi[i], 0.5) > 0) {
 			for (int j = -4; j < 5; j++) {
 				for (int k = -4; k < 5; k++) {
 					for (int l = 0; l < numNeuron; l++) {
 						if ((l+1) == static_cast<int>(round(id[i+j*(NY+1)+k]))) {
-							tip[i] += CellBoundary(phi[i+j*(NY+1)+k], 0.1);
-							// tip[i] += CellBoundary(phi[i+j*(NY+1)+k], 0.5);
+							phiSum[i] += CellBoundary(phi[i+j*(NY+1)+k], 0.1);
+							// phiSum[i] += CellBoundary(phi[i+j*(NY+1)+k], 0.5);
 						} 
 					}
 				}
 			}	
-			if (tip[i] > 0)
-				tip[i] = CellBoundary(phi[i], 0) / tip[i];
-			if (std::isnan(tip[i]))
-				tip[i] = 0;
-			if (tip[i] > maxVal)
-				maxVal = tip[i];
+			if (phiSum[i] > 0)
+				phiSum[i] = CellBoundary(phi[i], 0) / phiSum[i];
+			if (std::isnan(phiSum[i]))
+				phiSum[i] = 0;
+			// if (phiSum[i] > maxVal)
+			// 	maxVal = phiSum[i];
 		}
 	}
 
-	for (int i = 0; i < tip.size(); i++) {
-		tip[i] = tip[i]/maxVal;
+	maxVal = RmOutlier(phiSum);
+
+	for (int i = 0; i < phiSum.size(); i++) {
+		phiSum[i] = phiSum[i]/maxVal;
 	}
 
-	// maxVal = RmOutlier(tip);
 	for (int i = 1+NY; i < length-NY-1; i++) {
-		// if (tip[i] < (threshold * maxVal)) {
-		if (tip[i] < (threshold)) {
-			tip[i] = 0;
+		// if (phiSum[i] < (threshold * maxVal)) {
+		if (phiSum[i] < (threshold)) {
+			phiSum[i] = 0;
 		} 
 		// else {
 		// 	tip[i] = 1;
@@ -3032,6 +3033,93 @@ vector<float> NeuronGrowth::FindLocalMaximaInClusters(const vector<float>& matri
 	return localMaxima;
 }
 
+// Function to find centroids of connected clusters in the matrix
+vector<float> NeuronGrowth::FindCentroidsInClusters(const vector<float>& matrix, int rows, int cols) {
+	vector<vector<pair<int, int>>> clusters = FindClusters(matrix, rows, cols);
+	vector<float> centroids(rows * cols, 0.0f);
+
+	for (const auto& cluster : clusters) {
+		if (cluster.empty()) continue;
+
+		float sumRow = 0.0f, sumCol = 0.0f;
+		for (const auto& pos : cluster) {
+			sumRow += pos.first;
+			sumCol += pos.second;
+		}
+		int centroidRow = static_cast<int>(round(sumRow / cluster.size()));
+		int centroidCol = static_cast<int>(round(sumCol / cluster.size()));
+
+		// Ensure the centroid position is within bounds
+		centroidRow = std::max(0, std::min(centroidRow, rows - 1));
+		centroidCol = std::max(0, std::min(centroidCol, cols - 1));
+
+		centroids[centroidRow * cols + centroidCol] = 1.0f;
+
+		// centroids[centroidRow.first * cols + centroidRow.second - cols + 1] = 1.0f;
+		// centroids[centroidRow.first * cols + centroidRow.second - cols] = 1.0f;
+		// centroids[centroidRow.first * cols + centroidRow.second - cols - 1] = 1.0f;
+		// centroids[centroidRow.first * cols + centroidRow.second - 1] = 1.0f;
+		// centroids[centroidRow.first * cols + centroidRow.second + 1] = 1.0f;
+		// centroids[centroidRow.first * cols + centroidRow.second + cols + 1] = 1.0f;
+		// centroids[centroidRow.first * cols + centroidRow.second + cols] = 1.0f;
+		// centroids[centroidRow.first * cols + centroidRow.second + cols - 1] = 1.0f;
+	}
+	return centroids;
+}
+
+bool NeuronGrowth::IsLocalMaximum(const vector<float>& matrix, int rows, int cols, int x, int y) {
+    float value = matrix[x * cols + y];
+    for (int dx = -1; dx <= 1; ++dx) {
+        for (int dy = -1; dy <= 1; ++dy) {
+            int nx = x + dx, ny = y + dy;
+            if (nx >= 0 && nx < rows && ny >= 0 && ny < cols && (dx != 0 || dy != 0)) {
+                if (matrix[nx * cols + ny] > value) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+vector<float> NeuronGrowth::FindCentroidsOfLocalMaximaClusters(const vector<float>& matrix, int rows, int cols) {
+    vector<vector<pair<int, int>>> clusters = FindClusters(matrix, rows, cols);
+    vector<float> centroids(rows * cols, 0.0f);
+
+    for (const auto& cluster : clusters) {
+        vector<pair<int, int>> localMaxima;
+
+        // Find all local maxima in the cluster
+        for (const auto& pos : cluster) {
+            if (IsLocalMaximum(matrix, rows, cols, pos.first, pos.second)) {
+                localMaxima.push_back(pos);
+            }
+        }
+
+        // Calculate centroid of local maxima
+        float sumRow = 0, sumCol = 0;
+        for (const auto& maxPos : localMaxima) {
+            sumRow += maxPos.first;
+            sumCol += maxPos.second;
+        }
+
+        int centroidRow = static_cast<int>(round(sumRow / localMaxima.size()));
+        int centroidCol = static_cast<int>(round(sumCol / localMaxima.size()));
+
+        centroids[centroidRow * cols + centroidCol] = 1.0f;
+
+	// centroids[centroidRow.first * cols + centroidRow.second - cols + 1] = 1.0f;
+	// centroids[centroidRow.first * cols + centroidRow.second - cols] = 1.0f;
+	// centroids[centroidRow.first * cols + centroidRow.second - cols - 1] = 1.0f;
+	// centroids[centroidRow.first * cols + centroidRow.second - 1] = 1.0f;
+	// centroids[centroidRow.first * cols + centroidRow.second + 1] = 1.0f;
+	// centroids[centroidRow.first * cols + centroidRow.second + cols + 1] = 1.0f;
+	// centroids[centroidRow.first * cols + centroidRow.second + cols] = 1.0f;
+	// centroids[centroidRow.first * cols + centroidRow.second + cols - 1] = 1.0f;
+    }
+
+    return centroids;
+}
 
 vector<vector<int>> NeuronGrowth::ConvertTo2DIntVector(const vector<float> input, int NX, int NY) 
 {
@@ -3881,9 +3969,12 @@ int RunNG(int n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D> cpt
 			// NG.tips.clear();
 			// NG.tips = tip;
 			NG.DetectTipsMulti(id, NG.numNeuron, tip, NX, NY);
-			localMaximaMatrix = NG.FindLocalMaximaInClusters(tip, NX+1, NY+1);
-			NG.tips.clear();
+			// localMaximaMatrix = NG.FindLocalMaximaInClusters(tip, NX+1, NY+1);
+			// localMaximaMatrix = NG.FindCentroidsInClusters(tip, NX+1, NY+1);
+			localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX+1, NY+1);
 			
+			NG.tips.clear(); NG.tips.resize(NG.phi.size(), 0);
+			NG.tips = localMaximaMatrix;
 			// // NG.PrintOutNeurons(neurons);
 			// // NG.DetectTipsMulti(id, NG.numNeuron, tip, NX, NY);
 			// // NG.tips = InterpolateVars(tip, cpts_initial, cpts, 2);
@@ -3892,9 +3983,10 @@ int RunNG(int n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D> cpt
 			// 	NG.tips[j] += localMaximaMatrix[j-NY-1];
 
 			// }
-			for (int j = 0; j < localMaximaMatrix.size()-1; j++) {
-				NG.tips[j] += localMaximaMatrix[j+1];
-			}
+
+			// for (int j = 0; j < localMaximaMatrix.size()-1; j++) {
+			// 	NG.tips[j] = localMaximaMatrix[j+1];
+			// }
 			
 			// NG.tips.clear(); NG.tips.resize(cpts.size(), 0);
 			// for (int i = 0; i < seed.size(); i++) {

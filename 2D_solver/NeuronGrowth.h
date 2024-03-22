@@ -203,6 +203,10 @@ public:
 		std::vector<bool>& visited, std::vector<std::pair<int, int>>& cluster);
 	std::vector<std::vector<std::pair<int, int>>> FindClusters(const std::vector<float>& matrix, int rows, int cols);
 	std::vector<float> FindLocalMaximaInClusters(const std::vector<float>& matrix, int rows, int cols);
+	std::vector<float> FindCentroidsInClusters(const vector<float>& matrix, int rows, int cols);
+
+	bool IsLocalMaximum(const vector<float>& matrix, int rows, int cols, int x, int y);
+	vector<float> FindCentroidsOfLocalMaximaClusters(const vector<float>& matrix, int rows, int cols);
 
 	// Neuron detection
 	vector<vector<int>> ConvertTo2DIntVector(const vector<float> input, int NX, int NY);
