@@ -2820,9 +2820,7 @@ vector<float> NeuronGrowth::calculatePhiSum(const std::vector<Vertex2D>& cpts, f
 
 	// Thresholding and setting tp values based on the maximum value found
 	for (int i = 0; i < tp.size(); ++i) {
-		// if (tp[i] > (threshold * maxVal)) {
 		if (tp[i] > (threshold)) {
-		// if (tp[i] > (0.018)) {
 			tp[i] = 1; // Set tp below threshold to 0
 		} else {
 			tp[i] = 0; // Set tp above threshold to 1
@@ -2830,75 +2828,6 @@ vector<float> NeuronGrowth::calculatePhiSum(const std::vector<Vertex2D>& cpts, f
 	}
 	return tp;
 }
-// void NeuronGrowth::calculatePhiSum(const std::vector<Vertex2D>& cpts, float dx, float dy, vector<float> id) {
-// 	// std::vector<float> tips(cpts.size(), 0); // Initialize the result vector with zeros
-// 	tips.clear(); tips.resize(cpts.size());
-// 	float threshold = 0.9; // Threshold for filtering tips
-// 	float maxVal = 0; // Track the maximum value of tips for normalization
-
-// 	// Iterate over each center point
-// 	for (int i = 0; i < cpts.size(); ++i) {
-// 		const auto& center = cpts[i];
-
-// 		tips[i] = 0;
-
-// 		// Sum phi values for points within the box centered at 'center'
-// 		for (int j = 0; j < phi.size(); ++j) {
-// 			if (isInBox(cpts[j], center, dx, dy)) {
-// 				tips[i] += CellBoundary(phi[j], 0.5), id[j];
-// 				// tips[i] += CellBoundary(phi[j], 0.5);
-// 			}
-// 		}
-
-// 		tips[i] = CellBoundary(phi[i], 0.5) / tips[i] * CellBoundary(phi[i], 0.5);
-// 		// Handle NaN cases, ensuring a valid tips value
-// 		if (std::isnan(tips[i])) {
-// 			tips[i] = 0;
-// 		}
-		
-// 		if ((center.coor[0] <= min_x+1) || (center.coor[0] >= max_x-1) 
-// 			|| (center.coor[1] <= min_y+1) || (center.coor[1] >= max_y-1)) {
-// 			tips[i] = 0;
-// 		}
-
-// 		// Update maxVal to the highest tips value found
-// 		if (CellBoundary(phi[i], 0.5) > 0)
-// 			maxVal = max(tips[i], maxVal);
-// 	}
-
-// 	// for (int i = 0; i < tips.size(); ++i) {
-// 	// 	if (tips[i] > (0.99 * maxVal)) {
-// 	// 		tips[i] = 0; // Set tips below threshold to 0
-// 	// 	}
-// 	// }
-
-// 	// maxVal = 0;
-// 	// for (int i = 0; i < tips.size(); ++i) {
-// 	// 	maxVal = max(tips[i], maxVal);
-// 	// }
-
-// 	// CheckVar("../io3D/outputs/TIP_", cpts, tips);
-// 	// CheckVar("../io3D/outputs/PHI_", cpts, phi);
-
-// 	// Thresholding and setting tips values based on the maximum value found
-// 	for (int i = 0; i < tips.size(); ++i) {
-// 		if (tips[i] > (threshold * maxVal)) {
-// 		// if (tips[i] > (0.018)) {
-// 			tips[i] = 1; // Set tips below threshold to 0
-// 		} else {
-// 			tips[i] = 0; // Set tips above threshold to 1
-// 		}
-		
-// 		// if ((cpts[i].coor[0] >= 9) && (cpts[i].coor[0] <= 11)
-// 		// 	&& (cpts[i].coor[1] >= 9) && (cpts[i].coor[1] <= 11)) {
-// 		// 	tips[i] = 1;
-// 		// } else {
-// 		// 	tips[i] = 0;
-// 		// }
-
-// 	}
-
-// }
 
 void NeuronGrowth::DetectTipsMulti(vector<float> id, int numNeuron, vector<float> &phiSum, int NX, int NY)
 {
@@ -3925,9 +3854,10 @@ int RunNG(int n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D> cpt
 		t_write += t_synTub;
 		t_total += t_synTub;
 
-		// PetscPrintf(PETSC_COMM_WORLD, "Step:%d/%d | Phi:[%d]%.3fs | Syn:%d[%d]%.3fs | Tub:%d[%d]%.3fs | Mesh:%dx%d |\n",\
-		// 	NG.n, NG.end_iter, NR_itr, t_phi, reason_syn, its_syn, t_syn, reason_tub, its_tub, t_tub, NX, NY); CHKERRQ(NG.ierr);
-		// 	// NG.n, NG.end_iter, reason_phi, its_phi, t_phi, reason_syn, its_syn, t_syn, reason_tub, its_tub, t_tub, NX, NY); CHKERRQ(NG.ierr);
+		PetscPrintf(PETSC_COMM_WORLD, "Step:%d/%d | Phi:[%d]%.3fs | Syn:%d[%d] Tub:%d[%d] %.3fs | Mesh:%d |\n",\
+		NG.n, NG.end_iter, NR_itr, t_phi, reason_syn, its_syn, reason_tub, its_tub, t_synTub, NG.phi.size()); CHKERRQ(NG.ierr);
+		// PetscPrintf(PETSC_COMM_WORLD, "Step:%d/%d | Phi:%d[%d]%.3fs | Syn:%d[%d] Tub:%d[%d] %.3fs | Mesh:%d |\n",\
+		// NG.n, NG.end_iter, reason_phi, its_phi, t_phi, reason_syn, its_syn, reason_tub, its_tub, t_synTub, NG.phi.size()); CHKERRQ(NG.ierr);
 
 		// /*========================================================*/
 		// // Obtain initial local refinement information, the very first 25 iterations are purely used 
@@ -3954,20 +3884,8 @@ int RunNG(int n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D> cpt
 		vector<float> Mphi, localMaximaMatrix;
 		if ((NG.n % 1 == 0) || (NG.n == 0)) {	
 
-			PetscPrintf(PETSC_COMM_WORLD, "Step:%d/%d | Phi:[%d]%.3fs | Syn:%d[%d] Tub:%d[%d] %.3fs | Mesh:%d |\n",\
-			NG.n, NG.end_iter, NR_itr, t_phi, reason_syn, its_syn, reason_tub, its_tub, t_synTub, NG.phi.size()); CHKERRQ(NG.ierr);
-			// PetscPrintf(PETSC_COMM_WORLD, "Step:%d/%d | Phi:%d[%d]%.3fs | Syn:%d[%d] Tub:%d[%d] %.3fs | Mesh:%d |\n",\
-			// NG.n, NG.end_iter, reason_phi, its_phi, t_phi, reason_syn, its_syn, reason_tub, its_tub, t_synTub, NG.phi.size()); CHKERRQ(NG.ierr);
-
-			// PetscPrintf(PETSC_COMM_WORLD, "-----------------------------------------------------------------------------------------\n");	
-			// PetscPrintf(PETSC_COMM_WORLD, "Identifying neurons, calculating geodesic distances, and detecting tips\n");
 			NG.IdentifyNeurons(neurons, seed, NX, NY, originX, originY);
-			
 			vector<float> id = ConvertTo1DFloatVector(neurons);
-
-			// NG.DetectTipsMulti(id, NG.numNeuron, tip, NX, NY);
-			// NG.tips.clear();
-			// NG.tips = tip;
 			NG.DetectTipsMulti(id, NG.numNeuron, tip, NX, NY);
 			// localMaximaMatrix = NG.FindLocalMaximaInClusters(tip, NX+1, NY+1);
 			// localMaximaMatrix = NG.FindCentroidsInClusters(tip, NX+1, NY+1);
@@ -3975,18 +3893,8 @@ int RunNG(int n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D> cpt
 			
 			NG.tips.clear(); NG.tips.resize(NG.phi.size(), 0);
 			NG.tips = localMaximaMatrix;
-			// // NG.PrintOutNeurons(neurons);
-			// // NG.DetectTipsMulti(id, NG.numNeuron, tip, NX, NY);
+
 			// // NG.tips = InterpolateVars(tip, cpts_initial, cpts, 2);
-			
-			// for (int j = NY+1; j < localMaximaMatrix.size(); j++) {
-			// 	NG.tips[j] += localMaximaMatrix[j-NY-1];
-
-			// }
-
-			// for (int j = 0; j < localMaximaMatrix.size()-1; j++) {
-			// 	NG.tips[j] = localMaximaMatrix[j+1];
-			// }
 			
 			// NG.tips.clear(); NG.tips.resize(cpts.size(), 0);
 			// for (int i = 0; i < seed.size(); i++) {
@@ -4020,37 +3928,6 @@ int RunNG(int n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D> cpt
 			// 	// 	// Mphi[i] = 10;
 
 			// 	// }
-
-			// 	// for (int k = 0; k < tmp_ind.size(); k++) {
-			// 	// 	for (int i = -4; i < 3; i++) { // increase Mphi at longest tip 
-			// 	// 		for (int j = -3; j < 3; j++) {
-			// 	// 			Mphi[tmp_ind[k]-j*(NY+1)-i] = 10;
-			// 	// 		}
-			// 	// 	}
-			// 	// 	Mphi[tmp_ind[k]] = 60;
-			// 	// }
-
-			// 	// for (int k = (NY+1)+1; k < Mphi.size()-((NY+1)+1); k++) {
-			// 		// if (Mphi[k] != 0) {
-			// 		// 	for (int i = -1; i < 1; i++) { // increase Mphi at longest tip 
-			// 		// 		for (int j = -1; j < 1; j++) {
-			// 		// 			Mphi[k-j*(NY+1)-i] = 10;
-			// 		// 		}
-			// 		// 	}	
-			// 		// }
-			// 	// }
-
-			// 	// if (Mphi[k] != 0) {
-			// 	// 	Mphi[k-1] = 10;
-			// 	// 	Mphi[k+1] = 10;
-			// 	// 	Mphi[k-NY-1-1] = 10;
-			// 	// 	Mphi[k-NY-1] = 10;
-			// 	// 	Mphi[k-NY-1+1] = 10;
-			// 	// 	Mphi[k+NY+1-1] = 10;
-			// 	// 	Mphi[k+NY+1] = 10;
-			// 	// 	Mphi[k+NY+1+1] = 10;
-			// 	// }
-
 			// 	// NG.Mphi = InterpolateVars(Mphi, cpts_initial, cpts, 0);
 			// }
 
@@ -4068,30 +3945,16 @@ int RunNG(int n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D> cpt
 			PetscPrintf(PETSC_COMM_WORLD, "-----------------------------------------------------------------------------------------\n");
 			NG.VisualizeVTK_PhysicalDomain_All(NG.n, path_out);
 			
-			// Path where the PNG will be saved
 			string outputPath = path_out + "/phi_" + to_string(NG.n) + ".png";
-			// const char* cString = outputPath.c_str();
-			// Call the function to write the matrix to a PNG image
 			WriteMatrixToPNG(NG.phi, NX+1, NY+1, outputPath.c_str());
 
-			// varName = "neurons_running_";
-			// NG.VisualizeVTK_ControlMesh(cpts_initial, tmesh_initial, NG.n, path_out, ConvertTo1DFloatVector(neurons), varName); // solution on control points
 			varName = "localMax_running_";
 			NG.VisualizeVTK_ControlMesh(cpts_initial, tmesh_initial, NG.n, path_out, NG.tips, varName); // solution on control points
 			varName = "tip_running_";
 			NG.VisualizeVTK_ControlMesh(cpts_initial, tmesh_initial, NG.n, path_out, tip, varName); // solution on control points
-			// varName = "id_running_";
-			// NG.VisualizeVTK_ControlMesh(cpts_initial, tmesh_initial, NG.n, path_out, id, varName); // solution on control points
-			// varName = "phi_running_";
-			// NG.VisualizeVTK_ControlMesh(cpts_initial, tmesh_initial, NG.n, path_out, NG.phi, varName); // solution on control points
-			// varName = "id_lf_running_";
-			// NG.VisualizeVTK_ControlMesh(cpts, tmesh, NG.n, path_out, id_lf, varName); // solution on control points
-			// varName = "Mphi_running_";
-			// NG.VisualizeVTK_ControlMesh(cpts_initial, tmesh_initial, NG.n, path_out, Mphi, varName); // solution on control points
-			
+
 			PetscPrintf(PETSC_COMM_WORLD, "| Wrote Physical Domain! | Average time %fs | Total time: %f |\n", 
 				t_total/NG.n, t_total); CHKERRQ(NG.ierr);
-				// t_write/NG.var_save_invl, t_total); CHKERRQ(NG.ierr);
 			PetscPrintf(PETSC_COMM_WORLD, "-----------------------------------------------------------------------------------------\n");
 			t_write = 0;
 		}
