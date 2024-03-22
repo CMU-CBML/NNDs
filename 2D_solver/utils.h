@@ -8,6 +8,10 @@
 #include <vector>
 #include "BasicDataStructure.h"
 
+#include <png.h>
+#include <stdexcept>
+#include <iostream>
+
 using namespace std;
 
 // Creating 2D mesh (incrementing from lo to hi)
@@ -52,5 +56,7 @@ void VisualizeVTK_ControlMesh(const vector<Vertex2D> &spt, const vector<Element2
 void ReadMesh(string fn, vector<Vertex2D>& pts, vector<Element2D>& mesh); //need vtk file with point label
 
 void AssignProcessor(string fn, int &n_bzmesh, vector<vector<int>> &ele_process);
+
+void WriteMatrixToPNG(const std::vector<float>& phi, int width, int height, const char* filename);
 
 #endif

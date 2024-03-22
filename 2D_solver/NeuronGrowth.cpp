@@ -4067,6 +4067,13 @@ int RunNG(int n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D> cpt
 			// Writing results to files
 			PetscPrintf(PETSC_COMM_WORLD, "-----------------------------------------------------------------------------------------\n");
 			NG.VisualizeVTK_PhysicalDomain_All(NG.n, path_out);
+			
+			// Path where the PNG will be saved
+			string outputPath = path_out + "/phi_" + to_string(NG.n) + ".png";
+			// const char* cString = outputPath.c_str();
+			// Call the function to write the matrix to a PNG image
+			WriteMatrixToPNG(NG.phi, NX+1, NY+1, outputPath.c_str());
+
 			// varName = "neurons_running_";
 			// NG.VisualizeVTK_ControlMesh(cpts_initial, tmesh_initial, NG.n, path_out, ConvertTo1DFloatVector(neurons), varName); // solution on control points
 			varName = "localMax_running_";
