@@ -49,13 +49,11 @@ vector<float> ConvertTo1DFloatVector(const vector<vector<int>> input);
 vector<float> ConvertTo1DFloatVector(const vector<vector<float>> input);
 
 bool SearchPair(const vector<Vertex2D> prev_cpts, float targetX, float targetY, int &ind);
-bool SearchPair_debug(const vector<Vertex2D> prev_cpts, float targetX, float targetY, int &ind);
 
 vector<float> InterpolateVars(vector<vector<int>> input, vector<Vertex2D> cpts_initial, vector<Vertex2D> cpts, int type);
 vector<float> InterpolateVars(vector<float> input, vector<Vertex2D> cpts_initial, vector<Vertex2D> cpts, int type);
 float round5(float input);
 vector<float> InterpolateVars_coarse(vector<float> input, vector<Vertex2D> cpts_initial, vector<Vertex2D> cpts, int type);
-
 std::vector<float> interpolateValues_closest(
     const std::vector<float>& phi,
     const std::vector<Vertex2D>& cpt,

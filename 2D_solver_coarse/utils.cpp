@@ -13,117 +13,117 @@
 // Creating 2D mesh (incrementing from lo to hi)
 void gen2Dmesh(int Nx, int Ny, vector<vector<float>>& vertices, vector<vector<int>>& elements)
 {
-    std::cout << "******************************************************************************" << std::endl;
-    std::cout << "Generating 2D mesh (Nx by Ny): " << Nx << " x " << Ny << std::endl;
-    vertices.clear(); elements.clear();
-    vector<float> tmp_vtx;
-    vector<int> tmp_ele;
-    for(int i = 0; i <= Nx; i++)
-    {
-        for(int j = 0; j <= Ny; j++)
-        {
-            tmp_vtx.clear();
-            tmp_vtx.push_back(i);
-            tmp_vtx.push_back(j);
-            // tmp_vtx.push_back((float)(i)/(float)Nx);
-            // tmp_vtx.push_back((float)(j)/(float)Ny);
-            tmp_vtx.push_back(0);
-            vertices.push_back(tmp_vtx);
-        }
-    }
+	std::cout << "******************************************************************************" << std::endl;
+	std::cout << "Generating 2D mesh (Nx by Ny): " << Nx << " x " << Ny << std::endl;
+	vertices.clear(); elements.clear();
+	vector<float> tmp_vtx;
+	vector<int> tmp_ele;
+	for(int i = 0; i <= Nx; i++)
+	{
+		for(int j = 0; j <= Ny; j++)
+		{
+			tmp_vtx.clear();
+			tmp_vtx.push_back(i);
+			tmp_vtx.push_back(j);
+			// tmp_vtx.push_back((float)(i)/(float)Nx);
+			// tmp_vtx.push_back((float)(j)/(float)Ny);
+			tmp_vtx.push_back(0);
+			vertices.push_back(tmp_vtx);
+		}
+	}
 
-    int tl_pt;
-    for(int i = 0; i < Nx; i++)
-    {
-        for(int j = 0; j < Ny; j++)
-        {
-            tl_pt = i*(Ny+1)+j;
-            tmp_ele.clear();
-            tmp_ele.push_back(tl_pt);
-            tmp_ele.push_back(tl_pt+1);
-            tmp_ele.push_back(tl_pt+Ny+2);
-            tmp_ele.push_back(tl_pt+Ny+1);
-            elements.push_back(tmp_ele);
-        }
-    }
+	int tl_pt;
+	for(int i = 0; i < Nx; i++)
+	{
+		for(int j = 0; j < Ny; j++)
+		{
+			tl_pt = i*(Ny+1)+j;
+			tmp_ele.clear();
+			tmp_ele.push_back(tl_pt);
+			tmp_ele.push_back(tl_pt+1);
+			tmp_ele.push_back(tl_pt+Ny+2);
+			tmp_ele.push_back(tl_pt+Ny+1);
+			elements.push_back(tmp_ele);
+		}
+	}
 }
 
 void gen2Dmesh(int originX, int originY, int Nx, int Ny, vector<vector<float>>& vertices, vector<vector<int>>& elements, float ratio)
 {
-    std::cout << "******************************************************************************" << std::endl;
-    std::cout << "Generating 2D structured initial mesh" << std::endl;
-    std::cout << "-----------------------------------------------------------------------------" << std::endl;
-    std::cout << "Nx by Ny: " << Nx << " x " << Ny << " | origin: " << originX << "," << originY << std::endl;
-    vertices.clear(); elements.clear();
-    vector<float> tmp_vtx;
-    vector<int> tmp_ele;
-    for(int i = 0; i <= Nx; i++)
-    {
-        for(int j = 0; j <= Ny; j++)
-        {
-            tmp_vtx.clear();
-            tmp_vtx.push_back(i*2/ratio+originX);
-            tmp_vtx.push_back(j*2/ratio+originY);
-            // tmp_vtx.push_back((float)(i)/(float)Nx);
-            // tmp_vtx.push_back((float)(j)/(float)Ny);
-            tmp_vtx.push_back(0);
-            vertices.push_back(tmp_vtx);
-        }
-    }
+	std::cout << "******************************************************************************" << std::endl;
+	std::cout << "Generating 2D structured initial mesh" << std::endl;
+	std::cout << "-----------------------------------------------------------------------------" << std::endl;
+	std::cout << "Nx by Ny: " << Nx << " x " << Ny << " | origin: " << originX << "," << originY << std::endl;
+	vertices.clear(); elements.clear();
+	vector<float> tmp_vtx;
+	vector<int> tmp_ele;
+	for(int i = 0; i <= Nx; i++)
+	{
+		for(int j = 0; j <= Ny; j++)
+		{
+			tmp_vtx.clear();
+			tmp_vtx.push_back(i*2/ratio+originX);
+			tmp_vtx.push_back(j*2/ratio+originY);
+			// tmp_vtx.push_back((float)(i)/(float)Nx);
+			// tmp_vtx.push_back((float)(j)/(float)Ny);
+			tmp_vtx.push_back(0);
+			vertices.push_back(tmp_vtx);
+		}
+	}
 
-    int tl_pt;
-    for(int i = 0; i < Nx; i++)
-    {
-        for(int j = 0; j < Ny; j++)
-        {
-            tl_pt = i*(Ny+1)+j;
-            tmp_ele.clear();
-            tmp_ele.push_back(tl_pt);
-            tmp_ele.push_back(tl_pt+1);
-            tmp_ele.push_back(tl_pt+Ny+2);
-            tmp_ele.push_back(tl_pt+Ny+1);
-            elements.push_back(tmp_ele);
-        }
-    }
+	int tl_pt;
+	for(int i = 0; i < Nx; i++)
+	{
+		for(int j = 0; j < Ny; j++)
+		{
+			tl_pt = i*(Ny+1)+j;
+			tmp_ele.clear();
+			tmp_ele.push_back(tl_pt);
+			tmp_ele.push_back(tl_pt+1);
+			tmp_ele.push_back(tl_pt+Ny+2);
+			tmp_ele.push_back(tl_pt+Ny+1);
+			elements.push_back(tmp_ele);
+		}
+	}
 }
 
 void gen2Dmesh_new(int originX, int originY, int Nx, int Ny, vector<vector<float>>& vertices, vector<vector<int>>& elements, float ratio)
 {
-    std::cout << "******************************************************************************" << std::endl;
-    std::cout << "Generating 2D structured initial mesh" << std::endl;
-    std::cout << "-----------------------------------------------------------------------------" << std::endl;
-    std::cout << "Nx by Ny: " << Nx << " x " << Ny << " | origin: " << originX << "," << originY << std::endl;
-    vertices.clear(); elements.clear();
-    vector<float> tmp_vtx;
-    vector<int> tmp_ele;
-    for(int i = originX+1; i < (originX + Nx); i++)
-    {
-        for(int j = originY+1; j < (originY + Ny); j++)
-        {
-            tmp_vtx.clear();
-            tmp_vtx.push_back(i*2/ratio);
-            tmp_vtx.push_back(j*2/ratio);
-            // tmp_vtx.push_back((float)(i)/(float)Nx);
-            // tmp_vtx.push_back((float)(j)/(float)Ny);
-            tmp_vtx.push_back(0);
-            vertices.push_back(tmp_vtx);
-        }
-    }
+	std::cout << "******************************************************************************" << std::endl;
+	std::cout << "Generating 2D structured initial mesh" << std::endl;
+	std::cout << "-----------------------------------------------------------------------------" << std::endl;
+	std::cout << "Nx by Ny: " << Nx << " x " << Ny << " | origin: " << originX << "," << originY << std::endl;
+	vertices.clear(); elements.clear();
+	vector<float> tmp_vtx;
+	vector<int> tmp_ele;
+	for(int i = originX+1; i < (originX + Nx); i++)
+	{
+		for(int j = originY+1; j < (originY + Ny); j++)
+		{
+			tmp_vtx.clear();
+			tmp_vtx.push_back(i*2/ratio);
+			tmp_vtx.push_back(j*2/ratio);
+			// tmp_vtx.push_back((float)(i)/(float)Nx);
+			// tmp_vtx.push_back((float)(j)/(float)Ny);
+			tmp_vtx.push_back(0);
+			vertices.push_back(tmp_vtx);
+		}
+	}
 
-    int tl_pt;
-    for(int i = 0; i < Nx-1; i++)
-    {
-        for(int j = 0; j < Ny-1; j++)
-        {
-            tl_pt = i*(Ny+1)+j;
-            tmp_ele.clear();
-            tmp_ele.push_back(tl_pt);
-            tmp_ele.push_back(tl_pt+1);
-            tmp_ele.push_back(tl_pt+Ny+2);
-            tmp_ele.push_back(tl_pt+Ny+1);
-            elements.push_back(tmp_ele);
-        }
-    }
+	int tl_pt;
+	for(int i = 0; i < Nx-1; i++)
+	{
+		for(int j = 0; j < Ny-1; j++)
+		{
+			tl_pt = i*(Ny+1)+j;
+			tmp_ele.clear();
+			tmp_ele.push_back(tl_pt);
+			tmp_ele.push_back(tl_pt+1);
+			tmp_ele.push_back(tl_pt+Ny+2);
+			tmp_ele.push_back(tl_pt+Ny+1);
+			elements.push_back(tmp_ele);
+		}
+	}
 }
 
 // Export quad mesh to vtk for visualization
@@ -163,51 +163,51 @@ void write_quad_toVTK(const char* qs, vector<vector<float>>& vertices, vector<ve
 // Creating 2D mesh (incrementing from lo to hi)
 void gen3Dmesh(int Nx, int Ny, int Nz, vector<vector<float>>& vertices, vector<vector<int>>& elements)
 {
-    // float x_coord,y_coord;
-    // vector<float,2> pt_coord;
-    vector<float> tmp_vtx;
-    vector<int> tmp_ele;
-    for(int i = 0; i < Nx; i++)
-    {
-        for(int j = 0; j < Ny; j++)
-        {
-            for(int k = 0; k < Nz; k++)
-            {
-                // pt_coord = {i,j};
-                tmp_vtx.clear();
-                tmp_vtx.push_back(i);
-                tmp_vtx.push_back(j);
-                // tmp_vtx.push_back((float)(i+1)/(float)Nx);
-                // tmp_vtx.push_back((float)(j+1)/(float)Ny);
-                tmp_vtx.push_back(1);
-                vertices.push_back(tmp_vtx);
-            }
-        }
-    }
+	// float x_coord,y_coord;
+	// vector<float,2> pt_coord;
+	vector<float> tmp_vtx;
+	vector<int> tmp_ele;
+	for(int i = 0; i < Nx; i++)
+	{
+		for(int j = 0; j < Ny; j++)
+		{
+			for(int k = 0; k < Nz; k++)
+			{
+				// pt_coord = {i,j};
+				tmp_vtx.clear();
+				tmp_vtx.push_back(i);
+				tmp_vtx.push_back(j);
+				// tmp_vtx.push_back((float)(i+1)/(float)Nx);
+				// tmp_vtx.push_back((float)(j+1)/(float)Ny);
+				tmp_vtx.push_back(1);
+				vertices.push_back(tmp_vtx);
+			}
+		}
+	}
 
-    int tl_pt;
-    // std::cout << "Testing tl_pt" << std::endl;
-    for(int i = 0; i < Nx-1; i++)
-    {
-        for(int j = 0; j < Ny-1; j++)
-        {
-            for(int k = 0; k < Nz-1; k++)
-            {
-                tl_pt = i*(Nx)+j*(Ny)+k;
-                // std::cout<< tl_pt << std::endl;
-                tmp_ele.clear();
-                tmp_ele.push_back(tl_pt);
-                tmp_ele.push_back(tl_pt+1);
-                tmp_ele.push_back(tl_pt+Nx+1);
-                tmp_ele.push_back(tl_pt+Nx);
-                tmp_ele.push_back(tl_pt+Ny);
-                tmp_ele.push_back(tl_pt+Ny+1);
-                tmp_ele.push_back(tl_pt+Ny+Nx+1);
-                tmp_ele.push_back(tl_pt+Ny+Nx);
-                elements.push_back(tmp_ele);
-            }
-        }
-    }
+	int tl_pt;
+	// std::cout << "Testing tl_pt" << std::endl;
+	for(int i = 0; i < Nx-1; i++)
+	{
+		for(int j = 0; j < Ny-1; j++)
+		{
+			for(int k = 0; k < Nz-1; k++)
+			{
+				tl_pt = i*(Nx)+j*(Ny)+k;
+				// std::cout<< tl_pt << std::endl;
+				tmp_ele.clear();
+				tmp_ele.push_back(tl_pt);
+				tmp_ele.push_back(tl_pt+1);
+				tmp_ele.push_back(tl_pt+Nx+1);
+				tmp_ele.push_back(tl_pt+Nx);
+				tmp_ele.push_back(tl_pt+Ny);
+				tmp_ele.push_back(tl_pt+Ny+1);
+				tmp_ele.push_back(tl_pt+Ny+Nx+1);
+				tmp_ele.push_back(tl_pt+Ny+Nx);
+				elements.push_back(tmp_ele);
+			}
+		}
+	}
 
 }
 
@@ -278,11 +278,11 @@ void write_hex_toVTK(const char* qs, vector<vector<float>>& vertices, vector<vec
 
 // generating 2D bezier mesh using spline2D_src
 void bzmesh2D(string path_in){
-    std::cout << "******************************************************************************" << std::endl;
+	std::cout << "******************************************************************************" << std::endl;
 
-    string spline_cmd_tmd("../spline2D_src/spline -i " + path_in);
-    const char* spline_cmd = spline_cmd_tmd.c_str();
-    system(spline_cmd);
+	string spline_cmd_tmd("../spline2D_src/spline -i " + path_in);
+	const char* spline_cmd = spline_cmd_tmd.c_str();
+	system(spline_cmd);
 } 
 
 // generating 3D bezier mesh using spline_src
@@ -367,29 +367,29 @@ void InitializeSoma(int numNeuron, vector<array<float, 2>> &seed, int &NX, int &
 
 vector<float> ConvertTo1DFloatVector(const vector<vector<int>> input) 
 {
-    vector<float> output;
+	vector<float> output;
 
-    for (const auto& row : input) {
-        for (int value : row) {
-            output.push_back(static_cast<float>(value)); // Cast int value to float and add to the 1D vector
-        }
-    }
+	for (const auto& row : input) {
+		for (int value : row) {
+			output.push_back(static_cast<float>(value)); // Cast int value to float and add to the 1D vector
+		}
+	}
 
-    return output;
+	return output;
 }
 
 vector<float> ConvertTo1DFloatVector(const vector<vector<float>> input) 
 {
-    vector<float> output;
+	vector<float> output;
 
-    for (const auto& row : input) {
-        for (float value : row) {
-            output.push_back(static_cast<float>(value)); // Cast int value to float and add to the 1D vector
-        }
-    }
+	for (const auto& row : input) {
+		for (float value : row) {
+			output.push_back(static_cast<float>(value)); // Cast int value to float and add to the 1D vector
+		}
+	}
 
-    return output;
-}
+	return output;
+	}
 
 
 // Function to search for a particular x and y in the vector of Vertex2D
@@ -432,54 +432,6 @@ bool SearchPair(const vector<Vertex2D> prev_cpts, float targetX, float targetY, 
 			return true; // Found the pair (targetX, targetY) in the vector
 		}
 	}
-
-	return false; // Pair not found in the vector
-}
-
-// Function to search for a particular x and y in the vector of Vertex2D
-bool SearchPair_debug(const vector<Vertex2D> prev_cpts, float targetX, float targetY, int &ind) {
-	float x, y;
-	for (int i = 0; i < prev_cpts.size(); i++) {
-
-		// for (int i = 0; i < cpts_initial.size(); i++) {
-		// 	if (abs(remainder(cpts_initial[i].coor[0],2)) != 1)
-		// 		cpts_initial[i].coor[0] = round(cpts_initial[i].coor[0]);
-		// 	if (abs(remainder(cpts_initial[i].coor[1],2)) != 1)
-		// 		cpts_initial[i].coor[1] = round(cpts_initial[i].coor[1]);
-		// }
-
-		x = prev_cpts[i].coor[0];
-		if (abs(remainder(x,1)) > 0.5) {
-			x = floorf(x)+1;
-		}
-		if (abs(remainder(x,1)) <= 0.5) {
-			x = floorf(x);
-		}
-		y = prev_cpts[i].coor[1];
-		if (abs(remainder(y,1)) > 0.5) {
-			y = floorf(y)+1;
-		}
-		if (abs(remainder(y,1)) <= 0.5) {
-			y = floorf(y);
-		}
-
-		// if (abs(remainder(x,1)) == 0.5) {
-		// 	x = round(x) - 1;
-		// }
-		// if (abs(remainder(y,1)) == 0.5) {
-		// 	y = round(y) - 1;
-		// }
-		
-		// PetscPrintf(PETSC_COMM_WORLD, "x: %f y: %f\n", x, y);
-
-		// if (prev_cpts[i].coor[0] == targetX && prev_cpts[i].coor[1] == targetY) {
-		if (x == targetX && y == targetY) {
-			ind = i;
-			return true; // Found the pair (targetX, targetY) in the vector
-		}
-	}
-
-	std::cout << x << " " << y << std::endl;
 
 	return false; // Pair not found in the vector
 }
@@ -637,25 +589,16 @@ vector<float> InterpolateVars(vector<float> input, vector<Vertex2D> cpts_initial
 }
 
 float round5(float value) {
-//     // Extract the fractional part of the value
-//     float fractionalPart = value - std::floor(value);
+	// Extract the fractional part and the whole part of the value
+	float wholePart = std::floor(value);
+	float fractionalPart = value - wholePart;
 
-//     // Check if the fractional part is exactly 0.5
-//     if (fractionalPart == 0.5) {
-//         return std::floor(value); // Always round up if fractional part is 0.5
-//     } else {
-//         return std::round(value); // Use standard rounding for other cases
-//     }
-    // Extract the fractional part and the whole part of the value
-    float wholePart = std::floor(value);
-    float fractionalPart = value - wholePart;
-
-    // Check if the fractional part is exactly 0.5
-    if (fractionalPart == 0.5 || fractionalPart == -0.5) {
-        return wholePart; // Round down to 0 for 0.5
-    } else {
-        return std::round(value); // Use standard rounding for other cases
-    }
+	// Check if the fractional part is exactly 0.5
+	if (fractionalPart == 0.5 || fractionalPart == -0.5) {
+		return wholePart; // Round down to 0 for 0.5
+	} else {
+		return std::round(value); // Use standard rounding for other cases
+	}
 }
 
 vector<float> InterpolateVars_coarse(vector<float> input, vector<Vertex2D> cpts_initial, vector<Vertex2D> cpts, int type) 
@@ -733,100 +676,100 @@ float distance_d(const Vertex2D& a, const Vertex2D& b) {
 
 // Function to interpolate values for new control points
 std::vector<float> interpolateValues_closest(
-    const std::vector<float>& phi,
-    const std::vector<Vertex2D>& cpt,
-    const std::vector<Vertex2D>& cpt_out) {
+	const std::vector<float>& phi,
+	const std::vector<Vertex2D>& cpt,
+	const std::vector<Vertex2D>& cpt_out) {
 
-    std::vector<float> interpolatedValues(cpt_out.size());
+	std::vector<float> interpolatedValues(cpt_out.size());
 
-    for (size_t i = 0; i < cpt_out.size(); ++i) {
-        float minDistance = std::numeric_limits<float>::max();
-        size_t closestIndex = 0;
+	for (size_t i = 0; i < cpt_out.size(); ++i) {
+		float minDistance = std::numeric_limits<float>::max();
+		size_t closestIndex = 0;
 
-        // Find the closest point in cpt for each point in cpt_out
-        for (size_t j = 0; j < cpt.size(); ++j) {
-            float distance = distance_d(cpt_out[i], cpt[j]);
-            if (distance < minDistance) {
-                minDistance = distance;
-                closestIndex = j;
-            }
-        }
+		// Find the closest point in cpt for each point in cpt_out
+		for (size_t j = 0; j < cpt.size(); ++j) {
+			float distance = distance_d(cpt_out[i], cpt[j]);
+			if (distance < minDistance) {
+				minDistance = distance;
+				closestIndex = j;
+			}
+		}
 
-        // Assume the value of the closest point
-	if (abs(round(phi[closestIndex])) > 0.5) {
-		interpolatedValues[i] = 1;
-	} else {
-		interpolatedValues[i] = 0;
+		// Assume the value of the closest point
+		// if (abs(round(phi[closestIndex])) > 0.5) {
+		// 	interpolatedValues[i] = 1;
+		// } else {
+		// 	interpolatedValues[i] = 0;
+		// }
+		interpolatedValues[i] = phi[closestIndex];
 	}
-        // interpolatedValues[i] = phi[closestIndex];
-    }
 
-    return interpolatedValues;
+	return interpolatedValues;
 }
 
 // Function to interpolate values for new control points using the average of 6 closest points
 std::vector<float> interpolateValues_averageN(
-    const std::vector<float>& phi,
-    const std::vector<Vertex2D>& cpt,
-    const std::vector<Vertex2D>& cpt_out,
-    float numAverage) {
+	const std::vector<float>& phi,
+	const std::vector<Vertex2D>& cpt,
+	const std::vector<Vertex2D>& cpt_out,
+	float numAverage) {
 
-    std::vector<float> interpolatedValues(cpt_out.size());
+	std::vector<float> interpolatedValues(cpt_out.size());
 
-    for (size_t i = 0; i < cpt_out.size(); ++i) {
-        // Use a max heap to keep track of the closest points
-        // The heap will store pairs of (distance, index), where index is the index in `cpt`
-        std::priority_queue<std::pair<float, size_t>> heap;
+	for (size_t i = 0; i < cpt_out.size(); ++i) {
+		// Use a max heap to keep track of the closest points
+		// The heap will store pairs of (distance, index), where index is the index in `cpt`
+		std::priority_queue<std::pair<float, size_t>> heap;
 
-        for (size_t j = 0; j < cpt.size(); ++j) {
-            float dist = distance_d(cpt_out[i], cpt[j]);
-            // Keep the heap size to 6
-            if (heap.size() < numAverage) {
-                heap.push({dist, j});
-            } else if (dist < heap.top().first) {
-                heap.pop();
-                heap.push({dist, j});
-            }
-        }
+		for (size_t j = 0; j < cpt.size(); ++j) {
+			float dist = distance_d(cpt_out[i], cpt[j]);
+			// Keep the heap size to 6
+			if (heap.size() < numAverage) {
+				heap.push({dist, j});
+			} else if (dist < heap.top().first) {
+				heap.pop();
+				heap.push({dist, j});
+			}
+		}
 
-        // Calculate the average of the values of the 6 closest points
-        float sum = 0.0;
-        while (!heap.empty()) {
-            sum += phi[heap.top().second];
-            heap.pop();
-        }
-        interpolatedValues[i] = sum / numAverage;
-    }
+		// Calculate the average of the values of the 6 closest points
+		float sum = 0.0;
+		while (!heap.empty()) {
+			sum += phi[heap.top().second];
+			heap.pop();
+		}
+		interpolatedValues[i] = sum / numAverage;
+	}
 
-    return interpolatedValues;
+	return interpolatedValues;
 }
 
 // Function to interpolate values for new control points within a specified radius
 std::vector<float> interpolateValuesWithinRadius(
-    const std::vector<float>& phi,
-    const std::vector<Vertex2D>& cpt,
-    const std::vector<Vertex2D>& cpt_out,
-    float radius) {
+	const std::vector<float>& phi,
+	const std::vector<Vertex2D>& cpt,
+	const std::vector<Vertex2D>& cpt_out,
+	float radius) {
 
-    std::vector<float> interpolatedValues(cpt_out.size());
+	std::vector<float> interpolatedValues(cpt_out.size());
 
-    for (size_t i = 0; i < cpt_out.size(); ++i) {
-        float sum = 0.0;
-        size_t count = 0;
+	for (size_t i = 0; i < cpt_out.size(); ++i) {
+		float sum = 0.0;
+		size_t count = 0;
 
-        for (size_t j = 0; j < cpt.size(); ++j) {
-            float dist = distance_d(cpt_out[i], cpt[j]);
-            if (dist <= radius) {
-                sum += phi[j];
-                ++count;
-            }
-        }
+		for (size_t j = 0; j < cpt.size(); ++j) {
+			float dist = distance_d(cpt_out[i], cpt[j]);
+			if (dist <= radius) {
+				sum += phi[j];
+				++count;
+			}
+		}
 
-        // Avoid division by zero
-        interpolatedValues[i] = count > 0 ? sum / count : 0;
-    }
+		// Avoid division by zero
+		interpolatedValues[i] = count > 0 ? sum / count : 0;
+	}
 
-    return interpolatedValues;
+	return interpolatedValues;
 }
 
 void ObtainRefineID_coarse(vector<float> phi, vector<Vertex2D> cpts, int NX, int NY, int originX, int originY, vector<int> &rfid, vector<int> &rftype){
