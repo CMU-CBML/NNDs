@@ -184,7 +184,7 @@ void NeuronGrowth::SetVariables(string fn_par)
 	}
 }
 
-void NeuronGrowth::InitializeProblemNG(const int n_bz, vector<Vertex2D>& cpts, vector<Vertex2D> prev_cpts, vector<vector<float>> &NGvars, vector<array<float, 2>> &seed)
+void NeuronGrowth::InitializeProblemNG(const int n_bz, vector<Vertex2D>& cpts, vector<Vertex2D> prev_cpts, const KDTree& kdTree_prev, vector<vector<float>> &NGvars, vector<array<float, 2>> &seed)
 {
 	MPI_Barrier(PETSC_COMM_WORLD);
 	PetscPrintf(PETSC_COMM_WORLD, "Initializing-----------------------------------------------------------------\n");
@@ -265,94 +265,94 @@ void NeuronGrowth::InitializeProblemNG(const int n_bz, vector<Vertex2D>& cpts, v
 		phi_0 = phi; // initial phi
 		tub_0 = tub; // initial tub
 	} else { // Collect from NGvars - continue simulation
-		phi.clear(); 	phi.resize(cpts.size());
-		syn.clear(); 	syn.resize(cpts.size());
-		tub.clear(); 	tub.resize(cpts.size());
-		theta.clear();	theta.resize(cpts.size());
-		phi_0.clear(); 	phi_0.resize(cpts.size());
-		tub_0.clear(); 	tub_0.resize(cpts.size());
-		for (int i = 0; i < prev_cpts.size(); i++) {
-			if (abs(remainder(prev_cpts[i].coor[0],2)) != 1)
-				prev_cpts[i].coor[0] = round(prev_cpts[i].coor[0]);
-			if (abs(remainder(prev_cpts[i].coor[1],2)) != 1)
-				prev_cpts[i].coor[1] = round(prev_cpts[i].coor[1]);
-		}
-
-		for (int i = 0; i < cpts.size(); i++) {
-			x = cpts[i].coor[0];
-			if (abs(remainder(x,2)) != 1) {
-				x = round(x);
-			}
-			y = cpts[i].coor[1];
-			if (abs(remainder(y,2)) != 1) {
-				y = round(y);
-			}
-
-			// calculate new boundary label
-			if (x==min_x || x==max_x || y==min_y || y==max_y) {
-				cpts[i].label = 1;
-			} else {
-				cpts[i].label = 0;
-			}   
-
-			int ind, indDown, indUp, indLeft, indRight;
-			if (SearchPair(prev_cpts, round5(x), round5(y), ind)) {
-			// if (SearchPair(prev_cpts, cpts[i].coor[0], cpts[i].coor[1], ind)) {
-				phi[i] = NGvars[0][ind];
-				syn[i] = NGvars[1][ind];
-				tub[i] = NGvars[2][ind];
-				theta[i] = NGvars[3][ind];
-				phi_0[i] = NGvars[4][ind];
-				tub_0[i] = NGvars[5][ind];
-			} else if ((abs(remainder(x,2)) == 1) && (abs(remainder(y,2)) != 1) 
-				&& SearchPair(prev_cpts, floorf(x)-1, round5(y), indDown)
-				&& SearchPair(prev_cpts, floorf(x)+1, round5(y), indUp)) {
-					phi[i] = (NGvars[0][indDown] + NGvars[0][indUp])/2;
-					syn[i] = (NGvars[1][indDown] + NGvars[1][indUp])/2;
-					tub[i] = (NGvars[2][indDown] + NGvars[2][indUp])/2;
-					// theta[i] = max(NGvars[3][indDown], NGvars[3][indUp]);
-					theta[i] = (float)(rand()%100)/(float)100;
-					phi_0[i] = (NGvars[4][indDown] + NGvars[4][indUp])/2;
-					tub_0[i] = (NGvars[5][indDown] + NGvars[5][indUp])/2;
-			} else if ((abs(remainder(x,2)) != 1) && (abs(remainder(y,2)) == 1)
-				&& SearchPair(prev_cpts, round5(x), floorf(y)-1, indDown)
-				&& SearchPair(prev_cpts, round5(x), floorf(y)+1, indUp)){
-					phi[i] = (NGvars[0][indDown] + NGvars[0][indUp])/2;
-					syn[i] = (NGvars[1][indDown] + NGvars[1][indUp])/2;
-					tub[i] = (NGvars[2][indDown] + NGvars[2][indUp])/2;
-					// theta[i] = max(NGvars[3][indDown], NGvars[3][indUp]);
-					theta[i] = (float)(rand()%100)/(float)100;
-					phi_0[i] = (NGvars[4][indDown] + NGvars[4][indUp])/2;
-					tub_0[i] = (NGvars[5][indDown] + NGvars[5][indUp])/2;
-			} else if ((abs(remainder(x,2)) == 1) && (abs(remainder(y,2)) == 1)
-				&& SearchPair(prev_cpts, floorf(x)-1, floorf(y)-1, indDown)
-				&& SearchPair(prev_cpts, floorf(x)+1, floorf(y)+1, indUp)
-				&& SearchPair(prev_cpts, floorf(x)-1, floorf(y)+1, indLeft)
-				&& SearchPair(prev_cpts, floorf(x)+1, floorf(y)-1, indRight)) {
-					phi[i] = (NGvars[0][indDown] + NGvars[0][indUp] + NGvars[0][indLeft] + NGvars[0][indRight])/4;
-					syn[i] = (NGvars[1][indDown] + NGvars[1][indUp] + NGvars[1][indLeft] + NGvars[1][indRight])/4;
-					tub[i] = (NGvars[2][indDown] + NGvars[2][indUp] + NGvars[2][indLeft] + NGvars[2][indRight])/4;
-					// theta[i] = max(max(NGvars[3][indDown], NGvars[3][indUp]), max(NGvars[3][indLeft], NGvars[3][indRight]));
-					theta[i] = (float)(rand()%100)/(float)100;
-					phi_0[i] = (NGvars[4][indDown] + NGvars[4][indUp] + NGvars[4][indLeft] + NGvars[4][indRight])/4;
-					tub_0[i] = (NGvars[5][indDown] + NGvars[5][indUp] + NGvars[5][indLeft] + NGvars[5][indRight])/4;
-			} else {
-				phi[i] = 0;
-				syn[i] = 0;
-				tub[i] = 0;
-				theta[i] = (float)(rand()%100)/(float)100;
-				phi_0[i] = 0;
-				tub_0[i] = 0;
-			}		
-			Mphi.push_back(M_phi);
-		}
-
 		// phi.clear(); 	phi.resize(cpts.size());
 		// syn.clear(); 	syn.resize(cpts.size());
 		// tub.clear(); 	tub.resize(cpts.size());
 		// theta.clear();	theta.resize(cpts.size());
 		// phi_0.clear(); 	phi_0.resize(cpts.size());
 		// tub_0.clear(); 	tub_0.resize(cpts.size());
+		// for (int i = 0; i < prev_cpts.size(); i++) {
+		// 	if (abs(remainder(prev_cpts[i].coor[0],2)) != 1)
+		// 		prev_cpts[i].coor[0] = round(prev_cpts[i].coor[0]);
+		// 	if (abs(remainder(prev_cpts[i].coor[1],2)) != 1)
+		// 		prev_cpts[i].coor[1] = round(prev_cpts[i].coor[1]);
+		// }
+
+		// for (int i = 0; i < cpts.size(); i++) {
+		// 	x = cpts[i].coor[0];
+		// 	if (abs(remainder(x,2)) != 1) {
+		// 		x = round(x);
+		// 	}
+		// 	y = cpts[i].coor[1];
+		// 	if (abs(remainder(y,2)) != 1) {
+		// 		y = round(y);
+		// 	}
+
+		// 	// calculate new boundary label
+		// 	if (x==min_x || x==max_x || y==min_y || y==max_y) {
+		// 		cpts[i].label = 1;
+		// 	} else {
+		// 		cpts[i].label = 0;
+		// 	}   
+
+		// 	int ind, indDown, indUp, indLeft, indRight;
+		// 	if (SearchPair(prev_cpts, round5(x), round5(y), ind)) {
+		// 	// if (SearchPair(prev_cpts, cpts[i].coor[0], cpts[i].coor[1], ind)) {
+		// 		phi[i] = NGvars[0][ind];
+		// 		syn[i] = NGvars[1][ind];
+		// 		tub[i] = NGvars[2][ind];
+		// 		theta[i] = NGvars[3][ind];
+		// 		phi_0[i] = NGvars[4][ind];
+		// 		tub_0[i] = NGvars[5][ind];
+		// 	} else if ((abs(remainder(x,2)) == 1) && (abs(remainder(y,2)) != 1) 
+		// 		&& SearchPair(prev_cpts, floorf(x)-1, round5(y), indDown)
+		// 		&& SearchPair(prev_cpts, floorf(x)+1, round5(y), indUp)) {
+		// 			phi[i] = (NGvars[0][indDown] + NGvars[0][indUp])/2;
+		// 			syn[i] = (NGvars[1][indDown] + NGvars[1][indUp])/2;
+		// 			tub[i] = (NGvars[2][indDown] + NGvars[2][indUp])/2;
+		// 			// theta[i] = max(NGvars[3][indDown], NGvars[3][indUp]);
+		// 			theta[i] = (float)(rand()%100)/(float)100;
+		// 			phi_0[i] = (NGvars[4][indDown] + NGvars[4][indUp])/2;
+		// 			tub_0[i] = (NGvars[5][indDown] + NGvars[5][indUp])/2;
+		// 	} else if ((abs(remainder(x,2)) != 1) && (abs(remainder(y,2)) == 1)
+		// 		&& SearchPair(prev_cpts, round5(x), floorf(y)-1, indDown)
+		// 		&& SearchPair(prev_cpts, round5(x), floorf(y)+1, indUp)){
+		// 			phi[i] = (NGvars[0][indDown] + NGvars[0][indUp])/2;
+		// 			syn[i] = (NGvars[1][indDown] + NGvars[1][indUp])/2;
+		// 			tub[i] = (NGvars[2][indDown] + NGvars[2][indUp])/2;
+		// 			// theta[i] = max(NGvars[3][indDown], NGvars[3][indUp]);
+		// 			theta[i] = (float)(rand()%100)/(float)100;
+		// 			phi_0[i] = (NGvars[4][indDown] + NGvars[4][indUp])/2;
+		// 			tub_0[i] = (NGvars[5][indDown] + NGvars[5][indUp])/2;
+		// 	} else if ((abs(remainder(x,2)) == 1) && (abs(remainder(y,2)) == 1)
+		// 		&& SearchPair(prev_cpts, floorf(x)-1, floorf(y)-1, indDown)
+		// 		&& SearchPair(prev_cpts, floorf(x)+1, floorf(y)+1, indUp)
+		// 		&& SearchPair(prev_cpts, floorf(x)-1, floorf(y)+1, indLeft)
+		// 		&& SearchPair(prev_cpts, floorf(x)+1, floorf(y)-1, indRight)) {
+		// 			phi[i] = (NGvars[0][indDown] + NGvars[0][indUp] + NGvars[0][indLeft] + NGvars[0][indRight])/4;
+		// 			syn[i] = (NGvars[1][indDown] + NGvars[1][indUp] + NGvars[1][indLeft] + NGvars[1][indRight])/4;
+		// 			tub[i] = (NGvars[2][indDown] + NGvars[2][indUp] + NGvars[2][indLeft] + NGvars[2][indRight])/4;
+		// 			// theta[i] = max(max(NGvars[3][indDown], NGvars[3][indUp]), max(NGvars[3][indLeft], NGvars[3][indRight]));
+		// 			theta[i] = (float)(rand()%100)/(float)100;
+		// 			phi_0[i] = (NGvars[4][indDown] + NGvars[4][indUp] + NGvars[4][indLeft] + NGvars[4][indRight])/4;
+		// 			tub_0[i] = (NGvars[5][indDown] + NGvars[5][indUp] + NGvars[5][indLeft] + NGvars[5][indRight])/4;
+		// 	} else {
+		// 		phi[i] = 0;
+		// 		syn[i] = 0;
+		// 		tub[i] = 0;
+		// 		theta[i] = (float)(rand()%100)/(float)100;
+		// 		phi_0[i] = 0;
+		// 		tub_0[i] = 0;
+		// 	}		
+		// 	Mphi.push_back(M_phi);
+		// }
+
+		phi.clear(); 	phi.resize(cpts.size());
+		syn.clear(); 	syn.resize(cpts.size());
+		tub.clear(); 	tub.resize(cpts.size());
+		theta.clear();	theta.resize(cpts.size());
+		phi_0.clear(); 	phi_0.resize(cpts.size());
+		tub_0.clear(); 	tub_0.resize(cpts.size());
 
 		// phi = InterpolateVars_coarse(NGvars[0], prev_cpts, cpts, 1);
 		// syn = InterpolateVars_coarse(NGvars[1], prev_cpts, cpts, 1);
@@ -360,6 +360,13 @@ void NeuronGrowth::InitializeProblemNG(const int n_bz, vector<Vertex2D>& cpts, v
 		// theta = InterpolateVars_coarse(NGvars[3], prev_cpts, cpts, 1);
 		// phi_0 = InterpolateVars_coarse(NGvars[4], prev_cpts, cpts, 1);
 		// tub_0 = InterpolateVars_coarse(NGvars[5], prev_cpts, cpts, 1);
+
+		phi = InterpolateVars_coarse1(NGvars[0], prev_cpts, kdTree_prev, cpts, 1, 0);
+		syn = InterpolateVars_coarse1(NGvars[1], prev_cpts, kdTree_prev, cpts, 1, 0);
+		tub = InterpolateVars_coarse1(NGvars[2], prev_cpts, kdTree_prev, cpts, 1, 0);
+		theta = InterpolateVars_coarse1(NGvars[3], prev_cpts, kdTree_prev, cpts, 1, 1);
+		phi_0 = InterpolateVars_coarse1(NGvars[4], prev_cpts, kdTree_prev, cpts, 1, 0);
+		tub_0 = InterpolateVars_coarse1(NGvars[5], prev_cpts, kdTree_prev, cpts, 1, 0);
 
 		// // phi = interpolateValues_averageN(NGvars[0], prev_cpts, cpts, 4);
 		// // syn = interpolateValues_averageN(NGvars[1], prev_cpts, cpts, 4);
@@ -376,9 +383,9 @@ void NeuronGrowth::InitializeProblemNG(const int n_bz, vector<Vertex2D>& cpts, v
 		// // tub_0 = interpolateValuesWithinRadius(NGvars[5], prev_cpts, cpts, 1);
 
 
-		// for (int i = 0; i < cpts.size(); i++) {	
-		// 	Mphi.push_back(M_phi);
-		// }
+		for (int i = 0; i < cpts.size(); i++) {	
+			Mphi.push_back(M_phi);
+		}
 
 	}
 
@@ -1850,7 +1857,7 @@ void NeuronGrowth::preparePhaseField() {
 				// pre_eleMp.push_back(eleMp);
 
 				// adjust rg (assembly rate) and sg (disassembly rate) based on detected tips
-				if (n < 50) {
+				if (n < 1) {
 					eleE = alphaOverPi*atan(gamma * (1 - eleS));
 					pre_eleMp.push_back(50);
 				} else {
@@ -2779,8 +2786,10 @@ float NeuronGrowth::RmOutlier(vector<float> &data)
 	// // std::cout << mean + 2*standardDeviation << " " << maxVal << std::endl;
 	// for(int i = 0; i < data.size(); i++) {
 	// 	if (data[i] > (mean + 3.29*standardDeviation)) {
-	// 		data[i] = mean + 3.29*standardDeviation;
-	// 	} 
+	// 		// data[i] = mean + 3.29*standardDeviation;
+	// 	} else {
+	// 		data[i] = 0;
+	// 	}
 	// }
 	return (mean + 3.29*standardDeviation);
 }
@@ -2982,8 +2991,8 @@ vector<float> NeuronGrowth::calculatePhiSum(const std::vector<Vertex2D>& cpts, f
 
 void NeuronGrowth::DetectTipsMulti(const vector<float>& phi_fine, const vector<float>& id, const int& numNeuron, vector<float>& phiSum, const int& NX, const int& NY)
 {
-	// float threshold(0.9997), maxVal(0);
-	float threshold(0.85), maxVal(0);
+	float threshold(0.9997), maxVal(0);
+	// float threshold(0.9), maxVal(0);
 	int ind, length((NX+1)*(NY+1));
 	phiSum.clear();
 	phiSum.resize(length);
@@ -3008,12 +3017,12 @@ void NeuronGrowth::DetectTipsMulti(const vector<float>& phi_fine, const vector<f
 				phiSum[i] = CellBoundary(phi_fine[i], 0) / phiSum[i];
 			if (std::isnan(phiSum[i]))
 				phiSum[i] = 0;
-			if (phiSum[i] > maxVal)
-				maxVal = phiSum[i];
+			// if (phiSum[i] > maxVal)
+			// 	maxVal = phiSum[i];
 		}
 	}
 
-	// maxVal = RmOutlier(phiSum);
+	maxVal = RmOutlier(phiSum);
 
 	for (int i = 0; i < phiSum.size(); i++) {
 		phiSum[i] = phiSum[i]/maxVal;
@@ -3021,7 +3030,8 @@ void NeuronGrowth::DetectTipsMulti(const vector<float>& phi_fine, const vector<f
 
 	for (int i = 1+NY; i < length-NY-1; i++) {
 		// if (phiSum[i] < (threshold * maxVal)) {
-		if (phiSum[i] < (threshold)) {
+		// if (phiSum[i] < (threshold)) {
+		if (phiSum[i] < (1.1)) {
 			phiSum[i] = 0;
 		} 
 		// else {
@@ -3138,29 +3148,24 @@ vector<float> NeuronGrowth::InterpolateValues_closest(const vector<float>& input
 		} else {
 			// Handle error or unexpected case
 			interpolatedValues[i] = 0; // Define defaultValue appropriately
+			PetscPrintf(PETSC_COMM_WORLD, "Failed to find pts (ck0)! x: %f y: %f\n", cpt_out[i].coor[0], cpt_out[i].coor[1]);
+
 		}
 	}
 
 	return interpolatedValues;
 }
 
-vector<float> NeuronGrowth::InterpolateVars_coarse1(vector<float> input, vector<Vertex2D> cpts_initial, const KDTree& kdTree_initial, const vector<Vertex2D>& cpts, int type) 
+vector<float> NeuronGrowth::InterpolateVars_coarse1(vector<float> input, vector<Vertex2D> cpts_initial, const KDTree& kdTree_initial, const vector<Vertex2D>& cpts, int type, int isTheta) 
 {	
 	vector<float> output;
-	output.resize(cpts.size());
-
-	// for (int i = 0; i < cpts_initial.size(); i++) {
-	// 	if (abs(remainder(cpts_initial[i].coor[0],2)) != 1)
-	// 		cpts_initial[i].coor[0] = round5(cpts_initial[i].coor[0]);
-	// 	if (abs(remainder(cpts_initial[i].coor[1],2)) != 1)
-	// 		cpts_initial[i].coor[1] = round5(cpts_initial[i].coor[1]);
-	// }
+	output.resize(cpts.size(), 0);
 	
 	for (int i = 0; i < cpts.size(); i++) {
 		float x = round5(cpts[i].coor[0]);
 		float y = round5(cpts[i].coor[1]);
 		int ind;
-		if (KD_SearchPair(cpts_initial, kdTree_initial, round5(x), round5(y), ind)) {
+		if (KD_SearchPair(cpts_initial, kdTree_initial, x, y, ind)) {
 			output[i] = input[ind];
 		} 
 		else {
@@ -3204,7 +3209,13 @@ vector<float> NeuronGrowth::InterpolateVars_coarse1(vector<float> input, vector<
 						output[i] = 0;
 					}
 				} else {
-					PetscPrintf(PETSC_COMM_WORLD, "Failed to find pts (ck2)! x: %f y: %f | %f %f\n", x, y, floorf(x)-1, floorf(y)-1);
+					PetscPrintf(PETSC_COMM_WORLD, "Failed to find pts (ck2)! x: %f y: %f\n", x, y);
+				}
+			} else {
+				if (isTheta != 1) {
+					output[i] = 0;
+				} else {
+					output[i] = (float)(rand()%100)/(float)100; // for theta
 				}
 			}
 		}			
@@ -3240,7 +3251,9 @@ void NeuronGrowth::bfs(const vector<float>& matrix, int rows, int cols, int row,
          vector<bool>& visited, vector<pair<int, int>>& cluster) {
 	static const int dx[] = {-1, 0, 1, 0, -1, -1, 1, 1}; // Including diagonal directions
 	static const int dy[] = {0, -1, 0, 1, -1, 1, -1, 1}; // Including diagonal directions
-
+	// static const int dx[] = {-1, 0, 1, 0}; // Including diagonal directions
+	// static const int dy[] = {0, -1, 0, 1}; // Including diagonal directions
+	
 	queue<pair<int, int>> q;
 	q.push(make_pair(row, col));
 	visited[row * cols + col] = true;
@@ -3252,6 +3265,7 @@ void NeuronGrowth::bfs(const vector<float>& matrix, int rows, int cols, int row,
 		q.pop();
 
 		for (int i = 0; i < 8; ++i) { // Iterating through all 8 directions
+		// for (int i = 0; i < 4; ++i) { // Iterating through all 8 directions
 			int newRow = r + dx[i];
 			int newCol = c + dy[i];
 
@@ -3395,14 +3409,14 @@ vector<float> NeuronGrowth::FindCentroidsOfLocalMaximaClusters(const vector<floa
 
         centroids[centroidRow * cols + centroidCol] = 1.0f;
 
-	// centroids[centroidRow.first * cols + centroidRow.second - cols + 1] = 1.0f;
-	// centroids[centroidRow.first * cols + centroidRow.second - cols] = 1.0f;
-	// centroids[centroidRow.first * cols + centroidRow.second - cols - 1] = 1.0f;
-	// centroids[centroidRow.first * cols + centroidRow.second - 1] = 1.0f;
-	// centroids[centroidRow.first * cols + centroidRow.second + 1] = 1.0f;
-	// centroids[centroidRow.first * cols + centroidRow.second + cols + 1] = 1.0f;
-	// centroids[centroidRow.first * cols + centroidRow.second + cols] = 1.0f;
-	// centroids[centroidRow.first * cols + centroidRow.second + cols - 1] = 1.0f;
+	// centroids[centroidRow * cols + centroidCol - cols + 1] = 1.0f;
+	// centroids[centroidRow * cols + centroidCol- cols] = 1.0f;
+	// centroids[centroidRow * cols + centroidCol - cols - 1] = 1.0f;
+	// centroids[centroidRow * cols + centroidCol - 1] = 1.0f;
+	// centroids[centroidRow * cols + centroidCol + 1] = 1.0f;
+	// centroids[centroidRow * cols + centroidCol + cols + 1] = 1.0f;
+	// centroids[centroidRow * cols + centroidCol + cols] = 1.0f;
+	// centroids[centroidRow * cols + centroidCol + cols - 1] = 1.0f;
     }
 
     return centroids;
@@ -3416,8 +3430,8 @@ vector<vector<int>> NeuronGrowth::ConvertTo2DIntVector(const vector<float> input
 	for (int i = 0; i < NX+1; i++) {
 		vector<int> row;
 		for (int j = 0; j < NY+1; j++) {
-			row.push_back(CellBoundary(abs(input[k]), 0.01));
-			// row.push_back(CellBoundary(abs(input[k]), 0.25));
+			// row.push_back(CellBoundary(abs(input[k]), 0.01));
+			row.push_back(CellBoundary(abs(input[k]), 0.1));
 			// row.push_back(CellBoundary(input[k], 0.5));
 			k++;
 		}
@@ -3918,19 +3932,25 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 	NG.numNeuron = seed.size();
 	NG.end_iter = end_iter_in;
 
+	Vertex2DCloud cloud(cpts), cloud_fine(cpts_fine), cloud_prev(prev_cpts);
+	KDTree kdTree(2 /* dim */, cloud, nanoflann::KDTreeSingleIndexAdaptorParams(10 /* max leaf */));
+	KDTree kdTree_fine(2 /* dim */, cloud_fine, nanoflann::KDTreeSingleIndexAdaptorParams(10 /* max leaf */));
+	KDTree kdTree_prev(2 /* dim */, cloud_prev, nanoflann::KDTreeSingleIndexAdaptorParams(10 /* max leaf */));
+	kdTree.buildIndex();
+	kdTree_fine.buildIndex();
+	kdTree_prev.buildIndex();
+
 	// Vertex2DCloud cloud(cpts);
 	// KDTree kdTree(2 /* dim */, cloud, nanoflann::KDTreeSingleIndexAdaptorParams(10 /* max leaf */));
 	// kdTree.buildIndex();
-	
 	// Vertex2DCloud cloud_fine(cpts_fine);
 	// KDTree kdTree_fine(2 /* dim */, cloud_fine, nanoflann::KDTreeSingleIndexAdaptorParams(10 /* max leaf */));
 	// kdTree_fine.buildIndex();
-
 	// Vertex2DCloud cloud_prev(prev_cpts);
 	// KDTree kdTree_prev(2 /* dim */, cloud_prev, nanoflann::KDTreeSingleIndexAdaptorParams(10 /* max leaf */));
 	// kdTree_prev.buildIndex();
 
-	NG.InitializeProblemNG(n_bzmesh, cpts, prev_cpts, NGvars, seed);
+	NG.InitializeProblemNG(n_bzmesh, cpts, prev_cpts, kdTree_prev, NGvars, seed);
 	NG.AssignProcessor(ele_process_in);
 	// Check MPI element assignments, and print out in orders
 	for (int i = 0; i < NG.nProcess; i++){
@@ -3961,20 +3981,24 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 	// kdTree_fine.buildIndex();
 
 	// phi_fine = InterpolateVars_coarse(NG.phi, cpts, cpts_fine, 1);
-	// phi_fine = NG.InterpolateVars_coarse1(NG.phi, cpts, kdTree, cpts_fine, 0);
-	phi_fine = NG.InterpolateValues_closest(NG.phi, cpts, cpts_fine);
-	// phi_fine = NG.InterpolateValues_closest(NG.phi, kdTree, cpts_fine);
+	// phi_fine = NG.InterpolateVars_coarse1(NG.phi, cpts, kdTree, cpts_fine, 0, 0);
+	// phi_fine = NG.InterpolateValues_closest(NG.phi, cpts, cpts_fine);
+	phi_fine = NG.InterpolateValues_closest(NG.phi, kdTree, cpts_fine);
 	NG.IdentifyNeurons(phi_fine, neurons, seed, NX*2, NY*2, originX, originY);
 	// distances = NG.CalculateGeodesicDistanceFromPoint(neurons, seed, originX, originY);
 	// PetscPrintf(PETSC_COMM_WORLD, "Calculated geodesic distances!-----------------------------------------------\n");
 	id = ConvertTo1DFloatVector(neurons);
 	NG.DetectTipsMulti(phi_fine, id, NG.numNeuron, tip, NX*2, NY*2);
+	// NG.DetectTipsMulti_new(phi_fine, id, NG.numNeuron, tip, NX*2, NY*2);
+
+	localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX*2+1, NY*2+1);
+		
 	NG.tips.clear();
 	NG.tips.resize(NG.phi.size(),0);
-	NG.tips = InterpolateVars_coarse(tip, cpts_initial, cpts, 0);
-	// NG.tips = NG.InterpolateVars_coarse1(localMaximaMatrix, cpts_fine, kdTree_fine, cpts, 0);
-	// NG.tips = NG.InterpolateValues_closest(tip, cpts_fine, cpts);	
-	// NG.tips = NG.InterpolateValues_closest(tip, kdTree_fine, cpts);
+	// NG.tips = InterpolateVars_coarse(localMaximaMatrix, cpts_initial, cpts, 0);
+	// NG.tips = NG.InterpolateVars_coarse1(localMaximaMatrix, cpts_fine, kdTree_fine, cpts, 2, 0);
+	// NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, cpts_fine, cpts);	
+	NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, kdTree_fine, cpts);
 	PetscPrintf(PETSC_COMM_WORLD, "Detected initial tips!-------------------------------------------------------\n");
 
 	/*========================================================*/
@@ -4064,6 +4088,15 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 
 				if (abs(NG.phi[i]) > 3) {
 					PetscPrintf(PETSC_COMM_WORLD, "Incorrect diverging phi!-----------------------------------------------------\n");
+					varName = "localMax_running_";
+					NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, localMaximaMatrix, varName); // solution on control points
+					varName = "tip_running_";
+					NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, tip, varName); // solution on control points
+					varName = "id_running_";
+					NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, id, varName); // solution on control points
+					varName = "phi_running_";
+					NG.VisualizeVTK_ControlMesh(cpts, tmesh, NG.n, path_out, NG.phi, varName); // solution on control points
+					
 					return 3;
 				}
 			}
@@ -4290,21 +4323,22 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			NG.n, NG.end_iter, NR_itr, t_phi, reason_syn, its_syn, reason_tub, its_tub, t_synTub, t_tip, NG.phi.size()); CHKERRQ(NG.ierr);
 
 			// phi_fine = InterpolateVars_coarse(NG.phi, cpts, cpts_fine, 0);
-			// phi_fine = NG.InterpolateVars_coarse1(NG.phi, cpts, kdTree, cpts_fine, 0);
-			phi_fine = NG.InterpolateValues_closest(NG.phi, cpts, cpts_fine);
-			// phi_fine = NG.InterpolateValues_closest(NG.phi, kdTree, cpts_fine);
+			// phi_fine = NG.InterpolateVars_coarse1(NG.phi, cpts, kdTree, cpts_fine, 0, 0);
+			// phi_fine = NG.InterpolateValues_closest(NG.phi, cpts, cpts_fine);
+			phi_fine = NG.InterpolateValues_closest(NG.phi, kdTree, cpts_fine);
 			NG.IdentifyNeurons(phi_fine, neurons, seed, NX*2, NY*2, originX, originY);
 			// NG.PrintOutNeurons(neurons);
 			id = ConvertTo1DFloatVector(neurons);
 			NG.DetectTipsMulti(phi_fine, id, NG.numNeuron, tip, NX*2, NY*2);
+			// NG.DetectTipsMulti_new(phi_fine, id, NG.numNeuron, tip, NX*2, NY*2);
 			// localMaximaMatrix = NG.FindLocalMaximaInClusters(tip, NX*2+1, NY*2+1);
 			// localMaximaMatrix = NG.FindCentroidsInClusters(tip, NX+1, NY+1);
  			localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX*2+1, NY*2+1);
 		
-			NG.tips = InterpolateVars_coarse(localMaximaMatrix, cpts_fine, cpts, 0);
-			// NG.tips = NG.InterpolateVars_coarse1(localMaximaMatrix, cpts_fine, kdTree_fine, cpts, 0);
+			// NG.tips = InterpolateVars_coarse(localMaximaMatrix, cpts_fine, cpts, 0);
+			// NG.tips = NG.InterpolateVars_coarse1(localMaximaMatrix, cpts_fine, kdTree_fine, cpts, 2, 0);
 			// NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, cpts_fine, cpts);
-			// NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, kdTree_fine, cpts);
+			NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, kdTree_fine, cpts);
 
 			toc(t_tip);
 			tic();

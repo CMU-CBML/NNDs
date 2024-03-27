@@ -51,8 +51,6 @@ int main(int argc, char **argv)
 	NGvars.clear(); NGvars.resize(6);
 
 	bool localRefine = false;
-	// UserSetting *NGuser = new UserSetting;
-
 	int iter(0), state(1); // 0-end, 1-running, 2-expanding, 3-diverging
 	while (iter <= end_iter) {
 		prev_cpts = cpts; // back up old control points for later NGvars interpolations (old cpts to new cpts)
@@ -88,15 +86,6 @@ int main(int argc, char **argv)
 			} else {
 				ReadMesh(fn_mesh_initial, cpts_initial, tmesh_initial);
 				vector<float> tmp = InterpolateVars_coarse(NGvars[0], prev_cpts, cpts_initial, 1);
-				
-				// string varName = "check";
-				// VisualizeVTK_ControlMesh(cpts_initial, tmesh_initial, 0, path_out, tmp, varName); // solution on control points
-
-				// vector<float> tmp = interpolateValues_closest(NGvars[0], prev_cpts, cpts_initial);
-				// PrintVec2TXT(tmp, "../io2D/tmp_0.txt", 1);
-				// vector<float> tmp = interpolateValues_averageN(NGvars[0], prev_cpts, cpts_initial, 4);
-				// std::cout << tmp.size() << " " << cpts_initial.size() << " " << NX << " " << NY << std::endl;
-				// ObtainRefineID(tmp, cpts_initial, NX*2, NY*2, originX, originY, rfid, rftype);
 				ObtainRefineID_coarse(tmp, cpts_initial, NX, NY, originX/2, originY/2, rfid, rftype);
 				THS2D(path_in, rfid, rftype);
 			}

@@ -433,6 +433,8 @@ bool SearchPair(const vector<Vertex2D> prev_cpts, float targetX, float targetY, 
 		}
 	}
 
+	// PetscPrintf(PETSC_COMM_WORLD, "Failed to find pts (ck2)! x: %f y: %f | target: %f %f\n", x, y, targetX, targetY);
+
 	return false; // Pair not found in the vector
 }
 
@@ -472,7 +474,8 @@ vector<float> InterpolateVars(vector<vector<int>> input, vector<Vertex2D> cpts_i
 					} else if (type == 2) {
 						output[i] = 0;
 					}
-				} else {
+				}
+				else {
 					PetscPrintf(PETSC_COMM_WORLD, "Failed to find pts (ck0)!\n");
 				}
 			} else if ((abs(remainder(x,1)) != 0.5) && (abs(remainder(y,1)) == 0.5)) {
@@ -485,7 +488,8 @@ vector<float> InterpolateVars(vector<vector<int>> input, vector<Vertex2D> cpts_i
 					} else if (type == 2) {
 						output[i] = 0;
 					}
-				} else {
+				} 
+				else {
 					PetscPrintf(PETSC_COMM_WORLD, "Failed to find pts (ck1)!\n");
 				}
 			} else if ((abs(remainder(x,1)) == 0.5) && (abs(remainder(y,1)) == 0.5)) {
@@ -500,7 +504,8 @@ vector<float> InterpolateVars(vector<vector<int>> input, vector<Vertex2D> cpts_i
 					} else if (type == 2) {
 						output[i] = 0;
 					}
-				} else {
+				} 
+				else {
 					PetscPrintf(PETSC_COMM_WORLD, "Failed to find pts (ck2)!\n");
 				}
 			}
@@ -604,7 +609,7 @@ float round5(float value) {
 vector<float> InterpolateVars_coarse(vector<float> input, vector<Vertex2D> cpts_initial, const vector<Vertex2D>& cpts, int type) 
 {	
 	vector<float> output;
-	output.resize(cpts.size());
+	output.resize(cpts.size(), 0);
 
 	for (int i = 0; i < cpts_initial.size(); i++) {
 		if (abs(remainder(cpts_initial[i].coor[0],2)) != 1)
@@ -617,14 +622,14 @@ vector<float> InterpolateVars_coarse(vector<float> input, vector<Vertex2D> cpts_
 		float x = round5(cpts[i].coor[0]);
 		float y = round5(cpts[i].coor[1]);
 		int ind;
-		if (SearchPair(cpts_initial, round5(x), round5(y), ind)) {
+		if (SearchPair(cpts_initial, x, y, ind)) {
 			output[i] = input[ind];
 		} 
 		else {
 			int indDown, indUp, indLeft, indRight;
 			if ((abs(remainder(x,2)) == 1) && (abs(remainder(y,2)) != 1)) {
-				if (SearchPair(cpts_initial, floorf(x)-1, round5(y), indDown) &&
-					SearchPair(cpts_initial, floorf(x)+1, round5(y), indUp)) {
+				if (SearchPair(cpts_initial, x-1, y, indDown) &&
+					SearchPair(cpts_initial, x+1, y, indUp)) {
 					if (type == 0) {
 						output[i] = max(input[indDown], input[indUp]);
 					} else if (type == 1) {
@@ -636,8 +641,8 @@ vector<float> InterpolateVars_coarse(vector<float> input, vector<Vertex2D> cpts_
 					PetscPrintf(PETSC_COMM_WORLD, "Failed to find pts (ck0)! x: %f y: %f\n", x, y);
 			}
 			} else if ((abs(remainder(x,2)) != 1) && (abs(remainder(y,2)) == 1)) {
-				if (SearchPair(cpts_initial, round5(x), floorf(y)-1, indLeft) &&
-					SearchPair(cpts_initial, round5(x), floorf(y)+1, indRight)) {
+				if (SearchPair(cpts_initial, x, y-1, indLeft) &&
+					SearchPair(cpts_initial, x, y+1, indRight)) {
 					if (type == 0) {
 						output[i] = max(input[indLeft], input[indRight]);
 					} else if (type == 1) {
@@ -649,10 +654,10 @@ vector<float> InterpolateVars_coarse(vector<float> input, vector<Vertex2D> cpts_
 					PetscPrintf(PETSC_COMM_WORLD, "Failed to find pts (ck1)! x: %f y: %f\n", x, y);
 				}
 			} else if ((abs(remainder(x,2)) == 1) && (abs(remainder(y,2)) == 1)) {
-				if (SearchPair(cpts_initial, floorf(x)-1, floorf(y)-1, indDown) &&
-					SearchPair(cpts_initial, floorf(x)+1, floorf(y)+1, indUp) &&
-					SearchPair(cpts_initial, floorf(x)-1, floorf(y)+1, indLeft) &&
-					SearchPair(cpts_initial, floorf(x)+1, floorf(y)-1, indRight)) {
+				if (SearchPair(cpts_initial, x-1, y-1, indDown) &&
+					SearchPair(cpts_initial, x+1, y+1, indUp) &&
+					SearchPair(cpts_initial, x-1, y+1, indLeft) &&
+					SearchPair(cpts_initial, x+1, y-1, indRight)) {
 					if (type == 0) {
 						output[i] = max(max(input[indDown], input[indUp]), max(input[indLeft], input[indRight]));
 					} else if (type == 1) {
@@ -661,7 +666,7 @@ vector<float> InterpolateVars_coarse(vector<float> input, vector<Vertex2D> cpts_
 						output[i] = 0;
 					}
 				} else {
-					PetscPrintf(PETSC_COMM_WORLD, "Failed to find pts (ck2)! x: %f y: %f | %f %f\n", x, y, floorf(x)-1, floorf(y)-1);
+					PetscPrintf(PETSC_COMM_WORLD, "Failed to find pts (ck2)! x: %f y: %f | %f %f\n", x, y);
 				}
 			}
 		}			

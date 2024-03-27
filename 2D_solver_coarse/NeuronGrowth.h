@@ -113,7 +113,7 @@ public:
 	NeuronGrowth();
 	void AssignProcessor(vector<vector<int>> &ele_proc); // assign elements to different processors
 	void SetVariables(string fn_par);
-	void InitializeProblemNG(const int n_bz, vector<Vertex2D>& cpts, vector<Vertex2D> prev_cpts, vector<vector<float>> &NGvars, vector<array<float, 2>> &seed);
+	void InitializeProblemNG(const int n_bz, vector<Vertex2D>& cpts, vector<Vertex2D> prev_cpts, const KDTree& kdTree_prev, vector<vector<float>> &NGvars, vector<array<float, 2>> &seed);
 	void ToPETScVec(vector<float> input, Vec& petscVec); // for SNES phi initial guess
 
 	// Read mesh, calculate basis function value, assemble matrix, etc
@@ -230,7 +230,7 @@ public:
 	vector<float> InterpolateValues_closest(const std::vector<float>& phi, const std::vector<Vertex2D>& cpt, const std::vector<Vertex2D>& cpt_out);
 	vector<float> InterpolateValues_closest(const vector<float>& input, const KDTree& kdTree, const vector<Vertex2D>& cpt_out);
 	
-	vector<float> InterpolateVars_coarse1(vector<float> input, vector<Vertex2D> cpts_initial, const KDTree& kdTree, const vector<Vertex2D>& cpts, int type);
+	vector<float> InterpolateVars_coarse1(vector<float> input, vector<Vertex2D> cpts_initial, const KDTree& kdTree, const vector<Vertex2D>& cpts, int type, int isTheta);
 	bool KD_SearchPair(const vector<Vertex2D> prev_cpts, const KDTree& kdTree, float targetX, float targetY, int &ind);
 
 	void bfs(const std::vector<float>& matrix, int rows, int cols, int row, int col,
