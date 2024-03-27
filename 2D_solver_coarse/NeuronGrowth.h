@@ -217,28 +217,25 @@ public:
 	void ExpandDomain(vector<float> input, vector<float> &expd_var, int edge, int NX, int NY); // for when NX != NY
 	void PopulateRandom(vector<float> &input); // to populate theta with random after expansion
 
+	// Neuron growth interpolations
+	vector<float> InterpolateValues_closest(const std::vector<float>& phi, const std::vector<Vertex2D>& cpt, const std::vector<Vertex2D>& cpt_out);
+	vector<float> InterpolateValues_closest(const vector<float>& input, const KDTree& kdTree, const vector<Vertex2D>& cpt_out);
+	vector<float> InterpolateVars_coarse1(vector<float> input, vector<Vertex2D> cpts_initial, const KDTree& kdTree, const vector<Vertex2D>& cpts, int type, int isTheta);
+	bool KD_SearchPair(const vector<Vertex2D> prev_cpts, const KDTree& kdTree, float targetX, float targetY, int &ind);
+
 	// Tip detection
 	float RmOutlier(vector<float> &data); // standard deviation based outlier remover
 	float CellBoundary(float phi, float threshold); // threshould based boundary determination
 	vector<float> SmoothBinary2D(const std::vector<float>& binaryData, int rows, int cols);
-
 	bool isInBox(const Vertex2D& point, const Vertex2D& center, float dx, float dy);
 	vector<float> calculatePhiSum(const std::vector<Vertex2D>& cpts, float dx, float dy, vector<float> id);
-
 	void DetectTipsMulti(const vector<float>& phi_fine, const vector<float>& id, const int& numNeuron, vector<float>& phiSum, const int& NX, const int& NY);
 	void DetectTipsMulti_new(const std::vector<float>& phi_fine, const std::vector<float>& id, int numNeuron, std::vector<float>& phiSum, int NX, int NY);
-	vector<float> InterpolateValues_closest(const std::vector<float>& phi, const std::vector<Vertex2D>& cpt, const std::vector<Vertex2D>& cpt_out);
-	vector<float> InterpolateValues_closest(const vector<float>& input, const KDTree& kdTree, const vector<Vertex2D>& cpt_out);
-	
-	vector<float> InterpolateVars_coarse1(vector<float> input, vector<Vertex2D> cpts_initial, const KDTree& kdTree, const vector<Vertex2D>& cpts, int type, int isTheta);
-	bool KD_SearchPair(const vector<Vertex2D> prev_cpts, const KDTree& kdTree, float targetX, float targetY, int &ind);
-
 	void bfs(const std::vector<float>& matrix, int rows, int cols, int row, int col,
 		std::vector<bool>& visited, std::vector<std::pair<int, int>>& cluster);
 	std::vector<std::vector<std::pair<int, int>>> FindClusters(const std::vector<float>& matrix, int rows, int cols);
 	std::vector<float> FindLocalMaximaInClusters(const std::vector<float>& matrix, int rows, int cols);
 	std::vector<float> FindCentroidsInClusters(const vector<float>& matrix, int rows, int cols);
-
 	bool IsLocalMaximum(const vector<float>& matrix, int rows, int cols, int x, int y);
 	vector<float> FindCentroidsOfLocalMaximaClusters(const vector<float>& matrix, int rows, int cols);
 

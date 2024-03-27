@@ -52,20 +52,7 @@ vector<float> InterpolateVars(vector<vector<int>> input, vector<Vertex2D> cpts_i
 vector<float> InterpolateVars(vector<float> input, vector<Vertex2D> cpts_initial, vector<Vertex2D> cpts, int type);
 float round5(float input);
 vector<float> InterpolateVars_coarse(vector<float> input, vector<Vertex2D> cpts_initial, const vector<Vertex2D>& cpts, int type);
-std::vector<float> interpolateValues_closest(
-    const std::vector<float>& phi,
-    const std::vector<Vertex2D>& cpt,
-    const std::vector<Vertex2D>& cpt_out);
-std::vector<float> interpolateValues_averageN(
-    const std::vector<float>& phi,
-    const std::vector<Vertex2D>& cpt,
-    const std::vector<Vertex2D>& cpt_out,
-    float numAverage);
-std::vector<float> interpolateValuesWithinRadius(
-    const std::vector<float>& phi,
-    const std::vector<Vertex2D>& cpt,
-    const std::vector<Vertex2D>& cpt_out,
-    float radius);
+std::vector<float> interpolateValues_closest(const std::vector<float>& phi, const std::vector<Vertex2D>& cpt, const std::vector<Vertex2D>& cpt_out);
 
 float distance_d(const Vertex2D& a, const Vertex2D& b);
 

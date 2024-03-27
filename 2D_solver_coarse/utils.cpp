@@ -389,20 +389,13 @@ vector<float> ConvertTo1DFloatVector(const vector<vector<float>> input)
 	}
 
 	return output;
-	}
+}
 
 
 // Function to search for a particular x and y in the vector of Vertex2D
 bool SearchPair(const vector<Vertex2D> prev_cpts, float targetX, float targetY, int &ind) {
 	float x, y;
 	for (int i = 0; i < prev_cpts.size(); i++) {
-
-		// for (int i = 0; i < cpts_initial.size(); i++) {
-		// 	if (abs(remainder(cpts_initial[i].coor[0],2)) != 1)
-		// 		cpts_initial[i].coor[0] = round(cpts_initial[i].coor[0]);
-		// 	if (abs(remainder(cpts_initial[i].coor[1],2)) != 1)
-		// 		cpts_initial[i].coor[1] = round(cpts_initial[i].coor[1]);
-		// }
 
 		x = prev_cpts[i].coor[0];
 		if (abs(remainder(x,1)) > 0.5) {
@@ -419,21 +412,11 @@ bool SearchPair(const vector<Vertex2D> prev_cpts, float targetX, float targetY, 
 			y = floorf(y);
 		}
 
-		// if (abs(remainder(x,1)) == 0.5) {
-		// 	x = round(x) - 1;
-		// }
-		// if (abs(remainder(y,1)) == 0.5) {
-		// 	y = round(y) - 1;
-		// }
-		
-		// if (prev_cpts[i].coor[0] == targetX && prev_cpts[i].coor[1] == targetY) {
 		if (x == targetX && y == targetY) {
 			ind = i;
 			return true; // Found the pair (targetX, targetY) in the vector
 		}
 	}
-
-	// PetscPrintf(PETSC_COMM_WORLD, "Failed to find pts (ck2)! x: %f y: %f | target: %f %f\n", x, y, targetX, targetY);
 
 	return false; // Pair not found in the vector
 }
@@ -677,71 +660,6 @@ vector<float> InterpolateVars_coarse(vector<float> input, vector<Vertex2D> cpts_
 float distance_d(const Vertex2D& a, const Vertex2D& b) {
 	// return std::sqrt((a.coor[0] - b.coor[0]) * (a.coor[0] - b.coor[0]) + (a.coor[1] - b.coor[1]) * (a.coor[1] - b.coor[1]));
 	return abs(a.coor[0] - b.coor[0]) + abs(a.coor[1] - b.coor[1]);
-}
-
-// Function to interpolate values for new control points using the average of 6 closest points
-std::vector<float> interpolateValues_averageN(
-	const std::vector<float>& phi,
-	const std::vector<Vertex2D>& cpt,
-	const std::vector<Vertex2D>& cpt_out,
-	float numAverage) {
-
-	std::vector<float> interpolatedValues(cpt_out.size());
-
-	for (size_t i = 0; i < cpt_out.size(); ++i) {
-		// Use a max heap to keep track of the closest points
-		// The heap will store pairs of (distance, index), where index is the index in `cpt`
-		std::priority_queue<std::pair<float, size_t>> heap;
-
-		for (size_t j = 0; j < cpt.size(); ++j) {
-			float dist = distance_d(cpt_out[i], cpt[j]);
-			// Keep the heap size to 6
-			if (heap.size() < numAverage) {
-				heap.push({dist, j});
-			} else if (dist < heap.top().first) {
-				heap.pop();
-				heap.push({dist, j});
-			}
-		}
-
-		// Calculate the average of the values of the 6 closest points
-		float sum = 0.0;
-		while (!heap.empty()) {
-			sum += phi[heap.top().second];
-			heap.pop();
-		}
-		interpolatedValues[i] = sum / numAverage;
-	}
-
-	return interpolatedValues;
-}
-
-// Function to interpolate values for new control points within a specified radius
-std::vector<float> interpolateValuesWithinRadius(
-	const std::vector<float>& phi,
-	const std::vector<Vertex2D>& cpt,
-	const std::vector<Vertex2D>& cpt_out,
-	float radius) {
-
-	std::vector<float> interpolatedValues(cpt_out.size());
-
-	for (size_t i = 0; i < cpt_out.size(); ++i) {
-		float sum = 0.0;
-		size_t count = 0;
-
-		for (size_t j = 0; j < cpt.size(); ++j) {
-			float dist = distance_d(cpt_out[i], cpt[j]);
-			if (dist <= radius) {
-				sum += phi[j];
-				++count;
-			}
-		}
-
-		// Avoid division by zero
-		interpolatedValues[i] = count > 0 ? sum / count : 0;
-	}
-
-	return interpolatedValues;
 }
 
 void ObtainRefineID_coarse(vector<float> phi, vector<Vertex2D> cpts, int NX, int NY, int originX, int originY, vector<int> &rfid, vector<int> &rftype){
