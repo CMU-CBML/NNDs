@@ -7,6 +7,10 @@
 #include "utils.h"
 #include "time.h"
 
+#include <nanoflann.hpp> // for nearest points search with KD-tree
+// https://github.com/jlblancoc/nanoflann
+// sudo apt install libnanoflann-dev
+
 using namespace std;
 
 // timing function (similar to Matlab tic toc)
@@ -15,6 +19,28 @@ void toc(float &t);
 
 float MatrixDet(float dxdt[2][2]);
 void Matrix2DInverse(float dxdt[2][2], float dtdx[2][2]);
+
+struct Vertex2DCloud {
+	const std::vector<Vertex2D>& pts;
+
+	Vertex2DCloud(const std::vector<Vertex2D>& pts) : pts(pts) {}
+
+	// Returns the number of data points
+	inline size_t kdtree_get_point_count() const { return pts.size(); }
+
+	// Returns the dim'th component of the idx'th point
+	inline float kdtree_get_pt(const size_t idx, const size_t dim) const {
+		return pts[idx].coor[dim]; // Accessing coor[0] and coor[1]
+	}
+
+	// Optional bounding box computation; not implemented for simplicity
+	template <class BBOX>
+	bool kdtree_get_bbox(BBOX&) const { return false; }
+};
+
+using KDTree = nanoflann::KDTreeSingleIndexAdaptor<
+    nanoflann::L2_Simple_Adaptor<float, Vertex2DCloud>,
+    Vertex2DCloud, 2 /* dim */>;
 
 class NeuronGrowth
 {
@@ -50,6 +76,7 @@ public:
 	vector<vector<float>> pre_EVectorSolve;
 
 	float max_x, min_x, max_y, min_y;
+	float prev_max_x, prev_min_x, prev_max_y, prev_min_y;
 
 	// element stiffness matrix and load vector
 	int nen;
@@ -198,7 +225,14 @@ public:
 	bool isInBox(const Vertex2D& point, const Vertex2D& center, float dx, float dy);
 	vector<float> calculatePhiSum(const std::vector<Vertex2D>& cpts, float dx, float dy, vector<float> id);
 
-	void DetectTipsMulti(vector<float> id, int numNeuron, vector<float> &tp, int NX, int NY); // for multiple neurons
+	void DetectTipsMulti(const vector<float>& phi_fine, const vector<float>& id, const int& numNeuron, vector<float>& phiSum, const int& NX, const int& NY);
+	void DetectTipsMulti_new(const std::vector<float>& phi_fine, const std::vector<float>& id, int numNeuron, std::vector<float>& phiSum, int NX, int NY);
+	vector<float> InterpolateValues_closest(const std::vector<float>& phi, const std::vector<Vertex2D>& cpt, const std::vector<Vertex2D>& cpt_out);
+	vector<float> InterpolateValues_closest(const vector<float>& input, const KDTree& kdTree, const vector<Vertex2D>& cpt_out);
+	
+	vector<float> InterpolateVars_coarse1(vector<float> input, vector<Vertex2D> cpts_initial, const KDTree& kdTree, const vector<Vertex2D>& cpts, int type);
+	bool KD_SearchPair(const vector<Vertex2D> prev_cpts, const KDTree& kdTree, float targetX, float targetY, int &ind);
+
 	void bfs(const std::vector<float>& matrix, int rows, int cols, int row, int col,
 		std::vector<bool>& visited, std::vector<std::pair<int, int>>& cluster);
 	std::vector<std::vector<std::pair<int, int>>> FindClusters(const std::vector<float>& matrix, int rows, int cols);

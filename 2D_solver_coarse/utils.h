@@ -42,8 +42,6 @@ void THS2D(string path_in, vector<int> rfid, vector<int> rftype);
 
 void InitializeSoma(int numNeuron, vector<array<float, 2>> &seed, int &NX, int &NY);
 
-// void InitializeNGvars(vector<Vertex2D> cpts, vector<array<int, 2>> seed, vector<vector<float>> &NGvars, vector<float> &phi_0, vector<float> &tub_0, vector<float> &Mphi, int n);
-
 // Local refinement based on phi interface
 vector<float> ConvertTo1DFloatVector(const vector<vector<int>> input);
 vector<float> ConvertTo1DFloatVector(const vector<vector<float>> input);
@@ -53,7 +51,7 @@ bool SearchPair(const vector<Vertex2D> prev_cpts, float targetX, float targetY, 
 vector<float> InterpolateVars(vector<vector<int>> input, vector<Vertex2D> cpts_initial, vector<Vertex2D> cpts, int type);
 vector<float> InterpolateVars(vector<float> input, vector<Vertex2D> cpts_initial, vector<Vertex2D> cpts, int type);
 float round5(float input);
-vector<float> InterpolateVars_coarse(vector<float> input, vector<Vertex2D> cpts_initial, vector<Vertex2D> cpts, int type);
+vector<float> InterpolateVars_coarse(vector<float> input, vector<Vertex2D> cpts_initial, const vector<Vertex2D>& cpts, int type);
 std::vector<float> interpolateValues_closest(
     const std::vector<float>& phi,
     const std::vector<Vertex2D>& cpt,

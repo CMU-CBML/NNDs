@@ -325,11 +325,11 @@ void InitializeSoma(int numNeuron, vector<array<float, 2>> &seed, int &NX, int &
     // 2D neuron soma initialization
     switch (numNeuron) {
         case 1:
-            NX = 20;
-            NY = 20;
+            NX = 24;
+            NY = 24;
 	//     NX = 40;
         //     NY = 40;
-            seed[0][0] = 20;    seed[0][1] = 20;
+            seed[0][0] = 24;    seed[0][1] = 24;
             break;
         case 2:
             NX = 100;
@@ -601,12 +601,11 @@ float round5(float value) {
 	}
 }
 
-vector<float> InterpolateVars_coarse(vector<float> input, vector<Vertex2D> cpts_initial, vector<Vertex2D> cpts, int type) 
+vector<float> InterpolateVars_coarse(vector<float> input, vector<Vertex2D> cpts_initial, const vector<Vertex2D>& cpts, int type) 
 {	
 	vector<float> output;
 	output.resize(cpts.size());
 
-	// float max_x(-1e5), max_y(-1e5), min_x(1e5), min_y(1e5);
 	for (int i = 0; i < cpts_initial.size(); i++) {
 		if (abs(remainder(cpts_initial[i].coor[0],2)) != 1)
 			cpts_initial[i].coor[0] = round5(cpts_initial[i].coor[0]);
@@ -671,40 +670,8 @@ vector<float> InterpolateVars_coarse(vector<float> input, vector<Vertex2D> cpts_
 }
 
 float distance_d(const Vertex2D& a, const Vertex2D& b) {
-	return std::sqrt((a.coor[0] - b.coor[0]) * (a.coor[0] - b.coor[0]) + (a.coor[1] - b.coor[1]) * (a.coor[1] - b.coor[1]));
-}
-
-// Function to interpolate values for new control points
-std::vector<float> interpolateValues_closest(
-	const std::vector<float>& phi,
-	const std::vector<Vertex2D>& cpt,
-	const std::vector<Vertex2D>& cpt_out) {
-
-	std::vector<float> interpolatedValues(cpt_out.size());
-
-	for (size_t i = 0; i < cpt_out.size(); ++i) {
-		float minDistance = std::numeric_limits<float>::max();
-		size_t closestIndex = 0;
-
-		// Find the closest point in cpt for each point in cpt_out
-		for (size_t j = 0; j < cpt.size(); ++j) {
-			float distance = distance_d(cpt_out[i], cpt[j]);
-			if (distance < minDistance) {
-				minDistance = distance;
-				closestIndex = j;
-			}
-		}
-
-		// Assume the value of the closest point
-		// if (abs(round(phi[closestIndex])) > 0.5) {
-		// 	interpolatedValues[i] = 1;
-		// } else {
-		// 	interpolatedValues[i] = 0;
-		// }
-		interpolatedValues[i] = phi[closestIndex];
-	}
-
-	return interpolatedValues;
+	// return std::sqrt((a.coor[0] - b.coor[0]) * (a.coor[0] - b.coor[0]) + (a.coor[1] - b.coor[1]) * (a.coor[1] - b.coor[1]));
+	return abs(a.coor[0] - b.coor[0]) + abs(a.coor[1] - b.coor[1]);
 }
 
 // Function to interpolate values for new control points using the average of 6 closest points
@@ -787,6 +754,8 @@ void ObtainRefineID_coarse(vector<float> phi, vector<Vertex2D> cpts, int NX, int
 		// std::cout << x << " ";
 		rfid.push_back(ind - round(x/2) + originX + offset); // push back element id (calculated based on vertex id, ind)
 		float averagePhi = (phi[i-(NY+1)+1] + phi[i-(NY+1)] + phi[i-(NY+1)-1] + phi[i-1] + phi[i] + phi[i+1] + phi[i+(NY+1)+1] + phi[i+(NY+1)] + phi[i+(NY+1)-1])/9;
+		// float averagePhi = (abs(phi[i-(NY+1)+1]) + abs(phi[i-(NY+1)]) + abs(phi[i-(NY+1)-1]) + abs(phi[i-1]) 
+		// 	+ abs(phi[i]) + abs(phi[i+1]) + abs(phi[i+(NY+1)+1]) + abs(phi[i+(NY+1)]) + abs(phi[i+(NY+1)-1]))/9;
 		// tmp.push_back(averagePhi);
 		
 		if ((averagePhi < 0.95) && (averagePhi > 0.01)) {
