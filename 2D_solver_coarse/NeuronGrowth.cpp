@@ -115,7 +115,7 @@ NeuronGrowth::NeuronGrowth(){
 
 	// integer variable setup
 	expandCK_invl		= 100; 		// var_save_invl
-	var_save_invl		= 50; 		// var_save_invl
+	var_save_invl		= 100; 		// var_save_invl
 	numNeuron 		= 1;	     	// numNeuron
 	gc_sz			= 2;	     	// gc_sz
 	aniso 			= 6;   		// aniso
@@ -1813,11 +1813,11 @@ void NeuronGrowth::preparePhaseField() {
 			eleSyn[i] = syn[bzmesh_process[e].IEN[i]];			// eleSyn
 			eleTubulin[i] = tub[bzmesh_process[e].IEN[i]];			// eleTubulin
 			eleTips[i] = tips[bzmesh_process[e].IEN[i]];			// eleTips
-			if (n < 1) {
-				eleMphi[i] = 60;
-			} else {
-				eleMphi[i] = Mphi[bzmesh_process[e].IEN[i]];
-			}
+			// if (n < 1) {
+			// 	eleMphi[i] = 60;
+			// } else {
+			// 	eleMphi[i] = Mphi[bzmesh_process[e].IEN[i]];
+			// }
 		}
 
 		for (int i = 0; i < Gpt.size(); i++) {
@@ -1856,9 +1856,15 @@ void NeuronGrowth::preparePhaseField() {
 				} else {
 					if (eleTp > 0) {
 						eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(50 * eleTb - 0) * (1 - eleS));
-						pre_eleMp.push_back(50);
+						if (eleTp > 2) {
+							pre_eleMp.push_back(120);
+						} else {
+							// pre_eleMp.push_back(20);
+							pre_eleMp.push_back(50);
+						}
 					} else {
 						eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(r * eleTb - g) * (1 - eleS));
+						// pre_eleMp.push_back(1);
 						pre_eleMp.push_back(5);
 					}
 				}
@@ -3067,23 +3073,28 @@ void NeuronGrowth::DetectTipsMulti(const vector<float>& phi_fine, const vector<f
 	float threshold(0.9), stdVal(0), maxVal(0);
 	int ind, length((NX+1)*(NY+1));
 	phiSum.clear();
-	phiSum.resize(length);
+	phiSum.resize(length, 0);
 
 	for (int i = (5*NY+5); i < (length-4*NY-4); i++) {
-		phiSum[i] = 0;
+		// phiSum[i] = 0;
 		if (CellBoundary(phi_fine[i], 0.25) > 0) {
 		// if (CellBoundary(phi_fine[i], 0.5) > 0) {
+			// int baseID = static_cast<int>(round(id[i]));
 			for (int j = -4; j < 5; j++) {
 				for (int k = -4; k < 5; k++) {
 			// for (int j = -6; j < 7; j++) {
 			// 	for (int k = -6; k < 7; k++) {
-					for (int l = 0; l < numNeuron; l++) {
-						if ((l+1) == static_cast<int>(round(id[i+j*(NY+1)+k]))) {
+					// for (int l = 0; l < numNeuron; l++) {
+						// int inID = static_cast<int>(round(id[i+j*(NY+1)+k]));
+						// std::cout << baseID << " " << inID << std::endl;
+						if (round(id[i]) == round(id[i+j*(NY+1)+k])) {
+						// if (inID == l+1) { // not the same neuron
+						// if ((l+1) == static_cast<int>(round(id[i+j*(NY+1)+k]))) {
 							// phiSum[i] += CellBoundary(phi_fine[i+j*(NY+1)+k], 0.1);
 							phiSum[i] += CellBoundary(phi_fine[i+j*(NY+1)+k], 0.25);
 							// phiSum[i] += CellBoundary(phi_fine[i+j*(NY+1)+k], 0.5);
-						} 
-					}
+						}
+					// }
 				}
 			}	
 			if (phiSum[i] > 0)
@@ -4253,43 +4264,46 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			// phi_fine = NG.InterpolateVars_coarse1(NG.phi, cpts, kdTree, cpts_fine, 0, 0);
 			// phi_fine = NG.InterpolateValues_closest(NG.phi, cpts, cpts_fine);
 			phi_fine = NG.InterpolateValues_closest(NG.phi, kdTree, cpts_fine);
+			// PetscPrintf(PETSC_COMM_WORLD, "Got fine |");
 			NG.IdentifyNeurons(phi_fine, neurons, seed, NX*2, NY*2, originX, originY);
+			// PetscPrintf(PETSC_COMM_WORLD, "Got id |");
 			distances = NG.CalculateGeodesicDistanceFromPoint(neurons, seed, originX, originY);
 			geodist = ConvertTo1DFloatVector(distances);
 			// NG.PrintOutNeurons(neurons);
 			id = ConvertTo1DFloatVector(neurons);
+			// PetscPrintf(PETSC_COMM_WORLD, "Got geo |");
 			NG.DetectTipsMulti(phi_fine, id, NG.numNeuron, tip, NX*2, NY*2);
+			// PetscPrintf(PETSC_COMM_WORLD, "Got tip |");
 			// NG.DetectTipsMulti_new(phi_fine, id, NG.numNeuron, tip, NX*2, NY*2);
 			// localMaximaMatrix = NG.FindLocalMaximaInClusters(tip, NX*2+1, NY*2+1);
 			// localMaximaMatrix = NG.FindCentroidsInClusters(tip, NX+1, NY+1);
  			localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX*2+1, NY*2+1);
-		
+			// PetscPrintf(PETSC_COMM_WORLD, "Got loMax 0|");
+
+			int maxGeoInd(0);
+			float maxGeo(0);
+			for (int i = 0; i < geodist.size(); i++) {
+				if ((geodist[i] != INF) && (geodist[i] > maxGeo)) {
+					maxGeo = geodist[i];
+					maxGeoInd = i;
+				}
+			}
+			if (maxGeoInd > 1) {
+				for (int i = -1; i < 1; i++) { // increase Mphi at longest tip 
+					for (int j = -1; j < 1; j++) {
+							localMaximaMatrix[maxGeoInd+j*(2*NY+1)-i] = 5;
+					}
+				}
+			}
+
+			// localMaximaMatrix[maxGeoInd] = 5;
+			// PetscPrintf(PETSC_COMM_WORLD, "Got loMax 1|");
+
 			// NG.tips = InterpolateVars_coarse(localMaximaMatrix, cpts_fine, cpts, 0);
 			// NG.tips = NG.InterpolateVars_coarse1(localMaximaMatrix, cpts_fine, kdTree_fine, cpts, 2, 0);
 			// NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, cpts_fine, cpts);
 			NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, kdTree_fine, cpts);
-
-			// vector<float> Mphi; Mphi.clear(); Mphi.resize(geodist.size());
-			// int maxGeoInd(0);
-			// for (int i = 0; i < geodist.size(); i++) {
-			// 	if ((geodist[i] != INF) && (geodist[i] > maxGeoInd)) {
-			// 		maxGeoInd = i;
-			// 	}
-			// 	if (NG.tips[i] == 0) {
-			// 		Mphi[i] = 5;
-			// 	} else {
-			// 		Mphi[i] = 50;
-			// 	}
-
-			// }
-			// // Mphi[maxGeoInd+j*(2*NY+1)-i] = 100;
-			// for (int i = -1; i < 1; i++) { // increase Mphi at longest tip 
-			// 	for (int j = -1; j < 1; j++) {
-			// 		Mphi[maxGeoInd+j*(2*NY+1)-i] = 100;
-			// 	}
-			// }
-			// // NG.Mphi = InterpolateVars(Mphi, cpts_initial, cpts, 0);
-			// NG.Mphi = NG.InterpolateValues_closest(Mphi, kdTree_fine, cpts);
+			// PetscPrintf(PETSC_COMM_WORLD, "Got NGtips|\n");
 
 			toc(t_tip);
 			tic();
@@ -4298,7 +4312,6 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		}
 
 		if ((NG.n % NG.var_save_invl == 0) && (NG.n != 0)) {	
-		// if ((NG.n % 10 == 0) && (NG.n != 0)) {	
 			NG.PrintOutNeurons(neurons);
 			/*========================================================*/
 			// Writing results to files
@@ -4320,10 +4333,10 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, tip, varName); // solution on control points
 			varName = "id_running_";
 			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, id, varName); // solution on control points
-			varName = "phi_running_";
-			NG.VisualizeVTK_ControlMesh(cpts, tmesh, NG.n, path_out, NG.phi, varName); // solution on control points
-			varName = "Mphi_running_";
-			NG.VisualizeVTK_ControlMesh(cpts_initial, tmesh_initial, NG.n, path_out, Mphi, varName); // solution on control points
+			// varName = "phi_running_";
+			// NG.VisualizeVTK_ControlMesh(cpts, tmesh, NG.n, path_out, NG.phi, varName); // solution on control points
+			// varName = "Mphi_running_";
+			// NG.VisualizeVTK_ControlMesh(cpts_initial, tmesh_initial, NG.n, path_out, Mphi, varName); // solution on control points
 			
 			PetscPrintf(PETSC_COMM_WORLD, "| Wrote Physical Domain! | Average time %fs | Total time: %f |\n", 
 				t_total/NG.n, t_total); CHKERRQ(NG.ierr);
