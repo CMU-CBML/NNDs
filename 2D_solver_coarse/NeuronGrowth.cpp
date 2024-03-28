@@ -3103,9 +3103,9 @@ void NeuronGrowth::DetectTipsMulti(const vector<float>& phi_fine, const vector<f
 	}
 
 	for (int i = 1+NY; i < length-NY-1; i++) {
-		if (phiSum[i] < (threshold * maxVal)) {
+		// if (phiSum[i] < (threshold * maxVal)) {
 		// if (phiSum[i] < (threshold)) {
-		// if (phiSum[i] < (1.2)) {
+		if (phiSum[i] < (1.2)) {
 			phiSum[i] = 0;
 		} 
 		// else {
