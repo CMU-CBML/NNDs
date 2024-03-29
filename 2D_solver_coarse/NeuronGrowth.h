@@ -91,7 +91,7 @@ public:
 	int n; 								// time step
 	int judge_phi, judge_syn, judge_tub;				// assembly state	
 	vector<float> phi, tub, syn, theta;				// variable to be solved 
-	vector<float> phi_prev, phi_0, tub_0, tips, Mphi;			// assisting varibles
+	vector<float> phi_prev, phi_0, tub_0, tips, Mphi, prev_id;			// assisting varibles
 	float sum_grad_phi0_local, sum_grad_phi0_global, dP0dx, dP0dy;	
 	vector<float> elePhi0, eleTheta;
 
@@ -244,7 +244,7 @@ public:
 	vector<vector<float>> ConvertTo2DFloatVector(const vector<float> input, int NX, int NY);
 	
 	void FloodFill(vector<vector<int>>& image, int x, int y, int newColor, int originalColor); // label neuron with a value
-	void IdentifyNeurons(vector<float>& phi_in, vector<vector<int>>& neurons, vector<array<float, 2>> seed, int NX, int NY, int originX, int originY); // to detect neurons
+	void IdentifyNeurons(vector<float>& phi_in, vector<vector<int>>& neurons, const vector<float>& prev_id, vector<array<float, 2>> seed, int NX, int NY, int originX, int originY); // to detect neurons
 	bool isValid(int x, int y, int rows, int cols);
 	vector<vector<int>> CalculateGeodesicDistanceFromPoint(vector<vector<int>> grid, int startX, int startY); // single neuron
 	vector<vector<int>> CalculateGeodesicDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, int originX, int originY); // multiple neurons

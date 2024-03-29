@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 
 	vector<int> rfid, rftype; // list of elements to refine
 	vector<vector<float>> NGvars; // for passing neuron growth variables in-between domain expansion
-	NGvars.clear(); NGvars.resize(6);
+	NGvars.clear(); NGvars.resize(7);
 
 	bool localRefine = false;
 	int iter(0), state(1); // 0-end, 1-running, 2-expanding, 3-diverging

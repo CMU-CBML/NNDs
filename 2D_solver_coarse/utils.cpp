@@ -321,50 +321,45 @@ void THS2D(string path_in, vector<int> rfid, vector<int> rftype){
 
 //
 void InitializeSoma(int numNeuron, vector<array<float, 2>> &seed, int &NX, int &NY){
-    seed.resize(numNeuron);
-    // 2D neuron soma initialization
-    switch (numNeuron) {
-        case 1:
-            NX = 24;
-            NY = 24;
-	//     NX = 40;
-        //     NY = 40;
-            seed[0][0] = 24;    seed[0][1] = 24;
-            break;
-        case 2:
-            NX = 40;
-        //     NX = 35;
-            NY = 25;
-            seed[0][0] = 19;    seed[0][1] = 21;
-            seed[1][0] = 60;   seed[1][1] = 22;
-        //     seed[1][0] = 50;   seed[1][1] = 22;
-            break;
-        case 3:
-            NX = 140;
-            NY = 130;
-            seed[0][0] = 35;    seed[0][1] = 35;
-            seed[1][0] = 105;   seed[1][1] = 35;
-            seed[2][0] = 70;    seed[2][1] = 95;
-            break;
-        case 4:
-            NX = 140;
-            NY = 140;
-            seed[0][0] = 35;    seed[0][1] = 35;
-            seed[1][0] = 105;   seed[1][1] = 35;
-            seed[2][0] = 35;    seed[2][1] = 105;
-            seed[3][0] = 105;   seed[3][1] = 105;
-            break;
-        case 5:
-            NX = 140;
-            NY = 140;
-            seed[0][0] = 35;    seed[0][1] = 35;
-            seed[1][0] = 105;   seed[1][1] = 35;
-            seed[2][0] = 35;    seed[2][1] = 105;
-            seed[3][0] = 105;   seed[3][1] = 105;
-            seed[4][0] = 70;    seed[4][1] = 70;
-            break;
-    }
-
+	seed.resize(numNeuron);
+	// 2D neuron soma initialization
+	switch (numNeuron) {
+	case 1:
+		NX = 24;
+		NY = 24;
+		seed[0][0] = 24;    seed[0][1] = 24;
+		break;
+	case 2:
+		NX = 45;
+		NY = 25;
+		seed[0][0] = 19;    seed[0][1] = 21;
+		seed[1][0] = 65;   seed[1][1] = 22;
+		break;
+	case 3:
+		NX = 140;
+		NY = 130;
+		seed[0][0] = 35;    seed[0][1] = 35;
+		seed[1][0] = 105;   seed[1][1] = 35;
+		seed[2][0] = 70;    seed[2][1] = 95;
+		break;
+	case 4:
+		NX = 140;
+		NY = 140;
+		seed[0][0] = 35;    seed[0][1] = 35;
+		seed[1][0] = 105;   seed[1][1] = 35;
+		seed[2][0] = 35;    seed[2][1] = 105;
+		seed[3][0] = 105;   seed[3][1] = 105;
+		break;
+	case 5:
+		NX = 140;
+		NY = 140;
+		seed[0][0] = 35;    seed[0][1] = 35;
+		seed[1][0] = 105;   seed[1][1] = 35;
+		seed[2][0] = 35;    seed[2][1] = 105;
+		seed[3][0] = 105;   seed[3][1] = 105;
+		seed[4][0] = 70;    seed[4][1] = 70;
+		break;
+	}
 }
 
 vector<float> ConvertTo1DFloatVector(const vector<vector<int>> input) 
