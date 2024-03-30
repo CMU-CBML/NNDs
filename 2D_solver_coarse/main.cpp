@@ -2,7 +2,6 @@
 #include <vector>
 #include <array>
 #include "NeuronGrowth.h"
-// #include "UserSetting.h"
 #include <sstream>
 #include <iomanip>
 #include "time.h"
@@ -41,7 +40,7 @@ int main(int argc, char **argv)
 	vector<vector<float>> vertices;
 	vector<vector<int>> elements;
 	vector<vector<int>> ele_process;
-	vector<Vertex2D> cpts_initial, cpts, cpts_fine, prev_cpts;
+	vector<Vertex2D> cpts_initial, cpts, cpts_fine, prev_cpts, prev_cpts_fine;
 	vector<Element2D> tmesh_initial, tmesh, tmesh_fine;
 	ele_process.resize(nProcs);
 	PetscPrintf(PETSC_COMM_WORLD, "Initial element process size: %ld\n", ele_process.size()); CHKERRQ(ierr);
@@ -54,6 +53,7 @@ int main(int argc, char **argv)
 	int iter(0), state(1); // 0-end, 1-running, 2-expanding, 3-diverging
 	while (iter <= end_iter) {
 		prev_cpts = cpts; // back up old control points for later NGvars interpolations (old cpts to new cpts)
+		prev_cpts_fine = cpts_fine;
 		cpts_initial.clear(); tmesh_initial.clear(); 
 		cpts.clear(); tmesh.clear(); 
 		ele_process.clear();
@@ -99,7 +99,7 @@ int main(int argc, char **argv)
 		AssignProcessor(fn_bz, n_bzmesh, ele_process);
 		PetscPrintf(PETSC_COMM_WORLD, "Processor Assigned!----------------------------------------------------------\n");
 	
-		state = RunNG(n_bzmesh, ele_process, cpts_initial, tmesh_initial, cpts_fine, tmesh_fine, cpts, prev_cpts, tmesh, path_in, path_out,
+		state = RunNG(n_bzmesh, ele_process, cpts_initial, tmesh_initial, cpts_fine, tmesh_fine, cpts, prev_cpts, prev_cpts_fine, tmesh, path_in, path_out,
 			iter, end_iter, NGvars, NX, NY, seed, originX, originY, rfid, rftype, localRefine);
 
 		if (state == 3) {

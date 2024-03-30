@@ -4,10 +4,6 @@
 #include "BasicDataStructure.h"
 #include <cmath>
 
-#include <png.h>
-#include <stdexcept>
-#include <iostream>
-
 #include <queue>
 
 // Creating 2D mesh (incrementing from lo to hi)
@@ -282,7 +278,8 @@ void bzmesh2D(string path_in){
 
 	string spline_cmd_tmd("../spline2D_src/spline -i " + path_in);
 	const char* spline_cmd = spline_cmd_tmd.c_str();
-	system(spline_cmd);
+	int sys;
+	sys = system(spline_cmd);
 } 
 
 // generating 3D bezier mesh using spline_src
@@ -290,15 +287,17 @@ void bzmesh3D(){
 	std::cout << "******************************************************************************" << std::endl;
 	string spline_cmd_tmd = "../NeuronTransportIGA/spline_src/spline ../io/3DNG/";
 	const char* spline_cmd = spline_cmd_tmd.c_str();
-	system(spline_cmd);
+	int sys;
+	sys = system(spline_cmd);
 } 
 
 // partitioning mesh using mpmetis
 void mpmetis(int n_process, string path_in){
 	string mpmetis_cmd_tmp("mpmetis " + path_in + "bzmeshinfo.txt " + to_string(n_process));
 	const char* mpmetis_cmd = mpmetis_cmd_tmp.c_str();
-	system(mpmetis_cmd);
-	}
+	int sys;
+	sys = system(mpmetis_cmd);
+}
 
 // partitioning mesh using mpmetis
 void THS2D(string path_in, vector<int> rfid, vector<int> rftype){
@@ -316,7 +315,8 @@ void THS2D(string path_in, vector<int> rfid, vector<int> rftype){
 	}
 	std::cout << ths2d_cmd_tmp << std::endl;
 	const char* ths2d_cmd = ths2d_cmd_tmp.c_str();
-	system(ths2d_cmd);
+	int sys;
+	sys = system(ths2d_cmd);
 }
 
 //
@@ -826,51 +826,4 @@ void AssignProcessor(string fn, int &n_bzmesh, vector<vector<int>> &ele_process)
 	{
 		PetscPrintf(PETSC_COMM_WORLD, "Cannot open %s!\n", fname.c_str());
 	}
-}
-
-void WriteMatrixToPNG(const std::vector<float>& phi, int width, int height, const char* filename) {
-	FILE *fp = fopen(filename, "wb");
-	if (!fp) throw std::runtime_error("Failed to open file for writing");
-
-	png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-	if (!png_ptr) throw std::runtime_error("Failed to create PNG write structure");
-
-	png_infop info_ptr = png_create_info_struct(png_ptr);
-	if (!info_ptr) {
-		png_destroy_write_struct(&png_ptr, nullptr);
-		throw std::runtime_error("Failed to create PNG info structure");
-	}
-
-	if (setjmp(png_jmpbuf(png_ptr))) {
-		png_destroy_write_struct(&png_ptr, &info_ptr);
-		fclose(fp);
-		throw std::runtime_error("PNG writing error");
-	}
-
-	png_init_io(png_ptr, fp);
-	png_set_IHDR(png_ptr, info_ptr, width, height,
-			8, PNG_COLOR_TYPE_GRAY, PNG_INTERLACE_NONE,
-			PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
-
-	png_write_info(png_ptr, info_ptr);
-
-	std::vector<png_bytep> row_pointers(height);
-	for (int y = 0; y < height; ++y) {
-		row_pointers[y] = (png_bytep) malloc(png_get_rowbytes(png_ptr, info_ptr));
-		for (int x = 0; x < width; ++x) {
-			float value = round(phi[y * width + x]);
-			// Assuming the float values are normalized between 0 and 1
-			row_pointers[y][x] = static_cast<png_byte>(value * 255);
-		}
-	}
-
-	png_write_image(png_ptr, row_pointers.data());
-	png_write_end(png_ptr, nullptr);
-
-	for (int y = 0; y < height; y++) {
-		free(row_pointers[y]);
-	}
-
-	png_destroy_write_struct(&png_ptr, &info_ptr);
-	fclose(fp);
 }

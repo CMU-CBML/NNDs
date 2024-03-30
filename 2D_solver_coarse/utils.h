@@ -8,10 +8,6 @@
 #include <vector>
 #include "BasicDataStructure.h"
 
-#include <png.h>
-#include <stdexcept>
-#include <iostream>
-
 using namespace std;
 
 // Creating 2D mesh (incrementing from lo to hi)
@@ -61,7 +57,5 @@ void ObtainRefineID_coarse(vector<float> phi, vector<Vertex2D> cpts, int NX, int
 void ReadMesh(string fn, vector<Vertex2D>& pts, vector<Element2D>& mesh); //need vtk file with point label
 
 void AssignProcessor(string fn, int &n_bzmesh, vector<vector<int>> &ele_process);
-
-void WriteMatrixToPNG(const std::vector<float>& phi, int width, int height, const char* filename);
 
 #endif

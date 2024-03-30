@@ -16,7 +16,7 @@ endif
 # Compiler = /ocean/projects/eng170006p/ussqww/petsc/arch-linux-c-opt/bin/mpicxx
 
 include ${PETSC_DIR}/lib/petsc/conf/variables
-CFLAGS= ${PETSC_CC_INCLUDES} ${CXX_FLAGS} ${CXXFLAGS} ${CPPFLAGS} ${PSOURCECXX} -ffast-math -O3 -march=native -std=c++17 -fopenmp -Wall -lpng -I ${EIGEN_DIR}
+CFLAGS= ${PETSC_CC_INCLUDES} ${CXX_FLAGS} ${CXXFLAGS} ${CPPFLAGS} ${PSOURCECXX} -ffast-math -O3 -march=native -std=c++17 -fopenmp -Wall -I ${EIGEN_DIR}
 
 all: 2DNG
 
@@ -24,7 +24,7 @@ all: 2DNG
 	$(Compiler) BasicDataStructure.o NeuronGrowth.o utils.o main.o -o 2DNG ${PETSC_LIB} $(CFLAGS)
 	
 BasicDataStructure.o: BasicDataStructure.cpp
-	$(Compiler)	-c BasicDataStructure.cpp $(CFLAGS)
+	$(Compiler)	-c BasicDataStructure.cpp $(CFLAGS) -w
 	
 NeuronGrowth.o: NeuronGrowth.cpp
 	$(Compiler)	-c NeuronGrowth.cpp $(CFLAGS)
