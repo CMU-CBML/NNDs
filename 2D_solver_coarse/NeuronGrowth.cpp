@@ -1635,10 +1635,10 @@ void NeuronGrowth::preparePhaseField() {
 						eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(50 * eleTb - 0) * (1 - eleS));
 						if (eleTp > 5) {
 							// pre_eleMp.push_back(100);
-							pre_eleMp.push_back(60);
+							pre_eleMp.push_back(80);
 							// pre_eleMp.push_back(50);
 						} else {
-							pre_eleMp.push_back(30);
+							pre_eleMp.push_back(40);
 							// pre_eleMp.push_back(10);
 						}
 					} else {
@@ -2524,10 +2524,8 @@ vector<float> NeuronGrowth::InterpolateVars_coarseKDtree(vector<float> input, ve
 			output[i] = input[ind];
 		} else if ((x > prev_max_x) || (x < prev_min_x) || (y > prev_max_y) || (y < prev_max_y)) {
 			if (isTheta != 1) {
-				std::cout << 'outside!' << std::endl;
 				output[i] = 0;
 			} else {
-				std::cout << 'thetaOut!' << std::endl;
 				output[i] = (float)(rand()%100)/(float)100; // for theta
 			}
 		} else {
@@ -2593,11 +2591,12 @@ bool NeuronGrowth::KD_SearchPair(const vector<Vertex2D> prev_cpts, const KDTree&
 	float x = prev_cpts[closestIndex].coor[0];
 	float y = prev_cpts[closestIndex].coor[1];
 	
-	if ((max(abs(x-targetX), abs(y-targetY)) <= 1) || (targetX < prev_min_x) || (targetY < prev_min_y) || (targetX > prev_max_x) || (targetY > prev_max_y)) {
+	// if ((max(abs(x-targetX), abs(y-targetY)) <= 1) || (targetX < prev_min_x) || (targetY < prev_min_y) || (targetX > prev_max_x) || (targetY > prev_max_y)) {
+	if (max(abs(x-targetX), abs(y-targetY)) <= 1) {
 		ind = static_cast<int>(closestIndex);
 		return true; // Found the pair (targetX, targetY) in the vector
 	} else {
-		PetscPrintf(PETSC_COMM_WORLD, "Failed search! x: %f y: %f | %f %f\n", x, y, targetX, targetY);
+		// PetscPrintf(PETSC_COMM_WORLD, "Failed search! x: %f y: %f | %f %f\n", x, y, targetX, targetY);
 		return false; // Pair not found in the vector
 	}
 }
