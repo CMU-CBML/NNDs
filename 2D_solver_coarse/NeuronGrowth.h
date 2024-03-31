@@ -88,7 +88,7 @@ public:
 	// Neuron growth variables
 	int n; 								// time step
 	int judge_phi, judge_syn, judge_tub;				// assembly state	
-	vector<float> phi, tub, syn, theta;				// variable to be solved 
+	vector<float> phi, tub, syn, theta, theta_fine;				// variable to be solved 
 	vector<float> phi_prev, phi_0, tub_0, tips, Mphi;			// assisting varibles
 	vector<vector<int>> prev_id;
 	float sum_grad_phi0_local, sum_grad_phi0_global, dP0dx, dP0dy;	
@@ -111,7 +111,7 @@ public:
 	void AssignProcessor(vector<vector<int>> &ele_proc); // assign elements to different processors
 	void SetVariables(string fn_par);
 	void InitializeProblemNG(const int n_bz, vector<Vertex2D>& cpts, vector<Vertex2D> prev_cpts, const KDTree& kdTree_prev, 
-		vector<Vertex2D>& cpts_fine, vector<Vertex2D>& prev_cpts_fine,
+		vector<Vertex2D>& cpts_fine, vector<Vertex2D>& prev_cpts_fine, const KDTree& kdTree_prev_fine,
 		vector<vector<float>> &NGvars, vector<array<float, 2>> &seed, const int& NX, const int& NY);
 	void ToPETScVec(vector<float> input, Vec& petscVec); // for SNES phi initial guess
 

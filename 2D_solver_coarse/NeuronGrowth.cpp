@@ -132,7 +132,7 @@ void NeuronGrowth::SetVariables(string fn_par)
 }
 
 void NeuronGrowth::InitializeProblemNG(const int n_bz, vector<Vertex2D>& cpts, vector<Vertex2D> prev_cpts, const KDTree& kdTree_prev,
-	vector<Vertex2D>& cpts_fine, vector<Vertex2D>& prev_cpts_fine, vector<vector<float>> &NGvars, vector<array<float, 2>> &seed, const int& NX, const int& NY)
+	vector<Vertex2D>& cpts_fine, vector<Vertex2D>& prev_cpts_fine, const KDTree& kdTree_prev_fine, vector<vector<float>> &NGvars, vector<array<float, 2>> &seed, const int& NX, const int& NY)
 {
 	MPI_Barrier(PETSC_COMM_WORLD);
 	PetscPrintf(PETSC_COMM_WORLD, "Initializing-----------------------------------------------------------------\n");
@@ -189,10 +189,14 @@ void NeuronGrowth::InitializeProblemNG(const int n_bz, vector<Vertex2D>& cpts, v
 		for (uint i = 0; i<cpts.size(); i++) {
 			phi.push_back(0.f);
 			tub.push_back(0.f);
-			theta.push_back((float)(rand()%100)/(float)100); // orientation theta
+			// theta.push_back((float)(rand()%100)/(float)100); // orientation theta
 			syn.push_back(0.f); // synaptogenesis
 			Mphi.push_back(M_phi);
 		}
+		for (uint i = 0; i<cpts_fine.size(); i++) {
+			theta_fine.push_back((float)(rand()%100)/(float)100); // orientation theta
+		}
+		theta = InterpolateValues_closest(theta_fine, cpts_fine, cpts);
 
 		// cout << prev_id.size() << " " << tmp.size() << endl;
 		for (uint i = 0; i<cpts.size(); i++) {
@@ -222,18 +226,22 @@ void NeuronGrowth::InitializeProblemNG(const int n_bz, vector<Vertex2D>& cpts, v
 		prev_id = ConvertTo2DIntVector(tmp, 2*NX, 2*NY);
 
 	} else { // Collect from NGvars - continue simulation
-		phi.clear(); 	phi.resize(cpts.size());
-		syn.clear(); 	syn.resize(cpts.size());
-		tub.clear(); 	tub.resize(cpts.size());
-		theta.clear();	theta.resize(cpts.size());
-		phi_0.clear(); 	phi_0.resize(cpts.size());
-		tub_0.clear(); 	tub_0.resize(cpts.size());
+		phi.clear(); 		phi.resize(cpts.size());
+		syn.clear(); 		syn.resize(cpts.size());
+		tub.clear(); 		tub.resize(cpts.size());
+		theta.clear();		theta.resize(cpts.size());
+		theta_fine.clear();	theta_fine.resize(cpts.size());
+		phi_0.clear(); 		phi_0.resize(cpts.size());
+		tub_0.clear(); 		tub_0.resize(cpts.size());
 		prev_id.clear();
 
 		phi = InterpolateVars_coarseKDtree(NGvars[0], prev_cpts, kdTree_prev, cpts, 1, 0);
 		syn = InterpolateVars_coarseKDtree(NGvars[1], prev_cpts, kdTree_prev, cpts, 1, 0);
 		tub = InterpolateVars_coarseKDtree(NGvars[2], prev_cpts, kdTree_prev, cpts, 1, 0);
-		theta = InterpolateVars_coarseKDtree(NGvars[3], prev_cpts, kdTree_prev, cpts, 1, 1); // isTheta = 1 for special init
+
+		theta_fine = InterpolateVars_coarseKDtree(NGvars[3], prev_cpts_fine, kdTree_prev_fine, cpts_fine, 1, 1); // isTheta = 1 for special init
+		theta = InterpolateValues_closest(theta_fine, cpts_fine, cpts);
+
 		phi_0 = InterpolateVars_coarseKDtree(NGvars[4], prev_cpts, kdTree_prev, cpts, 1, 0);
 		tub_0 = InterpolateVars_coarseKDtree(NGvars[5], prev_cpts, kdTree_prev, cpts, 1, 0);
 		prev_id = ConvertTo2DIntVector(InterpolateValues_closest(NGvars[6], prev_cpts_fine, cpts_fine), NX*2, NY*2);
@@ -3524,19 +3532,22 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 	Vertex2DCloud cloud(cpts);        // Cloud for current points
 	Vertex2DCloud cloud_fine(cpts_fine);  // Cloud for finer resolution points
 	Vertex2DCloud cloud_prev(prev_cpts);  // Cloud for previous points
+	Vertex2DCloud cloud_prev_fine(prev_cpts_fine);  // Cloud for previous points
 
 	// Initialize KD-Trees for the current, fine, and previous vertex clouds
 	KDTree kdTree(2 /* dim */, cloud, nanoflann::KDTreeSingleIndexAdaptorParams(10 /* max leaf */));
 	KDTree kdTree_fine(2 /* dim */, cloud_fine, nanoflann::KDTreeSingleIndexAdaptorParams(10 /* max leaf */));
 	KDTree kdTree_prev(2 /* dim */, cloud_prev, nanoflann::KDTreeSingleIndexAdaptorParams(10 /* max leaf */));
+	KDTree kdTree_prev_fine(2 /* dim */, cloud_prev_fine, nanoflann::KDTreeSingleIndexAdaptorParams(10 /* max leaf */));
 
 	// Build indexes for KD-Trees to optimize search operations
 	kdTree.buildIndex();
 	kdTree_fine.buildIndex();
 	kdTree_prev.buildIndex();
+	kdTree_prev_fine.buildIndex();
 
 	// Initialize the Neuron Growth problem with the provided parameters and KDTree for previous points
-	NG.InitializeProblemNG(n_bzmesh, cpts, prev_cpts, kdTree_prev, cpts_fine, prev_cpts_fine, NGvars, seed, NX, NY);
+	NG.InitializeProblemNG(n_bzmesh, cpts, prev_cpts, kdTree_prev, cpts_fine, prev_cpts_fine, kdTree_prev_fine, NGvars, seed, NX, NY);
 
 	// Assign processing elements for the simulation
 	NG.AssignProcessor(ele_process_in);
@@ -3885,7 +3896,8 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			NGvars[0] = NG.phi;
 			NGvars[1] = NG.syn;
 			NGvars[2] = NG.tub;
-			NGvars[3] = NG.theta;
+			// NGvars[3] = NG.theta;
+			NGvars[3] = NG.theta_fine;
 			NGvars[4] = NG.phi_0;
 			NGvars[5] = NG.tub_0;
 			NGvars[6] = NG.InterpolateVars_coarseKDtree(ConvertTo1DFloatVector(NG.prev_id), cpts_fine, kdTree_fine, cpts, 0, 0);
@@ -3922,6 +3934,8 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, axonTip, varName); // solution on control points
 			varName = "localMax_running_";
 			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, localMaximaMatrix, varName); // solution on control points
+			varName = "theta_running_";
+			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, NG.theta_fine, varName); // solution on control points
 			varName = "tip_running_";
 			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, tip, varName); // solution on control points
 			varName = "id_running_";
@@ -3962,7 +3976,8 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			NGvars[0] = NG.phi;	
 			NGvars[1] = NG.syn;
 			NGvars[2] = NG.tub;
-			NGvars[3] = NG.theta;
+			// NGvars[3] = NG.theta;
+			NGvars[3] = NG.theta_fine;
 			NGvars[4] = NG.phi_0;
 			NGvars[5] = NG.tub_0;
 			NGvars[6] = ConvertTo1DFloatVector(NG.prev_id);
