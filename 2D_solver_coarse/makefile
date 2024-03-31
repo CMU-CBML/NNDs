@@ -36,7 +36,7 @@ main.o: main.cpp
 	$(Compiler)	-c main.cpp $(CFLAGS)
 
 clean:
-	rm *o 2DNG
+	rm *o 2DNG ../io2D/* ../io2D/outputs/*
 	
 # UNAME_S := $(shell uname -s)
 # ifeq ($(UNAME_S),Linux)

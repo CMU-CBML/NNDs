@@ -217,14 +217,14 @@ void PrintVec2TXT(const std::vector<float>& v, std::string fn, bool visualizatio
 
 	int v_size = v.size();
 	if (visualization == 0) {
-		for (int i = 0; i < v.size(); i++) {
+		for (size_t i = 0; i < v.size(); i++) {
 			fout << v[i] << std::endl;
 		}
 	} else {
 		int sq_sz = (int)sqrt(v_size);
 		int ind = 0;
-		for (int i = 0; i < sq_sz; i++) {
-			for (int j = 0; j < sq_sz; j++) {
+		for (size_t i = 0; i < sq_sz; i++) {
+			for (size_t j = 0; j < sq_sz; j++) {
 				if (round(v[ind]) == 0) {
 					fout << "     ";
 				} else {
@@ -307,10 +307,10 @@ void THS2D(string path_in, vector<int> rfid, vector<int> rftype){
 	std::cout << "-----------------------------------------------------------------------------" << std::endl;
 	std::cout << "Calling command | input mesh directory | refine ID | refine element type" << std::endl << std::endl;
 	string ths2d_cmd_tmp("../THS2D/TTSP2D " + path_in + " ");
-	for (int i = 0; i < rfid.size(); i++) {
+	for (size_t i = 0; i < rfid.size(); i++) {
 		ths2d_cmd_tmp = ths2d_cmd_tmp + std::to_string(rfid[i]) + " ";
 	}
-	for (int i = 0; i < rftype.size(); i++) {
+	for (size_t i = 0; i < rftype.size(); i++) {
 		ths2d_cmd_tmp = ths2d_cmd_tmp + std::to_string(rftype[i]) + " ";
 	}
 	std::cout << ths2d_cmd_tmp << std::endl;
@@ -325,40 +325,50 @@ void InitializeSoma(int numNeuron, vector<array<float, 2>> &seed, int &NX, int &
 	// 2D neuron soma initialization
 	switch (numNeuron) {
 	case 1:
-		NX = 24;
-		NY = 24;
-		seed[0][0] = 24;    seed[0][1] = 24;
-		break;
-	case 2:
-		NX = 45;
-		NY = 25;
-		seed[0][0] = 19;    seed[0][1] = 21;
-		seed[1][0] = 65;   seed[1][1] = 22;
-		break;
-	case 3:
-		NX = 140;
-		NY = 130;
-		seed[0][0] = 35;    seed[0][1] = 35;
-		seed[1][0] = 105;   seed[1][1] = 35;
-		seed[2][0] = 70;    seed[2][1] = 95;
-		break;
+            NX = 24;
+            NY = 24;
+            seed = {{24, 24}};
+            break;
+        case 2:
+            NX = 45;
+            NY = 25;
+            seed = {{19, 21}, {65, 22}};
+            break;
+        case 3:
+            NX = 45;
+            NY = 45;
+            seed = {{19, 21}, {65, 22}, {42.5, 65}};
+            break;
 	case 4:
-		NX = 140;
-		NY = 140;
-		seed[0][0] = 35;    seed[0][1] = 35;
-		seed[1][0] = 105;   seed[1][1] = 35;
-		seed[2][0] = 35;    seed[2][1] = 105;
-		seed[3][0] = 105;   seed[3][1] = 105;
-		break;
-	case 5:
-		NX = 140;
-		NY = 140;
-		seed[0][0] = 35;    seed[0][1] = 35;
-		seed[1][0] = 105;   seed[1][1] = 35;
-		seed[2][0] = 35;    seed[2][1] = 105;
-		seed[3][0] = 105;   seed[3][1] = 105;
-		seed[4][0] = 70;    seed[4][1] = 70;
-		break;
+            NX = 45;
+            NY = 45;
+            seed = {{19, 21}, {65, 22}, {20, 20}, {65, 65}};
+            break;
+	// case 5:
+        //     NX = 60;
+        //     NY = 60;
+        //     seed = {{19, 21}, {65, 22}, {20, 20}, {65, 65}};
+        //     break;
+
+	// case 1:
+	// 	NX = 24;
+	// 	NY = 24;
+	// 	seed[0][0] = 24;    seed[0][1] = 24;
+	// 	break;
+	// case 2:
+	// 	NX = 45;
+	// 	NY = 25;
+	// 	seed[0][0] = 19;    seed[0][1] = 21;
+	// 	seed[1][0] = 65;   seed[1][1] = 22;
+	// 	break;
+	// case 3:
+	// 	NX = 45;
+	// 	NY = 45;
+	// 	seed[0][0] = 19;   	seed[0][1] = 21;
+	// 	seed[1][0] = 65;	seed[1][1] = 22;
+	// 	seed[2][0] = 42.5;   	seed[2][1] = 65;
+	// 	break;
+	
 	}
 }
 
@@ -367,7 +377,7 @@ vector<float> ConvertTo1DFloatVector(const vector<vector<int>> input)
 	vector<float> output;
 
 	for (const auto& row : input) {
-		for (int value : row) {
+		for (size_t value : row) {
 			output.push_back(static_cast<float>(value)); // Cast int value to float and add to the 1D vector
 		}
 	}
@@ -392,7 +402,7 @@ vector<float> ConvertTo1DFloatVector(const vector<vector<float>> input)
 // Function to search for a particular x and y in the vector of Vertex2D
 bool SearchPair(const vector<Vertex2D> prev_cpts, float targetX, float targetY, int &ind) {
 	float x, y;
-	for (int i = 0; i < prev_cpts.size(); i++) {
+	for (size_t i = 0; i < prev_cpts.size(); i++) {
 
 		x = prev_cpts[i].coor[0];
 		if (abs(remainder(x,1)) > 0.5) {
@@ -424,7 +434,7 @@ vector<float> InterpolateVars(vector<vector<int>> input, vector<Vertex2D> cpts_i
 	output.resize(cpts.size());
 	vector<float> tmp = ConvertTo1DFloatVector(input);
 
-	for (int i = 0; i < cpts.size(); i++) {
+	for (size_t i = 0; i < cpts.size(); i++) {
 		// float x = cpts[i].coor[0];
 		// float y = cpts[i].coor[1];
 
@@ -499,14 +509,14 @@ vector<float> InterpolateVars(vector<float> input, vector<Vertex2D> cpts_initial
 	vector<float> output;
 	output.resize(cpts.size());
 
-	for (int i = 0; i < cpts_initial.size(); i++) {
+	for (size_t i = 0; i < cpts_initial.size(); i++) {
 		if (abs(remainder(cpts_initial[i].coor[0],1)) != 0.5)
 			cpts_initial[i].coor[0] = round(cpts_initial[i].coor[0]);
 		if (abs(remainder(cpts_initial[i].coor[1],1)) != 0.5)
 			cpts_initial[i].coor[1] = round(cpts_initial[i].coor[1]);
 	}
 	
-	for (int i = 0; i < cpts.size(); i++) {
+	for (size_t i = 0; i < cpts.size(); i++) {
 		// float x = cpts[i].coor[0];
 		// float y = cpts[i].coor[1];
 
@@ -591,14 +601,14 @@ vector<float> InterpolateVars_coarse(vector<float> input, vector<Vertex2D> cpts_
 	vector<float> output;
 	output.resize(cpts.size(), 0);
 
-	for (int i = 0; i < cpts_initial.size(); i++) {
+	for (size_t i = 0; i < cpts_initial.size(); i++) {
 		if (abs(remainder(cpts_initial[i].coor[0],2)) != 1)
 			cpts_initial[i].coor[0] = round5(cpts_initial[i].coor[0]);
 		if (abs(remainder(cpts_initial[i].coor[1],2)) != 1)
 			cpts_initial[i].coor[1] = round5(cpts_initial[i].coor[1]);
 	}
 	
-	for (int i = 0; i < cpts.size(); i++) {
+	for (size_t i = 0; i < cpts.size(); i++) {
 		float x = round5(cpts[i].coor[0]);
 		float y = round5(cpts[i].coor[1]);
 		int ind;
@@ -668,7 +678,7 @@ void ObtainRefineID_coarse(vector<float> phi, vector<Vertex2D> cpts, int NX, int
 
 	// vector<float> tmp;
 
-	for (int i = offset; i < cpts.size() - offset; i++) {
+	for (size_t i = offset; i < cpts.size() - offset; i++) {
 		float x = cpts[i].coor[0];
 		float y = cpts[i].coor[1];
 		// std::cout << x << " ";
@@ -693,7 +703,7 @@ void ObtainRefineID_coarse(vector<float> phi, vector<Vertex2D> cpts, int NX, int
 	int ring(1), rf1(1), rf2(1);
 	switch (ring) {
 		case 1: // apply supporting local refinement to 1-ring of elements
-			for (int i = (NY+1)+1; i < rftype.size()-(NY+1)-1; i++) {
+			for (size_t i = (NY+1)+1; i < rftype.size()-(NY+1)-1; i++) {
 				if (rftype[i] == 0) {
 					rftype[i-(NY+1)-1] = min(rftype[i-(NY+1)-1], rf1);
 					rftype[i-(NY+1)] = min(rftype[i-(NY+1)], rf1);
@@ -707,7 +717,7 @@ void ObtainRefineID_coarse(vector<float> phi, vector<Vertex2D> cpts, int NX, int
 			}
 			break;
 		case 2: // apply supporting local refinement to 2-ring of elements
-			for (int i = 2*(NY+1)+2; i < rftype.size()-2*(NY+1)-2; i++) {
+			for (size_t i = 2*(NY+1)+2; i < rftype.size()-2*(NY+1)-2; i++) {
 				if (rftype[i] == 0) {
 					rftype[i-2*(NY+1)-2] = min(rftype[i-2*(NY+1)-2], rf1);
 					rftype[i-2*(NY+1)-1] = min(rftype[i-2*(NY+1)-1], rf1);
@@ -741,13 +751,13 @@ void ObtainRefineID_coarse(vector<float> phi, vector<Vertex2D> cpts, int NX, int
 			}
 	}
 
-	for (int i = 0; i < rftype.size(); i++) {
+	for (size_t i = 0; i < rftype.size(); i++) {
 		if ((rftype[i] == 5) && (rftype[i-1] != 5) && (rftype[i+1] != 5)) {
 			rftype[i] = 1;
 		}
 	}
 
-	for (int i = 0; i < rftype.size();) {
+	for (size_t i = 0; i < rftype.size();) {
 		if (rftype[i] == 5) {
 			std::swap(rfid[i], rfid.back());
 			rfid.pop_back();
@@ -770,21 +780,21 @@ void ReadMesh(string fn, vector<Vertex2D>& pts, vector<Element2D>& mesh)//need v
 	fin.open(fname);
 	if (fin.is_open())
 	{
-		for (int i = 0; i < 4; i++) getline(fin, stmp);//skip lines
+		for (size_t i = 0; i < 4; i++) getline(fin, stmp);//skip lines
 		fin >> stmp >> npts >> stmp;
 		pts.resize(npts);
-		for (int i = 0; i < npts; i++)
+		for (size_t i = 0; i < npts; i++)
 		{
 			fin >> pts[i].coor[0] >> pts[i].coor[1] >> tmp; // pts[i].coor[2];
 		}
 		getline(fin, stmp);
 		fin >> stmp >> neles >> itmp;
 		mesh.resize(neles);
-		for (int i = 0; i < neles; i++)
+		for (size_t i = 0; i < neles; i++)
 		{
 			fin >> itmp >> mesh[i].IEN[0] >> mesh[i].IEN[1] >> mesh[i].IEN[2] >> mesh[i].IEN[3]; /* >>
 				mesh[i].IEN[4] >> mesh[i].IEN[5] >> mesh[i].IEN[6] >> mesh[i].IEN[7]; */
-			for (int j = 0; j < 4; j++)
+			for (size_t j = 0; j < 4; j++)
 			{
 				mesh[i].pts[j][0] = pts[mesh[i].IEN[j]].coor[0];
 				mesh[i].pts[j][1] = pts[mesh[i].IEN[j]].coor[1];
@@ -792,7 +802,7 @@ void ReadMesh(string fn, vector<Vertex2D>& pts, vector<Element2D>& mesh)//need v
 			}
 
 		}
-		for (int i = 0; i < neles + 5; i++) getline(fin, stmp);//skip lines
+		for (size_t i = 0; i < neles + 5; i++) getline(fin, stmp);//skip lines
 		fin.close();
 		PetscPrintf(PETSC_COMM_WORLD, "Mesh Loaded!\n");
 	}
@@ -826,4 +836,21 @@ void AssignProcessor(string fn, int &n_bzmesh, vector<vector<int>> &ele_process)
 	{
 		PetscPrintf(PETSC_COMM_WORLD, "Cannot open %s!\n", fname.c_str());
 	}
+}
+
+// Function to add two vectors
+std::vector<float> addVectors(const std::vector<float>& a, const std::vector<float>& b) {
+    // Ensure both vectors are of the same size
+    if (a.size() != b.size()) {
+        throw std::invalid_argument("Vectors are of different sizes");
+    }
+
+    std::vector<float> result;
+    result.reserve(a.size()); // Reserve memory upfront for efficiency
+
+    for (size_t i = 0; i < a.size(); ++i) {
+        result.push_back(a[i] + b[i]);
+    }
+
+    return result;
 }

@@ -240,10 +240,10 @@ public:
 	
 	void FloodFill(vector<vector<int>>& image, int x, int y, int newColor, int originalColor, const vector<vector<int>>& prev_id); // label neuron with a value
 	void IdentifyNeurons(vector<float>& phi_in, vector<vector<int>>& neurons, const vector<vector<int>>& prev_id,
-		vector<array<float, 2>> seed, int NX, int NY, int originX, int originY); // to detect neurons
+		vector<array<float, 2>> seed, const int& NX, const int& NY, const int& originX, const int& originY);
 	bool isValid(int x, int y, int rows, int cols);
 	vector<vector<int>> CalculateGeodesicDistanceFromPoint(vector<vector<int>> grid, int startX, int startY); // single neuron
-	vector<vector<int>> CalculateGeodesicDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, int originX, int originY); // multiple neurons
+	vector<vector<vector<int>>> CalculateGeodesicDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, int originX, int originY); // multiple neurons
 	vector<vector<array<int, 2>>> NeuriteTracing(vector<vector<double>> distance);
 	void SaveNGvars(vector<vector<float>> &NGvars, int NX, int NY, string fn);
 	void PrintOutNeurons(vector<vector<int>> neurons);

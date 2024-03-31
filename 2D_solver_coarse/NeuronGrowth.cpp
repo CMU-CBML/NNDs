@@ -144,6 +144,10 @@ void NeuronGrowth::InitializeProblemNG(const int n_bz, vector<Vertex2D>& cpts, v
 	N_0.resize(cpt_sz);
 
 	// float max_x, min_x, max_y, min_y;
+	max_x = -INF; min_x = INF;
+	max_y = -INF; min_y = INF;
+	prev_max_x = -INF; prev_min_x = INF;
+	prev_max_y = -INF; prev_min_y = INF;
 	for (uint i = 0; i<cpts.size(); i++) {
 		if (n==0) {
 			max_x = cpts[i].coor[0];
@@ -153,7 +157,7 @@ void NeuronGrowth::InitializeProblemNG(const int n_bz, vector<Vertex2D>& cpts, v
 
 			if (i < prev_cpts.size()) {
 				prev_max_x = prev_cpts[i].coor[0];
-				prev_min_x = prev_cpts[i].coor[0];
+				prev_max_x = prev_cpts[i].coor[0];
 				prev_max_y = prev_cpts[i].coor[1];
 				prev_min_y = prev_cpts[i].coor[1];
 			}
@@ -175,6 +179,7 @@ void NeuronGrowth::InitializeProblemNG(const int n_bz, vector<Vertex2D>& cpts, v
 
 	PetscPrintf(PETSC_COMM_WORLD, "Checking maximum x and y value-----------------------------------------------\n");
 	PetscPrintf(PETSC_COMM_WORLD, "max x: %f min x: %f | max y: %f min y %f\n", max_x, min_x, max_y, min_y);
+	PetscPrintf(PETSC_COMM_WORLD, "max x: %f min x: %f | max y: %f min y %f\n", prev_max_x, prev_min_x, prev_max_y, prev_min_y);
 
 	float r, x, y; // radius, x, y
 	float dx = 1;
@@ -1628,12 +1633,12 @@ void NeuronGrowth::preparePhaseField() {
 				} else {
 					if (eleTp > 0) {
 						eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(50 * eleTb - 0) * (1 - eleS));
-						if (eleTp > 2) {
-							// pre_eleMp.push_back(120);
-							pre_eleMp.push_back(50);
+						if (eleTp > 5) {
+							// pre_eleMp.push_back(100);
+							pre_eleMp.push_back(60);
 							// pre_eleMp.push_back(50);
 						} else {
-							pre_eleMp.push_back(50);
+							pre_eleMp.push_back(30);
 							// pre_eleMp.push_back(10);
 						}
 					} else {
@@ -2517,11 +2522,17 @@ vector<float> NeuronGrowth::InterpolateVars_coarseKDtree(vector<float> input, ve
 		int ind;
 		if (KD_SearchPair(cpts_initial, kdTree_initial, x, y, ind)) {
 			output[i] = input[ind];
-		} 
-		else {
+		} else if ((x > prev_max_x) || (x < prev_min_x) || (y > prev_max_y) || (y < prev_max_y)) {
+			if (isTheta != 1) {
+				std::cout << 'outside!' << std::endl;
+				output[i] = 0;
+			} else {
+				std::cout << 'thetaOut!' << std::endl;
+				output[i] = (float)(rand()%100)/(float)100; // for theta
+			}
+		} else {
 			int indDown, indUp, indLeft, indRight;
-			if ((abs(remainder(x,2)) == 1) && (abs(remainder(y,2)) != 1)
-			&& (x <= prev_max_x) && (x >= prev_min_x) && (y <= prev_max_y) && (y >= prev_max_y)) {
+			if ((abs(remainder(x,2)) == 1) && (abs(remainder(y,2)) != 1)) {
 				if (KD_SearchPair(cpts_initial, kdTree_initial, floorf(x)-1, round5(y), indDown) &&
 				KD_SearchPair(cpts_initial, kdTree_initial, floorf(x)+1, round5(y), indUp)) {
 					if (type == 0) {
@@ -2534,8 +2545,7 @@ vector<float> NeuronGrowth::InterpolateVars_coarseKDtree(vector<float> input, ve
 				} else {
 					PetscPrintf(PETSC_COMM_WORLD, "Failed to find pts (ck0)! x: %f y: %f\n", x, y);
 			}
-			} else if ((abs(remainder(x,2)) != 1) && (abs(remainder(y,2)) == 1)
-			&& (x <= prev_max_x) && (x >= prev_min_x) && (y <= prev_max_y) && (y >= prev_max_y)) {
+			} else if ((abs(remainder(x,2)) != 1) && (abs(remainder(y,2)) == 1)) {
 				if (KD_SearchPair(cpts_initial, kdTree_initial, round5(x), floorf(y)-1, indLeft) &&
 				KD_SearchPair(cpts_initial, kdTree_initial, round5(x), floorf(y)+1, indRight)) {
 					if (type == 0) {
@@ -2548,8 +2558,7 @@ vector<float> NeuronGrowth::InterpolateVars_coarseKDtree(vector<float> input, ve
 				} else {
 					PetscPrintf(PETSC_COMM_WORLD, "Failed to find pts (ck1)! x: %f y: %f\n", x, y);
 				}
-			} else if ((abs(remainder(x,2)) == 1) && (abs(remainder(y,2)) == 1)
-			&& (x <= prev_max_x) && (x >= prev_min_x) && (y <= prev_max_y) && (y >= prev_max_y)) {
+			} else if ((abs(remainder(x,2)) == 1) && (abs(remainder(y,2)) == 1)) {
 				if (KD_SearchPair(cpts_initial, kdTree_initial, floorf(x)-1, floorf(y)-1, indDown) &&
 				KD_SearchPair(cpts_initial, kdTree_initial, floorf(x)+1, floorf(y)+1, indUp) &&
 				KD_SearchPair(cpts_initial, kdTree_initial, floorf(x)-1, floorf(y)+1, indLeft) &&
@@ -2563,12 +2572,6 @@ vector<float> NeuronGrowth::InterpolateVars_coarseKDtree(vector<float> input, ve
 					}
 				} else {
 					PetscPrintf(PETSC_COMM_WORLD, "Failed to find pts (ck2)! x: %f y: %f\n", x, y);
-				}
-			} else {
-				if (isTheta != 1) {
-					output[i] = 0;
-				} else {
-					output[i] = (float)(rand()%100)/(float)100; // for theta
 				}
 			}
 		}			
@@ -2603,20 +2606,20 @@ float NeuronGrowth::RmOutlier(vector<float> &data)
 {
 	float sum = 0.0, mean, standardDeviation = 0.0;
 
-	for(uint i = 0; i < data.size(); i++) {
+	for (size_t i = 0; i < data.size(); i++) {
 		sum += data[i];
 	}
 
 	mean = sum / data.size();
 
-	for(uint i = 0; i < data.size(); i++) {
+	for (size_t i = 0; i < data.size(); i++) {
 		standardDeviation += pow(data[i] - mean, 2);
 	}
 
 	standardDeviation = sqrt(standardDeviation / data.size());
 
 	// // cout << mean + 2*standardDeviation << " " << maxVal << endl;
-	// for(uint i = 0; i < data.size(); i++) {
+	// for (size_t i = 0; i < data.size(); i++) {
 	// 	if (data[i] > (mean + 3.29*standardDeviation)) {
 	// 		// data[i] = mean + 3.29*standardDeviation;
 	// 	} else {
@@ -3016,7 +3019,7 @@ vector<vector<int>> NeuronGrowth::ConvertTo2DIntVector_PushBoundary(const vector
 	for (int i = 0; i < NX+1; i++) {
 		vector<int> row;
 		for (int j = 0; j < NY+1; j++) {
-			row.push_back(CellBoundary(abs(input[k]), 0.25));
+			row.push_back(CellBoundary(abs(input[k]), 0.25)*9);
 			k++;
 		}
 		output.push_back(row);
@@ -3077,7 +3080,7 @@ void NeuronGrowth::FloodFill(vector<vector<int>>& image, int x, int y, int newCo
 }
 
 // Function to perform flood fill
-void NeuronGrowth::IdentifyNeurons(vector<float>& phi_in, vector<vector<int>>& neurons, const vector<vector<int>>& prev_id, vector<array<float, 2>> seed, int NX, int NY, int originX, int originY) 
+void NeuronGrowth::IdentifyNeurons(vector<float>& phi_in, vector<vector<int>>& neurons, const vector<vector<int>>& prev_id, vector<array<float, 2>> seed, const int& NX, const int& NY, const int& originX, const int& originY) 
 {
 	neurons = ConvertTo2DIntVector_PushBoundary(phi_in, NX, NY);
 	for (uint i = 0; i < seed.size(); i++) {
@@ -3085,6 +3088,7 @@ void NeuronGrowth::IdentifyNeurons(vector<float>& phi_in, vector<vector<int>>& n
 		int startY = seed[i][1] - originY;
 		int newColor = i+1;
 		int originalColor = neurons[startX][startY];
+		// int originalColor = prev_id[startX][startY];
 		FloodFill(neurons, startX, startY, newColor, originalColor, prev_id);
 	}
 }
@@ -3138,7 +3142,7 @@ vector<vector<int>> NeuronGrowth::CalculateGeodesicDistanceFromPoint(vector<vect
 }
 
 // Function to calculate geodesic distance from a point
-vector<vector<int>> NeuronGrowth::CalculateGeodesicDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, int originX, int originY) 
+vector<vector<vector<int>>> NeuronGrowth::CalculateGeodesicDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, int originX, int originY) 
 {
 	int rows = neurons.size();
 	if (rows == 0) return {};
@@ -3146,7 +3150,8 @@ vector<vector<int>> NeuronGrowth::CalculateGeodesicDistanceFromPoint(vector<vect
 	int cols = neurons[0].size();
 
 	// vector<vector<int>> distances(rows, vector<int>(cols, INF));
-	vector<vector<int>> distances(rows, vector<int>(cols, 0));
+	vector<vector<vector<int>>> distances(seed.size(), vector<vector<int>>(rows, vector<int>(cols, 0)));
+	// vector<vector<int>> distances(rows, vector<int>(cols, 0));
 	vector<vector<bool>> visited(rows, vector<bool>(cols, false));
 
 	int startX, startY;
@@ -3154,7 +3159,7 @@ vector<vector<int>> NeuronGrowth::CalculateGeodesicDistanceFromPoint(vector<vect
 		startX = seed[i][0] - originX;
 		startY = seed[i][1] - originY;
 
-		distances[startX][startY] = 0;
+		distances[i][startX][startY] = 0;
 		visited[startX][startY] = true;
 
 		queue<pair<int, int>> q;
@@ -3174,9 +3179,9 @@ vector<vector<int>> NeuronGrowth::CalculateGeodesicDistanceFromPoint(vector<vect
 				int newX = x + dx[j];
 				int newY = y + dy[j];
 
-				if (isValid(newX, newY, rows, cols) && neurons[newX][newY] == i+1 && !visited[newX][newY]) {
+				if (isValid(newX, newY, rows, cols) && neurons[newX][newY] == neurons[startX][startY] && !visited[newX][newY]) {
 					visited[newX][newY] = true;
-					distances[newX][newY] = distances[x][y] + 1;
+					distances[i][newX][newY] = distances[i][x][y] + 1;
 					q.push({newX, newY});
 				}
 			}
@@ -3578,8 +3583,10 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 
 		/*========================================================*/
 		// Neuron identification and tip detection
-		vector<vector<int>> neurons, distances;
-		vector<float> phi_fine, id, geodist, tip, localMaximaMatrix;
+		vector<vector<int>> neurons;
+		vector<vector<vector<int>>> distances;
+		vector<float> phi_fine, id, tip, localMaximaMatrix;
+		vector<vector<float>> geodist;
 		phi_fine = NG.InterpolateValues_closest(NG.phi, kdTree, cpts_fine);
 		NG.IdentifyNeurons(phi_fine, neurons, NG.prev_id, seed, NX*2, NY*2, originX, originY);
 		NG.prev_id = neurons;
@@ -3589,14 +3596,19 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 
 		if (NG.n > 1500) {
 			distances = NG.CalculateGeodesicDistanceFromPoint(neurons, seed, originX, originY);
-			geodist = ConvertTo1DFloatVector(distances);
-			vector<float> axonTip(geodist.size(), 0);
-			axonTip = NG.FindLocalMaximaInClusters(geodist, 2*NX+1, 2*NY+1);
-			for (uint k = 1; k < axonTip.size(); k++) {
-				if (axonTip[k] != 0) {
-					for (int i = -1; i < 1; i++) { // increase Mphi at longest tip 
-						for (int j = -1; j < 1; j++) {
-							localMaximaMatrix[k+j*(2*NY+1)-i] = 5;
+			vector<vector<float>> axonTip(NG.numNeuron, vector<float>(distances[0].size(), 0));
+			geodist = axonTip;
+			for (uint i = 0; i < distances.size(); i++) {
+				geodist[i] = ConvertTo1DFloatVector(distances[i]);
+				axonTip[i] = NG.FindLocalMaximaInClusters(geodist[i], 2*NX+1, 2*NY+1);
+			}
+			for (uint k = 1; k < axonTip[0].size(); k++) {
+				for (uint l = 0; l < axonTip.size(); l++) {
+					if (axonTip[l][k] != 0) {
+						for (int i = -1; i < 1; i++) { // increase Mphi at longest tip 
+							for (int j = -1; j < 1; j++) {
+								localMaximaMatrix[k+j*(2*NY+1)-i] = 5;
+							}
 						}
 					}
 				}
@@ -3901,8 +3913,12 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			string varName;	
 			// varName = "phifine_running_";
 			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, phi_fine, varName); // solution on control points
-			varName = "geoDist_running_";
-			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geodist, varName); // solution on control points
+			if (NG.n > 1500) {
+				varName = "geoDist0_running_";
+				NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geodist[0], varName); // solution on control points
+				varName = "geoDist1_running_";
+				NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geodist[1], varName); // solution on control points
+			}
 			// varName = "axonTip_running_";
 			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, axonTip, varName); // solution on control points
 			varName = "localMax_running_";
