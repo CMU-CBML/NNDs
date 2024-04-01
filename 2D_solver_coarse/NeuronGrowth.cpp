@@ -3472,6 +3472,7 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 	int &NX, int &NY, vector<array<float, 2>> &seed, int &originX, int &originY,
 	vector<int> &rfid, vector<int> &rftype, bool &localRefine)
 {	
+	/*==============================================================================*/
 	// Declare and initialize Neuron Growth simulation
 	NeuronGrowth NG;
 
@@ -3522,42 +3523,50 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 	// NG.ToPETScVec(NG.phi, NG.temp_phi); // Commented out, indicating it's optional
 	// PetscPrintf(PETSC_COMM_WORLD, "Set initial guess!-----------------------------------------------------------\n");
 	
-	/*========================================================*/
+	/*==============================================================================*/
 	// Write initial variables
 	if (NG.n == 0) {
 		NG.VisualizeVTK_PhysicalDomain_All(0, path_out);
 		PetscPrintf(PETSC_COMM_WORLD, "Saving all variables!--------------------------------------------------------\n");	
 	}
 
-	/*========================================================*/
-	// calculate some variable in advance to save computational cost
+	/*==============================================================================*/
+	// Pre-calculation phase to optimize computational cost
+	// Prepare basis
 	NG.prepareBasis();
-	PetscPrintf(PETSC_COMM_WORLD, "Prepared basis!--------------------------------------------------------------\n");	
-	NG.ierr = MPI_Allreduce(&NG.sum_grad_phi0_local, &NG.sum_grad_phi0_global, 1, MPI_FLOAT, MPI_SUM, PETSC_COMM_WORLD); CHKERRQ(NG.ierr);
+	PetscPrintf(PETSC_COMM_WORLD, "Prepared basis!--------------------------------------------------------------\n");
+
+	// Aggregate gradient of phi0 across processes
+	NG.ierr = MPI_Allreduce(&NG.sum_grad_phi0_local, &NG.sum_grad_phi0_global, 1, MPI_FLOAT, MPI_SUM, PETSC_COMM_WORLD);
+	CHKERRQ(NG.ierr); // Check for errors during MPI call
 	PetscPrintf(PETSC_COMM_WORLD, "Calculated sum grad phi0!----------------------------------------------------\n");
+
+	// Prepare source terms for computation
 	NG.prepareTerm_source();
-	// NG.prepareEE();
-	PetscPrintf(PETSC_COMM_WORLD, "Prepared variables!----------------------------------------------------------\n");
-	
-	/*========================================================*/
+	PetscPrintf(PETSC_COMM_WORLD, "Prepared source terms!-------------------------------------------------------\n");
+
+	/*==============================================================================*/
 	// Pre-allocate variables for tip detections (will be used every iter)
 	// Allocate neurons matrix
 	std::vector<std::vector<int>> neurons(2 * NX + 1, std::vector<int>(2 * NY + 1, 0));
+	
 	// Allocate distances 3D matrix
 	std::vector<std::vector<std::vector<int>>> distances(NG.numNeuron, std::vector<std::vector<int>>(2 * NX + 1, std::vector<int>(2 * NY + 1, 0)));
+	
 	// Allocate vectors for phi_fine, id, tip, and localMaximaMatrix
 	std::vector<float> phi_fine(cpts_fine.size(), 0), id(cpts_fine.size(), 0), tip(cpts_fine.size(), 0), localMaximaMatrix(cpts_fine.size(), 0);
+	
 	// Allocate geodist and axonTip matrices
 	std::vector<std::vector<float>> geodist(NG.numNeuron, std::vector<float>(distances[0].size(), 0));
 	std::vector<std::vector<float>> axonTip(NG.numNeuron, std::vector<float>(distances[0].size(), 0));
-
 	PetscPrintf(PETSC_COMM_WORLD, "Pre-allocated vectors!------------------------------------------------------\n");
 
+	/*==============================================================================*/
+	// Main time iterations
 	while (iter <= NG.end_iter) {
 		NG.n = iter;
-		tic();		
-
-		/*========================================================*/
+		tic();
+		/*==============================================================================*/
 		// Neuron identification and tip detection
 		phi_fine = NG.InterpolateValues_closest(NG.phi, kdTree, cpts_fine);
 		NG.IdentifyNeurons(phi_fine, neurons, NG.prev_id, seed, NX*2, NY*2, originX, originY);
@@ -3611,7 +3620,7 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		tic();
 		t_total += t_tip;
 		
-		/*========================================================*/
+		/*==============================================================================*/
 		/*Implcit Non-liear Newton Raphson solver for Phase field equation*/
 		NG.phi_prev = NG.phi;	
 	
@@ -3657,7 +3666,7 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 
 			NR_itr += 1;
 
-			/*========================================================*/
+			/*==============================================================================*/
 			/*Collecting scattered Phi variable from all processors*/
 			Vec temp_phi_seq;
 			VecScatter ctx_phi;
@@ -3689,7 +3698,7 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		tic();
 		t_total += t_phi;
 
-		// /*========================================================*/
+		// /*==============================================================================*/
 		// /*Implcit Non-liear SNES solver for Phase field equation*/
 		// NG.phi_prev = NG.phi;	
 	
@@ -3735,7 +3744,7 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		// // 	cout << "Checking snes calls: " << NG.check_itr << endl;
 		// // }
 
-		// /*========================================================*/
+		// /*==============================================================================*/
 		// /*Collecting scattered Phi variable from all processors*/
 		// Vec temp_phi_seq;
 		// VecScatter ctx_phi;
@@ -3758,7 +3767,7 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		// tic();
 		// t_total += t_phi;
 		
-		/*========================================================*/
+		/*==============================================================================*/
 		/*Synaptogenesis and Tubulin equation*/
 		/*Build Linear System*/
 		NG.prepareSourceSum();
@@ -3836,7 +3845,7 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			return 3;	
 		}
 
-		/*========================================================*/
+		/*==============================================================================*/
 		/*Collecting scattered Synaptogenesis and Tubulin variables from all processors*/
 		Vec temp_syn_seq, temp_tub_seq;
 		VecScatter ctx_syn, ctx_tub;
@@ -3869,10 +3878,10 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		tic();
 		t_total += t_synTub;
 
-		/*========================================================*/
-		// Obtain initial local refinement information, the very first 25 iterations are purely used 
+		/*==============================================================================*/
+		// Obtain initial local refinement information, the very first 5 iterations are purely used 
 		// for getting diffused interface for applying local refinements (phi initialization is binary) 
-		if ((NG.n == 25) && (localRefine == false)) {
+		if ((NG.n == 5) && (localRefine == false)) {
 			NGvars.clear(); NGvars.resize(7);
 			NGvars[0] = NG.phi;
 			NGvars[1] = NG.syn;
@@ -3889,12 +3898,12 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			return 2;
 		}
 		
-		/*========================================================*/
+		/*==============================================================================*/
 		// Command line update
 		PetscPrintf(PETSC_COMM_WORLD, "Step:%d/%d | Phi:[%d] %.3fs | Syn:%d[%d] Tub:%d[%d] %.3fs | Tip:%.3fs | DOFs:%d |\n",\
 		NG.n, NG.end_iter, NR_itr, t_phi, reason_syn, its_syn, reason_tub, its_tub, t_synTub, t_tip, NG.phi.size()); CHKERRQ(NG.ierr);
 
-		/*========================================================*/
+		/*==============================================================================*/
 		// Writing results to files
 		if ((NG.n % NG.var_save_invl == 0) && (NG.n != 0)) {	
 			NG.PrintOutNeurons(neurons);
@@ -3932,7 +3941,7 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			PetscPrintf(PETSC_COMM_WORLD, "-----------------------------------------------------------------------------\n");
 		}
 
-		/*========================================================*/
+		/*==============================================================================*/
 		// Domain expansion and variable passing - back to main.cpp
 		if ((NG.n % NG.expandCK_invl == 0) && (NG.n != 0)) {
 			int expd_dir_local = NG.CheckExpansion(NG.phi, NX, NY);
@@ -3971,7 +3980,7 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		iter += 1;
 	}
 
-	/*========================================================*/
+	/*==============================================================================*/
 	CleanUpSolvers(NG); // Destroy solvers
 	NG.ierr = MPI_Barrier(PETSC_COMM_WORLD); CHKERRQ(NG.ierr);
 

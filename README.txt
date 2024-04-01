@@ -1,4 +1,8 @@
 Initial readme file
 for testing git
 
-apt-get install libpng-dev
+Requirements:
+PETSc
+METIS
+Eigen (included in directory)
+Nanoflann (included in directory)
