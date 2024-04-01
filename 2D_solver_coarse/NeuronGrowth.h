@@ -7,7 +7,7 @@
 #include "utils.h"
 #include "time.h"
 
-#include "../nanoflann/1.5.5/include/nanoflann.hpp"
+#include "../nanoflann/1.5.5/include/nanoflann.hpp" // for KDtree points search
 
 using namespace std;
 
@@ -37,8 +37,8 @@ struct Vertex2DCloud {
 };
 
 using KDTree = nanoflann::KDTreeSingleIndexAdaptor<
-    nanoflann::L2_Simple_Adaptor<float, Vertex2DCloud>,
-    Vertex2DCloud, 2 /* dim */>;
+	nanoflann::L2_Simple_Adaptor<float, Vertex2DCloud>,
+	Vertex2DCloud, 2 /* dim */>;
 
 class NeuronGrowth
 {
@@ -224,7 +224,6 @@ public:
 	bool isInBox(const Vertex2D& point, const Vertex2D& center, float dx, float dy);
 	vector<float> calculatePhiSum(const vector<Vertex2D>& cpts, float dx, float dy, vector<float> id);
 	void DetectTipsMulti(const vector<float>& phi_fine, const vector<float>& id, const int& numNeuron, vector<float>& phiSum, const int& NX, const int& NY);
-	void DetectTipsMulti_new(const vector<float>& phi_fine, const vector<float>& id, int numNeuron, vector<float>& phiSum, int NX, int NY);
 	void bfs(const vector<float>& matrix, int rows, int cols, int row, int col,
 		vector<bool>& visited, vector<pair<int, int>>& cluster);
 	vector<vector<pair<int, int>>> FindClusters(const vector<float>& matrix, int rows, int cols);

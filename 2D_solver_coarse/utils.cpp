@@ -273,54 +273,55 @@ void write_hex_toVTK(const char* qs, vector<vector<float>>& vertices, vector<vec
 }
 
 // generating 2D bezier mesh using spline2D_src
-void bzmesh2D(string path_in){
+void bzmesh2D(const std::string& path_in){
 	std::cout << "******************************************************************************" << std::endl;
-
-	string spline_cmd_tmd("../spline2D_src/spline -i " + path_in);
-	const char* spline_cmd = spline_cmd_tmd.c_str();
-	int sys;
-	sys = system(spline_cmd);
-} 
+	std::string spline_cmd = "../spline2D_src/spline -i " + path_in;
+	if (system(spline_cmd.c_str()) != 0) {
+		std::cerr << "Command failed to execute." << std::endl;
+	}
+}
 
 // generating 3D bezier mesh using spline_src
 void bzmesh3D(){
 	std::cout << "******************************************************************************" << std::endl;
-	string spline_cmd_tmd = "../NeuronTransportIGA/spline_src/spline ../io/3DNG/";
-	const char* spline_cmd = spline_cmd_tmd.c_str();
-	int sys;
-	sys = system(spline_cmd);
-} 
-
-// partitioning mesh using mpmetis
-void mpmetis(int n_process, string path_in){
-	string mpmetis_cmd_tmp("mpmetis " + path_in + "bzmeshinfo.txt " + to_string(n_process));
-	const char* mpmetis_cmd = mpmetis_cmd_tmp.c_str();
-	int sys;
-	sys = system(mpmetis_cmd);
+	std::string spline_cmd = "../NeuronTransportIGA/spline_src/spline ../io/3DNG/";
+	if (system(spline_cmd.c_str()) != 0) {
+		std::cerr << "Command failed to execute." << std::endl;
+	}
 }
 
 // partitioning mesh using mpmetis
-void THS2D(string path_in, vector<int> rfid, vector<int> rftype){
+void mpmetis(int n_process, const std::string& path_in){
+	std::string mpmetis_cmd = "mpmetis " + path_in + "bzmeshinfo.txt " + std::to_string(n_process);
+	if (system(mpmetis_cmd.c_str()) != 0) {
+		std::cerr << "Command failed to execute." << std::endl;
+	}
+}
+
+// // partitioning mesh using mpmetis
+void THS2D(const std::string& path_in, const std::vector<int>& rfid, const std::vector<int>& rftype) {
 	std::cout << "******************************************************************************" << std::endl;
 	std::cout << "Local refinement based on Xiaodong's THS3D code ... " << std::endl;
 	std::cout << "  - see: Truncated T-splines: Fundamentals and methods (2017)" << std::endl << std::endl;
 	std::cout << "-----------------------------------------------------------------------------" << std::endl;
 	std::cout << "Calling command | input mesh directory | refine ID | refine element type" << std::endl << std::endl;
-	string ths2d_cmd_tmp("../THS2D/TTSP2D " + path_in + " ");
-	for (size_t i = 0; i < rfid.size(); i++) {
-		ths2d_cmd_tmp = ths2d_cmd_tmp + std::to_string(rfid[i]) + " ";
+
+	std::string ths2d_cmd_tmp("../THS2D/TTSP2D " + path_in + " ");
+	for (size_t i = 0; i < rfid.size(); ++i) {
+		ths2d_cmd_tmp += std::to_string(rfid[i]) + " ";
 	}
-	for (size_t i = 0; i < rftype.size(); i++) {
-		ths2d_cmd_tmp = ths2d_cmd_tmp + std::to_string(rftype[i]) + " ";
+	for (size_t i = 0; i < rftype.size(); ++i) {
+		ths2d_cmd_tmp += std::to_string(rftype[i]) + " ";
 	}
 	std::cout << ths2d_cmd_tmp << std::endl;
-	const char* ths2d_cmd = ths2d_cmd_tmp.c_str();
-	int sys;
-	sys = system(ths2d_cmd);
+
+	if (system(ths2d_cmd_tmp.c_str()) != 0) {
+		std::cerr << "Command failed to execute." << std::endl;
+	}
 }
 
 //
-void InitializeSoma(int numNeuron, vector<array<float, 2>> &seed, int &NX, int &NY){
+void InitializeSoma(const int& numNeuron, vector<array<float, 2>> &seed, int &NX, int &NY){
 	seed.resize(numNeuron);
 	// 2D neuron soma initialization
 	switch (numNeuron) {
@@ -332,7 +333,7 @@ void InitializeSoma(int numNeuron, vector<array<float, 2>> &seed, int &NX, int &
         case 2:
             NX = 45;
             NY = 25;
-            seed = {{19, 21}, {65, 22}};
+            seed = {{19, 20}, {64, 23}};
             break;
         case 3:
             NX = 45;
@@ -676,20 +677,14 @@ void ObtainRefineID_coarse(vector<float> phi, vector<Vertex2D> cpts, int NX, int
 	int ind = 0;
 	int offset = 1 + (NY+1); // offset for using phi on cpts to determine local refinements on elements
 
-	// vector<float> tmp;
-
 	for (size_t i = offset; i < cpts.size() - offset; i++) {
 		float x = cpts[i].coor[0];
 		float y = cpts[i].coor[1];
 		// std::cout << x << " ";
 		rfid.push_back(ind - round(x/2) + originX + offset); // push back element id (calculated based on vertex id, ind)
 		float averagePhi = (phi[i-(NY+1)+1] + phi[i-(NY+1)] + phi[i-(NY+1)-1] + phi[i-1] + phi[i] + phi[i+1] + phi[i+(NY+1)+1] + phi[i+(NY+1)] + phi[i+(NY+1)-1])/9;
-		// float averagePhi = (abs(phi[i-(NY+1)+1]) + abs(phi[i-(NY+1)]) + abs(phi[i-(NY+1)-1]) + abs(phi[i-1]) 
-		// 	+ abs(phi[i]) + abs(phi[i+1]) + abs(phi[i+(NY+1)+1]) + abs(phi[i+(NY+1)]) + abs(phi[i+(NY+1)-1]))/9;
-		// tmp.push_back(averagePhi);
 		
 		if ((averagePhi < 0.95) && (averagePhi > 0.01)) {
-		// if ((averagePhi < 0.95) && (averagePhi > 0.25)) {
 			rftype.push_back(0); // default to type 0 local refinement
 		} else { // maintain domain element strcuture, needed for later local refinement limitation (face-face intersection)
 			rftype.push_back(5); // 5 for elemetmpnts without local refinement
@@ -836,21 +831,4 @@ void AssignProcessor(string fn, int &n_bzmesh, vector<vector<int>> &ele_process)
 	{
 		PetscPrintf(PETSC_COMM_WORLD, "Cannot open %s!\n", fname.c_str());
 	}
-}
-
-// Function to add two vectors
-std::vector<float> addVectors(const std::vector<float>& a, const std::vector<float>& b) {
-    // Ensure both vectors are of the same size
-    if (a.size() != b.size()) {
-        throw std::invalid_argument("Vectors are of different sizes");
-    }
-
-    std::vector<float> result;
-    result.reserve(a.size()); // Reserve memory upfront for efficiency
-
-    for (size_t i = 0; i < a.size(); ++i) {
-        result.push_back(a[i] + b[i]);
-    }
-
-    return result;
 }
