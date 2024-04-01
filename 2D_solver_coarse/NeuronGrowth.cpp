@@ -2609,18 +2609,17 @@ bool NeuronGrowth::KD_SearchPair(const vector<Vertex2D> prev_cpts, const KDTree&
 	}
 }
 
-float NeuronGrowth::RmOutlier(vector<float> &data) 
-{
+float NeuronGrowth::RmOutlier(const vector<float>& data) {
 	float sum = 0.0, mean, standardDeviation = 0.0;
 
-	for (size_t i = 0; i < data.size(); i++) {
-		sum += data[i];
+	for (float val : data) {
+		sum += val;
 	}
 
 	mean = sum / data.size();
 
-	for (size_t i = 0; i < data.size(); i++) {
-		standardDeviation += pow(data[i] - mean, 2);
+	for (float val : data) {
+		standardDeviation += pow(val - mean, 2);
 	}
 
 	standardDeviation = sqrt(standardDeviation / data.size());
@@ -2633,49 +2632,13 @@ float NeuronGrowth::RmOutlier(vector<float> &data)
 	// 		data[i] = 0;
 	// 	}
 	// }
-	return (mean + 3.29*standardDeviation);
+
+	return (mean + 3.29 * standardDeviation);
 }
 
-float NeuronGrowth::CellBoundary(float phi, float threshold) {
-	float P;
-	if (phi > threshold) {
-		P = 1;
-	} else {
-		P = 0;
-	}
-	return P;
+float NeuronGrowth::CellBoundary(const float& phi, const float& threshold) {
+	return (phi > threshold) ? 1.0f : 0.0f;
 }
-
-// Function to apply a simple smoothing operation to a 2D binary variable
-vector<float> NeuronGrowth::SmoothBinary2D(const vector<float>& binaryData, int rows, int cols) {
-	// Create a new vector to store the smoothed data
-	vector<float> smoothedData(rows * cols, 0.0f);
-
-	// Define a 5x5 smoothing kernel
-	const vector<float> kernel = {
-		1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-	1.0f, 1.0f, 1.0f, 1.0f, 1.0f
-	};
-
-	// Apply the smoothing operation using the defined kernel
-	for (int i = 2; i < rows - 2; ++i) {
-		for (int j = 2; j < cols - 2; ++j) {
-			float sum = 0.0f;
-			for (int k = -2; k <= 2; ++k) {
-				for (int l = -2; l <= 2; ++l) {
-					sum += binaryData[(i + k) * cols + (j + l)] * kernel[(k + 2) * 5 + (l + 2)];
-				}
-			}
-			smoothedData[i * cols + j] = (sum > 12.0f) ? 1.0f : 0.0f; // Apply threshold to convert sum to binary value
-		}
-	}
-
-	return smoothedData;
-}
-
 
 // Check if point coordinates are within the bounds defined by center and dx dy dz
 bool NeuronGrowth::isInBox(const Vertex2D& point, const Vertex2D& center, float dx, float dy) {
@@ -2683,31 +2646,8 @@ bool NeuronGrowth::isInBox(const Vertex2D& point, const Vertex2D& center, float 
 		point.coor[1] >= (center.coor[1] - dy/2) && point.coor[1] <= (center.coor[1] + dy/2);
 }
 
-/**
- * Calculates the sum of phi values around each vertex in a given set, applying
- * a threshold to identify significant points, potentially indicating neuron growth tips.
- * 
- * This function iterates over a collection of vertices (`cpts`), summing the phi values
- * within a defined vicinity around each vertex. The vicinity is determined by the `dx`, and `dy`
- * parameters, which define the dimensions of a box centered on each vertex. Points within
- * this box contribute to the sum. After calculating the sums, the function applies a threshold
- * to these values, normalizing them against the highest value found. Points with summed values
- * above this threshold are marked as potential growth tips by setting their corresponding value
- * in the output vector to 1; all others are set to 0.
- * 
- * @param cpts A vector of Vertex2D objects representing the neuron's vertices.
- * @param dx The delta in the x-direction to define the vicinity around a point.
- * @param dy The delta in the y-direction to define the vicinity around a point.
- * @return vector<float> A vector of the same size as `cpts`, where each element is either 0
- *         (indicating the corresponding vertex is not a tip) or 1 (indicating a potential tip),
- *         based on the thresholding of summed phi values.
- * 
- * Note: The function assumes that `phi` is a pre-defined vector accessible within the class
- *       that contains phi values corresponding to each Vertex3D in `cpts`. The function
- *       `isInBox` checks whether a point is within the specified vicinity of another,
- *       and `CellBoundary` computes a boundary-related value for a given phi, with
- *       the second argument presumably allowing for further customization.
- */
+//  * Calculates the sum of phi values around each vertex in a given set, applying
+//  * a threshold to identify significant points, potentially indicating neuron growth tips.
 vector<float> NeuronGrowth::calculatePhiSum(const vector<Vertex2D>& cpts, float dx, float dy, vector<float> id) {
 	vector<float> tp(cpts.size(), 0); // Initialize the result vector with zeros
 	tp.clear(); tp.resize(cpts.size());
@@ -2763,51 +2703,90 @@ vector<float> NeuronGrowth::calculatePhiSum(const vector<Vertex2D>& cpts, float 
 	return tp;
 }
 
-void NeuronGrowth::DetectTipsMulti(const vector<float>& phi_fine, const vector<float>& id, const int& numNeuron, vector<float>& phiSum, const int& NX, const int& NY)
-{
-	float stdVal(0), maxVal(0);
-	// threshold(0.9), 
-	int length((NX+1)*(NY+1));
-	phiSum.clear();
-	phiSum.resize(length, 0);
+// void NeuronGrowth::DetectTipsMulti(const vector<float>& phi_fine, const vector<float>& id, const int& numNeuron, vector<float>& phiSum, const int& NX, const int& NY)
+// {
+// 	float stdVal(0), maxVal(0);
+// 	int length((NX+1)*(NY+1));
+// 	phiSum.clear();
+// 	phiSum.resize(length, 0);
 
-	for (int i = (5*NY+5); i < (length-4*NY-4); i++) {
-		if (CellBoundary(phi_fine[i], 0.25) > 0 && round(id[i]) != 9) {
-		// if (CellBoundary(phi_fine[i], 0.5) > 0 && round(id[i]) != 9) {
-			for (int j = -4; j < 5; j++) {
-				for (int k = -4; k < 5; k++) {
-						if  (round(id[i+j*(NY+1)+k]) == round(id[i]) || round(id[i+j*(NY+1)+k]) == 0 || round(id[i+j*(NY+1)+k]) == 9) {
-						// if  (round(id[i+j*(NY+1)+k]) == round(id[i]) || round(id[i+j*(NY+1)+k]) == 9) {
-						// if  (round(id[i+j*(NY+1)+k]) == round(id[i])) {
-							phiSum[i] += CellBoundary(phi_fine[i+j*(NY+1)+k], 0.1);
-							// phiSum[i] += CellBoundary(phi_fine[i+j*(NY+1)+k], 0.25);
-							// phiSum[i] += CellBoundary(phi_fine[i+j*(NY+1)+k], 0.5);
-						}
+// 	for (int i = (5*NY+5); i < (length-4*NY-4); i++) {
+// 		if (CellBoundary(phi_fine[i], 0.25) > 0 && round(id[i]) != 9) {
+// 		// if (CellBoundary(phi_fine[i], 0.5) > 0 && round(id[i]) != 9) {
+// 			for (int j = -4; j < 5; j++) {
+// 				for (int k = -4; k < 5; k++) {
+// 						// Increase intensity(phiSum) if: 1. same neuron; 2. empty domain; 3. Disconnected neurites
+// 						if  (round(id[i+j*(NY+1)+k]) == round(id[i]) || round(id[i+j*(NY+1)+k]) == 0 || round(id[i+j*(NY+1)+k]) == 9) {
+// 							phiSum[i] += CellBoundary(phi_fine[i+j*(NY+1)+k], 0.1);
+// 							// phiSum[i] += CellBoundary(phi_fine[i+j*(NY+1)+k], 0.25);
+// 							// phiSum[i] += CellBoundary(phi_fine[i+j*(NY+1)+k], 0.5);
+// 						}
+// 				}
+// 			}	
+// 			if (phiSum[i] > 0)
+// 				phiSum[i] = CellBoundary(phi_fine[i], 0) / phiSum[i];
+// 			if (isnan(phiSum[i]))
+// 				phiSum[i] = 0;
+// 		}
+// 	}
+
+// 	stdVal = RmOutlier(phiSum);
+
+// 	for (size_t i = 0; i < phiSum.size(); i++) {
+// 		phiSum[i] = phiSum[i]/stdVal;
+// 		maxVal = max(phiSum[i], maxVal);
+// 	}
+
+// 	for (int i = 1+NY; i < length-NY-1; i++) {
+// 		if (phiSum[i] < (1.4)) {
+// 		// if (phiSum[i] < (1.3)) {
+// 			phiSum[i] = 0;
+// 		} 
+// 	}
+// }
+void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std::vector<float>& id, const int& numNeuron, std::vector<float>& phiSum, const int& NX, const int& NY) {
+	const int length = (NX + 1) * (NY + 1);
+	phiSum.assign(length, 0); // Clear and resize with zero initialization
+
+	const float threshold = 0.25;
+	const float intensityThreshold = 0.1;
+	const int offsetY = NY + 1;
+	const float phiThreshold = 0;
+
+	// Lambda to replace CellBoundary and reduce condition checks
+	auto cellBoundary = [](float phi, float threshold) -> float {
+		return phi > threshold ? 1.0f : 0.0f;
+	};
+
+	// Iterate with precomputed values and reduced condition checks
+	for (int i = (5 * NY + 5); i < (length - 4 * NY - 4); ++i) {
+		if (cellBoundary(phi_fine[i], threshold) > 0 && std::round(id[i]) != 9) {
+			for (int j = -4; j <= 4; ++j) {
+				for (int k = -4; k <= 4; ++k) {
+					int index = i + j * offsetY + k;
+					float roundedId = std::round(id[index]);
+					if (roundedId == std::round(id[i]) || roundedId == 0 || roundedId == 9) {
+						phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
+					}
 				}
-			}	
-			if (phiSum[i] > 0)
-				phiSum[i] = CellBoundary(phi_fine[i], 0) / phiSum[i];
-			if (isnan(phiSum[i]))
-				phiSum[i] = 0;
+			}
+			phiSum[i] = phiSum[i] > 0 ? cellBoundary(phi_fine[i], phiThreshold) / phiSum[i] : 0;
+			if (std::isnan(phiSum[i])) phiSum[i] = 0; // Handle NaN explicitly, though it should not occur now
 		}
 	}
 
-	stdVal = RmOutlier(phiSum);
+	// Normalize phiSum by the standard deviation value
+	float stdVal = RmOutlier(phiSum);
+	std::transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [stdVal](float val) { return val / stdVal; });
 
-	for (size_t i = 0; i < phiSum.size(); i++) {
-		phiSum[i] = phiSum[i]/stdVal;
-		maxVal = max(phiSum[i], maxVal);
-	}
+	// Find the maximum value in phiSum for potential use
+	float maxVal = *std::max_element(phiSum.begin(), phiSum.end());
 
-	for (int i = 1+NY; i < length-NY-1; i++) {
-		if (phiSum[i] < (1.4)) {
-		// if (phiSum[i] < (1.3)) {
-			phiSum[i] = 0;
-		} 
-		// else {
-		// 	tip[i] = 1;
-		// }
-	}
+	// Filter based on a normalized threshold
+	const float normalizedThreshold = 1.4;
+	std::transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [normalizedThreshold](float val) {
+		return val < normalizedThreshold ? 0.0f : val;
+	});
 }
 
 // Function to perform Breadth-First Search (BFS) for clustering
@@ -2986,47 +2965,53 @@ vector<float> NeuronGrowth::FindCentroidsOfLocalMaximaClusters(const vector<floa
 	return centroids;
 }
 
-vector<vector<int>> NeuronGrowth::ConvertTo2DIntVector_PushBoundary(const vector<float> input, int NX, int NY) 
-{
+vector<vector<int>> NeuronGrowth::ConvertTo2DIntVector_PushBoundary(const vector<float>& input, const int& NX, const int& NY) {
 	vector<vector<int>> output;
+	output.reserve(NX + 1); // Reserve space for rows
 
 	int k = 0;
-	for (int i = 0; i < NX+1; i++) {
+	for (int i = 0; i < NX + 1; i++) {
 		vector<int> row;
-		for (int j = 0; j < NY+1; j++) {
-			row.push_back(CellBoundary(abs(input[k]), 0.25)*9);
-			k++;
+		row.reserve(NY + 1); // Reserve space for columns
+
+		for (int j = 0; j < NY + 1; j++, k++) { // Increment k in the loop header
+			// Assuming CellBoundary returns 1 if condition is met, 0 otherwise
+			row.push_back(CellBoundary(std::abs(input[k]), 0.25) * 9);
+		}
+		output.push_back(std::move(row)); // Use std::move to avoid copying the row
+	}
+
+	return output;
+}
+
+std::vector<std::vector<int>> NeuronGrowth::ConvertTo2DIntVector(const std::vector<float>& input, int NX, int NY) {
+	std::vector<std::vector<int>> output;
+	output.reserve(NX + 1); // Preallocate memory for rows
+
+	size_t k = 0; // Use size_t for consistency with standard library sizes
+	for (int i = 0; i < NX + 1; i++) {
+		std::vector<int> row;
+		row.reserve(NY + 1); // Preallocate memory for columns
+
+		for (int j = 0; j < NY + 1; j++, k++) {
+			row.push_back(static_cast<int>(input[k])); // Explicit type conversion shown
 		}
 		output.push_back(row);
 	}
 	return output;
 }
 
-vector<vector<int>> NeuronGrowth::ConvertTo2DIntVector(const vector<float> input, int NX, int NY) 
-{
-	vector<vector<int>> output;
+std::vector<std::vector<float>> NeuronGrowth::ConvertTo2DFloatVector(const std::vector<float>& input, int NX, int NY) {
+	std::vector<std::vector<float>> output;
+	output.reserve(NX); // Preallocate memory for rows
 
-	uint k = 0;
-	for (int i = 0; i < NX+1; i++) {
-		vector<int> row;
-		for (int j = 0; j < NY+1; j++) {
-			row.push_back(input[k]);
-			k++;
-		}
-		output.push_back(row);
-	}
-	return output;
-}
-
-vector<vector<float>> NeuronGrowth::ConvertTo2DFloatVector(const vector<float> input, int NX, int NY) 
-{
-	vector<vector<float>> output;
-	int k = 0;
+	size_t k = 0; // Use size_t for consistency with standard library sizes
 	for (int i = 0; i < NX; i++) {
-		vector<float> row;
-		for (int j = 0; j < NY; j++) {
+		std::vector<float> row;
+		row.reserve(NY); // Preallocate memory for columns
+
+		for (int j = 0; j < NY; j++, k++) {
 			row.push_back(input[k]);
-			k++;
 		}
 		output.push_back(row);
 	}
@@ -3554,22 +3539,19 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 	// NG.prepareEE();
 	PetscPrintf(PETSC_COMM_WORLD, "Prepared variables!----------------------------------------------------------\n");
 	
-	// // Pre-allocation of vectors and matrices
+	/*========================================================*/
+	// Pre-allocate variables for tip detections (will be used every iter)
+	// Allocate neurons matrix
+	std::vector<std::vector<int>> neurons(2 * NX + 1, std::vector<int>(2 * NY + 1, 0));
+	// Allocate distances 3D matrix
+	std::vector<std::vector<std::vector<int>>> distances(NG.numNeuron, std::vector<std::vector<int>>(2 * NX + 1, std::vector<int>(2 * NY + 1, 0)));
+	// Allocate vectors for phi_fine, id, tip, and localMaximaMatrix
+	std::vector<float> phi_fine(cpts_fine.size(), 0), id(cpts_fine.size(), 0), tip(cpts_fine.size(), 0), localMaximaMatrix(cpts_fine.size(), 0);
+	// Allocate geodist and axonTip matrices
+	std::vector<std::vector<float>> geodist(NG.numNeuron, std::vector<float>(distances[0].size(), 0));
+	std::vector<std::vector<float>> axonTip(NG.numNeuron, std::vector<float>(distances[0].size(), 0));
 
-	// // Allocate neurons matrix
-	// std::vector<std::vector<int>> neurons(2 * NX + 1, std::vector<int>(2 * NY + 1, 0));
-
-	// // Allocate distances 3D matrix
-	// std::vector<std::vector<std::vector<int>>> distances(NG.numNeuron, std::vector<std::vector<int>>(2 * NX + 1, std::vector<int>(2 * NY + 1, 0)));
-
-	// // Allocate vectors for phi_fine, id, tip, and localMaximaMatrix
-	// std::vector<float> phi_fine(cpts_fine.size(), 0), id(cpts_fine.size(), 0), tip(cpts_fine.size(), 0), localMaximaMatrix(cpts_fine.size(), 0);
-
-	// // Allocate geodist and axonTip matrices
-	// std::vector<std::vector<float>> geodist(NG.numNeuron, std::vector<float>(distances[0].size(), 0));
-	// std::vector<std::vector<float>> axonTip(NG.numNeuron, std::vector<float>(distances[0].size(), 0));
-
-	// PetscPrintf(PETSC_COMM_WORLD, "Pre-allocated vectors!------------------------------------------------------\n");
+	PetscPrintf(PETSC_COMM_WORLD, "Pre-allocated vectors!------------------------------------------------------\n");
 
 	while (iter <= NG.end_iter) {
 		NG.n = iter;
@@ -3577,10 +3559,6 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 
 		/*========================================================*/
 		// Neuron identification and tip detection
-		vector<vector<int>> neurons;
-		vector<vector<vector<int>>> distances;
-		vector<float> phi_fine, id, tip, localMaximaMatrix;
-		vector<vector<float>> geodist;
 		phi_fine = NG.InterpolateValues_closest(NG.phi, kdTree, cpts_fine);
 		NG.IdentifyNeurons(phi_fine, neurons, NG.prev_id, seed, NX*2, NY*2, originX, originY);
 		// NG.prev_id = neurons;
@@ -3899,7 +3877,6 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			NGvars[0] = NG.phi;
 			NGvars[1] = NG.syn;
 			NGvars[2] = NG.tub;
-			// NGvars[3] = NG.theta;
 			NGvars[3] = NG.theta_fine;
 			NGvars[4] = NG.phi_0;
 			NGvars[5] = NG.tub_0;
@@ -3981,7 +3958,6 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			NGvars[0] = NG.phi;	
 			NGvars[1] = NG.syn;
 			NGvars[2] = NG.tub;
-			// NGvars[3] = NG.theta;
 			NGvars[3] = NG.theta_fine;
 			NGvars[4] = NG.phi_0;
 			NGvars[5] = NG.tub_0;

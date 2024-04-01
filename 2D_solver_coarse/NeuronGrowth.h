@@ -218,9 +218,8 @@ public:
 	bool KD_SearchPair(const vector<Vertex2D> prev_cpts, const KDTree& kdTree, float targetX, float targetY, int &ind);
 
 	// Tip detection
-	float RmOutlier(vector<float> &data); // standard deviation based outlier remover
-	float CellBoundary(float phi, float threshold); // threshould based boundary determination
-	vector<float> SmoothBinary2D(const vector<float>& binaryData, int rows, int cols);
+	float RmOutlier(const vector<float>& data); // standard deviation based outlier remover
+	float CellBoundary(const float& phi, const float& threshold); // threshould based boundary determination
 	bool isInBox(const Vertex2D& point, const Vertex2D& center, float dx, float dy);
 	vector<float> calculatePhiSum(const vector<Vertex2D>& cpts, float dx, float dy, vector<float> id);
 	void DetectTipsMulti(const vector<float>& phi_fine, const vector<float>& id, const int& numNeuron, vector<float>& phiSum, const int& NX, const int& NY);
@@ -233,10 +232,10 @@ public:
 	vector<float> FindCentroidsOfLocalMaximaClusters(const vector<float>& matrix, int rows, int cols);
 
 	// Neuron detection
-	vector<vector<int>> ConvertTo2DIntVector_PushBoundary(const vector<float> input, int NX, int NY);
-	vector<vector<int>> ConvertTo2DIntVector(const vector<float> input, int NX, int NY);
-	vector<vector<float>> ConvertTo2DFloatVector(const vector<float> input, int NX, int NY);
-	
+	vector<vector<int>> ConvertTo2DIntVector_PushBoundary(const vector<float>& input, const int& NX, const int& NY);
+	vector<vector<int>> ConvertTo2DIntVector(const vector<float>& input, int NX, int NY);
+	vector<vector<float>> ConvertTo2DFloatVector(const vector<float>& input, int NX, int NY);
+
 	void FloodFill(vector<vector<int>>& image, int x, int y, int newColor, int originalColor, const vector<vector<int>>& prev_id); // label neuron with a value
 	void IdentifyNeurons(vector<float>& phi_in, vector<vector<int>>& neurons, const vector<vector<int>>& prev_id,
 		vector<array<float, 2>> seed, const int& NX, const int& NY, const int& originX, const int& originY);
