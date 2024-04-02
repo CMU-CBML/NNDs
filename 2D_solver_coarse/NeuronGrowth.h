@@ -53,8 +53,6 @@ public:
 	int comSize;
 	int nProcess;
 
-	int check_itr;
-
 	// Spline parameters
 	int n_bzmesh;
 	vector<int> ele_process;
@@ -205,15 +203,13 @@ public:
 	void BuildLinearSystemProcessNG_syn_tub(const vector<Element2D> &tmesh, const vector<Vertex2D> &cpts);
 
 	// Domain expansion
-	int CheckExpansion(vector<float> input); // for when square domain
 	int CheckExpansion(vector<float> input, int NX, int NY); // for when NX != NY
-	void ExpandDomain(vector<float> input, vector<float> &expd_var, int edge); // for square domain
-	void ExpandDomain(vector<float> input, vector<float> &expd_var, int edge, int NX, int NY); // for when NX != NY
 	void PopulateRandom(vector<float> &input); // to populate theta with random after expansion
 
 	// Neuron growth interpolations
 	vector<float> InterpolateValues_closest(const vector<float>& phi, const vector<Vertex2D>& cpt, const vector<Vertex2D>& cpt_out);
 	vector<float> InterpolateValues_closest(const vector<float>& input, const KDTree& kdTree, const vector<Vertex2D>& cpt_out);
+	vector<float> InterpolateValues_closest_pushBoundary(const vector<float>& input, const KDTree& kdTree, const vector<Vertex2D>& cpt_out);
 	vector<float> InterpolateVars_coarseKDtree(vector<float> input, vector<Vertex2D> cpts_initial, const KDTree& kdTree, const vector<Vertex2D>& cpts, int type, int isTheta);
 	bool KD_SearchPair(const vector<Vertex2D> prev_cpts, const KDTree& kdTree, float targetX, float targetY, int &ind);
 
@@ -223,13 +219,14 @@ public:
 	bool isInBox(const Vertex2D& point, const Vertex2D& center, float dx, float dy);
 	vector<float> calculatePhiSum(const vector<Vertex2D>& cpts, float dx, float dy, vector<float> id);
 	void DetectTipsMulti(const vector<float>& phi_fine, const vector<float>& id, const int& numNeuron, vector<float>& phiSum, const int& NX, const int& NY);
-	void bfs(const vector<float>& matrix, int rows, int cols, int row, int col,
+	float bfs(const vector<float>& matrix, const int& rows, const int& cols, const int& row, const int& col,
 		vector<bool>& visited, vector<pair<int, int>>& cluster);
-	vector<vector<pair<int, int>>> FindClusters(const vector<float>& matrix, int rows, int cols);
-	vector<float> FindLocalMaximaInClusters(const vector<float>& matrix, int rows, int cols);
-	vector<float> FindCentroidsInClusters(const vector<float>& matrix, int rows, int cols);
-	bool IsLocalMaximum(const vector<float>& matrix, int rows, int cols, int x, int y);
-	vector<float> FindCentroidsOfLocalMaximaClusters(const vector<float>& matrix, int rows, int cols);
+	vector<vector<pair<int, int>>> FindClusters(const vector<float>& matrix, const int& rows, const int& cols);
+	vector<float> FindLocalMaximaInClusters(const vector<float>& matrix, const int& rows, const int& cols);
+	vector<float> KeepOneClusterWithMaxValue(const vector<float>& matrix, const int& rows, const int& cols);
+	vector<float> FindCentroidsInClusters(const vector<float>& matrix, const int& rows, const int& cols);
+	bool IsLocalMaximum(const vector<float>& matrix, const int& rows, const int& cols, const int& x, const int& y);
+	vector<float> FindCentroidsOfLocalMaximaClusters(const vector<float>& matrix, const int& rows, const int& cols);
 
 	// Neuron detection
 	vector<vector<int>> ConvertTo2DIntVector_PushBoundary(const vector<float>& input, const int& NX, const int& NY);
@@ -242,7 +239,7 @@ public:
 	bool isValid(int x, int y, int rows, int cols);
 	vector<vector<int>> CalculateGeodesicDistanceFromPoint(vector<vector<int>> grid, int startX, int startY); // single neuron
 	vector<vector<vector<int>>> CalculateGeodesicDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, int originX, int originY); // multiple neurons
-	vector<vector<array<int, 2>>> NeuriteTracing(vector<vector<double>> distance);
+	vector<vector<pair<int, int>>> TraceNeurites(vector<vector<float>>& geodist);
 	void SaveNGvars(vector<vector<float>> &NGvars, int NX, int NY, string fn);
 	void PrintOutNeurons(vector<vector<int>> neurons);
 

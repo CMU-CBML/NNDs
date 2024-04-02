@@ -326,15 +326,18 @@ void InitializeSoma(const int& numNeuron, vector<array<float, 2>> &seed, int &NX
 	// 2D neuron soma initialization
 	switch (numNeuron) {
 	case 1:
-            NX = 24;
-            NY = 24;
-            seed = {{24, 24}};
-            break;
+		NX = 24;
+		NY = 24;
+		seed = {{24, 24}};
+		break;
         case 2:
-            NX = 45;
-            NY = 25;
-            seed = {{19, 20}, {64, 23}};
-            break;
+		NX = 45;
+		NY = 20;
+		seed = {{20, 20}, {65, 20}};
+		// NX = 40;
+		// NY = 20;
+		// seed = {{20, 20}, {55, 20}};
+		break;
         case 3:
             NX = 45;
             NY = 45;
