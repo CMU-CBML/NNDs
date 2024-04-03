@@ -53,6 +53,8 @@ public:
 	int comSize;
 	int nProcess;
 
+	int check_itr;
+	
 	// Spline parameters
 	int n_bzmesh;
 	vector<int> ele_process;
@@ -238,7 +240,9 @@ public:
 		vector<array<float, 2>> seed, const int& NX, const int& NY, const int& originX, const int& originY);
 	bool isValid(int x, int y, int rows, int cols);
 	vector<vector<int>> CalculateGeodesicDistanceFromPoint(vector<vector<int>> grid, int startX, int startY); // single neuron
-	vector<vector<vector<int>>> CalculateGeodesicDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, int originX, int originY); // multiple neurons
+	vector<vector<vector<int>>> CalculateGeodesicDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, const int& originX, const int& originY); // multiple neurons
+	vector<vector<vector<float>>> CalculateQuasiEuclideanDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, const int& originX, const int& originY);
+
 	vector<vector<pair<int, int>>> TraceNeurites(vector<vector<float>>& geodist);
 	void SaveNGvars(vector<vector<float>> &NGvars, int NX, int NY, string fn);
 	void PrintOutNeurons(vector<vector<int>> neurons);
