@@ -339,15 +339,15 @@ void InitializeSoma(const int& numNeuron, vector<array<float, 2>> &seed, int &NX
 		// seed = {{20, 20}, {55, 20}};
 		break;
         case 3:
-            NX = 45;
-            NY = 45;
-            seed = {{19, 21}, {65, 22}, {42.5, 65}};
-            break;
+		NX = 45;
+		NY = 45;
+		seed = {{19, 21}, {65, 22}, {42.5, 65}};
+		break;
 	case 4:
-            NX = 45;
-            NY = 45;
-            seed = {{19, 21}, {65, 22}, {20, 20}, {65, 65}};
-            break;
+		NX = 45;
+		NY = 45;
+		seed = {{19, 21}, {65, 22}, {20, 20}, {65, 65}};
+		break;
 	// case 5:
         //     NX = 60;
         //     NY = 60;
@@ -679,6 +679,7 @@ void ObtainRefineID_coarse(vector<float> phi, vector<Vertex2D> cpts, int NX, int
 	rftype.clear();
 	int ind = 0;
 	int offset = 1 + (NY+1); // offset for using phi on cpts to determine local refinements on elements
+	// int offset = 1;
 
 	for (size_t i = offset; i < cpts.size() - offset; i++) {
 		float x = cpts[i].coor[0];

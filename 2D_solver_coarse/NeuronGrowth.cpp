@@ -1625,17 +1625,15 @@ void NeuronGrowth::preparePhaseField() {
 						eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(50 * eleTb - 0) * (1 - eleS));
 						if (eleTp > 3) {
 							pre_eleMp.push_back(80);
-							// pre_eleMp.push_back(8);
 						} else {
 							pre_eleMp.push_back(50);
-							// pre_eleMp.push_back(5);
+							// pre_eleMp.push_back(20);
 						}
 					} else {
 						eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(r * eleTb - g) * (1 - eleS));
 						pre_eleMp.push_back(5);
-						// pre_eleMp.push_back(0.5);
+						// pre_eleMp.push_back(2);
 					}
-					// std::cout << atan(gamma * Regular_Heiviside_fun(50 * eleTb - 0) * (1 - eleS)) << std::endl;
 				}
 
 				// calculate C1 variable for phase field energy term
@@ -2113,7 +2111,7 @@ void NeuronGrowth::BuildLinearSystemProcessNG_syn_tub(const vector<Element2D> &t
 
 					for (size_t n = 0; n < nen; n++) {
 						if (judge_syn == 0)
-							EMatrixSolve_syn[m][n] += (Nx[m] * Nx[n] + dt/4 * Dc * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])) * detJ;
+							EMatrixSolve_syn[m][n] += (Nx[m] * Nx[n] + dt/4 * Dc * 2 * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])) * detJ;
 
 						// EMatrixSolve_tub[m][n] += (Nx[m] * Nx[n] - dt / vars_st[2] * (
 						// 	(- Diff * (vars_st[2] * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])))
@@ -2475,10 +2473,10 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 	const int length = (NX + 1) * (NY + 1);
 	phiSum.assign(length, 0); // Clear and resize with zero initialization
 
-	// const float threshold = 0.25; // threshould for where to detect neurites
-	// const float intensityThreshold = 0.1; // threshould for whether to use the value for detection
-	const float threshold = 0.5;
-	const float intensityThreshold = 0.5;
+	const float threshold = 0.25; // threshould for where to detect neurites
+	const float intensityThreshold = 0.1; // threshould for whether to use the value for detection
+	// const float threshold = 0.5;
+	// const float intensityThreshold = 0.5;
 	const int offsetY = NY + 1; // offset to avoid index issue
 	const float phiThreshold = 0; // threshould for scaling
 
@@ -2513,8 +2511,8 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 	float maxVal = *std::max_element(phiSum.begin(), phiSum.end());
 
 	// Filter based on a normalized threshold
-	// const float normalizedThreshold = 1.4;
-	const float normalizedThreshold = 1.3;
+	const float normalizedThreshold = 1.4;
+	// const float normalizedThreshold = 1.3;
 	// const float normalizedThreshold = 1.1;
 	std::transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [normalizedThreshold](float val) {
 		return val < normalizedThreshold ? 0.0f : val;
@@ -2633,11 +2631,24 @@ vector<float> NeuronGrowth::KeepOneClusterWithMaxValue(const vector<float>& matr
 		}
 	}
 
-	for (const auto& pos : maxCluster) {
-		int row = pos.first;
-		int col = pos.second;
-		localMaxima[row * cols + col] = 1.0f;
+	// for (const auto& pos : maxCluster) {
+	// 	int row = pos.first;
+	// 	int col = pos.second;
+	// 	localMaxima[row * cols + col] = 1.0f;
+	// }
+
+	// Calculate centroid of local maxima
+	float sumRow = 0, sumCol = 0;
+	for (const auto& maxPos : maxCluster) {
+		sumRow += maxPos.first;
+		sumCol += maxPos.second;
 	}
+
+	int centroidRow = static_cast<int>(round(sumRow / maxCluster.size()));
+	int centroidCol = static_cast<int>(round(sumCol / maxCluster.size()));
+
+	localMaxima[centroidRow * cols + centroidCol] = 1.0f;
+
 
 	return localMaxima;
 }
@@ -2756,8 +2767,8 @@ vector<vector<int>> NeuronGrowth::ConvertTo2DIntVector_PushBoundary(const vector
 
 		for (int j = 0; j < NY + 1; j++, k++) { // Increment k in the loop header
 			// Assuming CellBoundary returns 1 if condition is met, 0 otherwise
-			// row.push_back(CellBoundary(std::abs(input[k]), 0.25) * 9);
-			row.push_back(CellBoundary(std::abs(input[k]), 0.5) * 9);
+			row.push_back(CellBoundary(std::abs(input[k]), 0.25) * 9);
+			// row.push_back(CellBoundary(std::abs(input[k]), 0.5) * 9);
 		}
 		output.push_back(std::move(row)); // Use std::move to avoid copying the row
 	}
@@ -3432,14 +3443,15 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		vector<vector<float>> axonTip(NG.numNeuron, vector<float>(distances[0].size(), 0));
 		for (size_t i = 0; i < distances.size(); i++) {
 			geodist[i] = ConvertTo1DFloatVector(distances[i]);
-			// for (size_t j = 0; j < geodist[i].size(); j++) {
-			// 	if (tip[j] != 0) {
-			// 		// std::cout << tip[j] << " ";
-			// 		tip[j] = tip[j] * geodist[i][j];
-			// 		// std::cout << tip[j] << " " << geodist[i][j] << std::endl;
-			// 	}
-			// }
-			axonTip[i] = NG.FindLocalMaximaInClusters(geodist[i], 2*NX+1, 2*NY+1);
+			for (size_t j = 0; j < geodist[i].size(); j++) {
+				if (tip[j] != 0) {
+					// std::cout << tip[j] << " ";
+					tip[j] = tip[j] * geodist[i][j];
+					// std::cout << tip[j] << " " << geodist[i][j] << std::endl;
+				}
+			}
+			// axonTip[i] = NG.FindLocalMaximaInClusters(geodist[i], 2*NX+1, 2*NY+1);
+			axonTip[i] = NG.KeepOneClusterWithMaxValue(tip, 2*NX+1, 2*NY+1);
 		}
 
 		// localMaximaMatrix = NG.FindLocalMaximaInClusters(tip, NX*2+1, NY*2+1);
@@ -3460,26 +3472,27 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		// 	localMaximaMatrix[maxInd] = 5;
 		// }
 
-		// // Iterate over axonTip using range-based for loops
-		// const int range = 2 * NY + 1;
-		// for (size_t k = 0; k < NG.numNeuron; ++k) {
-		// 	for (size_t l = 1; l < cpts_fine.size() - (2 * NY + 1) - 1; ++l) {
-		// 		if (axonTip[k][l] != 0) {
-		// 			// Iterate over the 3x3 neighborhood of each non-zero element
-		// 			for (int i = -1; i <= 1; ++i) {
-		// 				for (int j = -1; j <= 1; ++j) {
-		// 					// Skip the central element
-		// 					if (i != 0 || j != 0) {
-		// 						// Calculate the index for localMaximaMatrix
-		// 						localMaximaMatrix[l + j * range - i] = 5;
-		// 					}
-		// 				}
-		// 			}
-		// 			localMaximaMatrix[l] = 5;
-		// 		}
-		// 	}
-		// }
-
+		if (NG.n > 2000) {
+			// Iterate over axonTip using range-based for loops
+			const int range = 2 * NY + 1;
+			for (size_t k = 0; k < NG.numNeuron; ++k) {
+				for (size_t l = 1; l < cpts_fine.size() - (2 * NY + 1) - 1; ++l) {
+					if (axonTip[k][l] != 0) {
+						// // Iterate over the 3x3 neighborhood of each non-zero element
+						// for (int i = -1; i <= 1; ++i) {
+						// 	for (int j = -1; j <= 1; ++j) {
+						// 		// Skip the central element
+						// 		if (i != 0 || j != 0) {
+						// 			// Calculate the index for localMaximaMatrix
+						// 			localMaximaMatrix[l + j * range - i] = 5;
+						// 		}
+						// 	}
+						// }
+						localMaximaMatrix[l] = 5;
+					}
+				}
+			}
+		}
 		NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, kdTree_fine, cpts);
 
 		toc(t_tip);
