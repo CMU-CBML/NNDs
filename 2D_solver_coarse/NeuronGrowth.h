@@ -105,6 +105,29 @@ public:
 	// Parameters for neuron growth model
 	int var_save_invl,expandCK_invl,numNeuron,gc_sz,end_iter,aniso,gamma,seed_radius;
 	float kappa,dt,Dc,alpha,alphaOverPi,M_phi,s_coeff,delta,epsilonb,r,g,alphaT,betaT,Diff,source_coeff;
+	// int expandCK_invl;
+	// int var_save_invl;
+	// int numNeuron;
+	// int gc_sz;
+	// int aniso;
+	// int gamma;
+	// int seed_radius;
+
+	// double kappa;
+	// double dt;
+	// double Dc;
+	// double alpha;
+	// double alphaOverPi;
+	// double M_phi;
+	// double s_coeff;
+	// double delta;
+	// double epsilonb;
+	// double r;
+	// double g;
+	// double alphaT;
+	// double betaT;
+	// double Diff;
+	// double source_coeff;
 
 	// Initializations
 	NeuronGrowth();

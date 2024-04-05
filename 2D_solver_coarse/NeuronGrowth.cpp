@@ -68,7 +68,7 @@ NeuronGrowth::NeuronGrowth(){
 	gc_sz			= 2;	     	// gc_sz
 	aniso 			= 6;   		// aniso
 	gamma 			= 10;  		// gamma
-	seed_radius 		= 10;		// seed radius
+	seed_radius 		= 15;		// seed radius
 
 	// variable setup
 	kappa			= 2.0;		// kappa;
@@ -95,40 +95,49 @@ void NeuronGrowth::AssignProcessor(vector<vector<int>> &ele_proc)
 		ele_process.push_back(ele_proc[comRank][i]);
 }
 
-void NeuronGrowth::SetVariables(string fn_par)
-{
-	string fname(fn_par), stmp;
-	stringstream ss;
-	ifstream fin;
-	fin.open(fname);
-	if (fin.is_open()) {
-		fin >> stmp >> var_save_invl;
-		fin >> stmp >> expandCK_invl;
-		fin >> stmp >> gc_sz;
-		fin >> stmp >> aniso;
-		fin >> stmp >> gamma;
-		fin >> stmp >> seed_radius;
-		fin >> stmp >> kappa;
-		fin >> stmp >> dt;
-		fin >> stmp >> Dc;
-		fin >> stmp >> alpha;
-		alphaOverPi = alpha / PI; 	// alphOverPi
-		fin >> stmp >> M_phi;
-		fin >> stmp >> s_coeff;
-		fin >> stmp >> delta;
-		fin >> stmp >> epsilonb;
-		fin >> stmp >> r;
-		fin >> stmp >> g;
-		fin >> stmp >> alphaT;
-		fin >> stmp >> betaT;
-		fin >> stmp >> Diff;
-		fin >> stmp >> source_coeff;
-
-		fin.close();
-		PetscPrintf(PETSC_COMM_WORLD, "Parameter Loaded!\n");
-	} else {
-		PetscPrintf(PETSC_COMM_WORLD, "Cannot open %s!\n", fname.c_str());
+void NeuronGrowth::SetVariables(string fn_par) {
+	std::ifstream inputFile(fn_par);
+	if (!inputFile.is_open()) {
+		PetscPrintf(PETSC_COMM_WORLD, "Error: Unable to open file %s\n", fn_par.c_str());
+		return;
 	}
+
+	std::string line;
+	while (std::getline(inputFile, line)) {
+		std::istringstream iss(line);
+		std::string variableName;
+		char equalsSign;
+		if (!(iss >> variableName >> equalsSign)) {
+			PetscPrintf(PETSC_COMM_WORLD, "Error: Reading variable failed!\n");
+			break;
+		}
+		if (variableName == "expandCK_invl") iss >> expandCK_invl;
+		else if (variableName == "var_save_invl") iss >> var_save_invl;
+		else if (variableName == "numNeuron") iss >> numNeuron;
+		else if (variableName == "gc_sz") iss >> gc_sz;
+		else if (variableName == "aniso") iss >> aniso;
+		else if (variableName == "gamma") iss >> gamma;
+		else if (variableName == "seed_radius") iss >> seed_radius;
+		else if (variableName == "kappa") iss >> kappa;
+		else if (variableName == "dt") iss >> dt;
+		else if (variableName == "Dc") iss >> Dc;
+		else if (variableName == "alpha") iss >> alpha;
+		else if (variableName == "M_phi") iss >> M_phi;
+		else if (variableName == "s_coeff") iss >> s_coeff;
+		else if (variableName == "delta") iss >> delta;
+		else if (variableName == "epsilonb") iss >> epsilonb;
+		else if (variableName == "r") iss >> r;
+		else if (variableName == "g") iss >> g;
+		else if (variableName == "alphaT") iss >> alphaT;
+		else if (variableName == "betaT") iss >> betaT;
+		else if (variableName == "Diff") iss >> Diff;
+		else if (variableName == "source_coeff") iss >> source_coeff;
+	}
+	inputFile.close();
+	PetscPrintf(PETSC_COMM_WORLD, "Parameter Loaded!\n");
+
+	// Calculate alphaOverPi after all variables are loaded
+	alphaOverPi = alpha / PI;
 }
 
 void NeuronGrowth::InitializeProblemNG(const int n_bz, vector<Vertex2D>& cpts, vector<Vertex2D> prev_cpts, const KDTree& kdTree_prev,
@@ -2107,11 +2116,17 @@ void NeuronGrowth::BuildLinearSystemProcessNG_syn_tub(const vector<Element2D> &t
 
 					// EVectorSolve_tub[m] += (dt / vars_st[2] * vars_st[11] + vars_st[6]) * Nx[m] * detJ;
 					// EVectorSolve_tub[m] += (dt / vars_st[2] + vars_st[6]) * Nx[m] * detJ;
-					EVectorSolve_tub[m] += (vars_st[2] * vars_st[6] + dt/4 * vars_st[11]) * Nx[m] * detJ;
+					EVectorSolve_tub[m] += (vars_st[2] * vars_st[6] + dt * vars_st[11]) * Nx[m] * detJ;
 
 					for (size_t n = 0; n < nen; n++) {
 						if (judge_syn == 0)
-							EMatrixSolve_syn[m][n] += (Nx[m] * Nx[n] + dt/4 * Dc * 2 * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])) * detJ;
+							// if( n < 10000) {
+							// 	EMatrixSolve_syn[m][n] += (Nx[m] * Nx[n] + dt/4 * Dc * 1.5 * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])) * detJ;
+							// } else {
+							// 	EMatrixSolve_syn[m][n] += (Nx[m] * Nx[n] + dt/4 * Dc * 0.5 * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])) * detJ;
+							// }
+
+						EMatrixSolve_syn[m][n] += (Nx[m] * Nx[n] + dt * Dc * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])) * detJ;
 
 						// EMatrixSolve_tub[m][n] += (Nx[m] * Nx[n] - dt / vars_st[2] * (
 						// 	(- Diff * (vars_st[2] * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])))
@@ -2511,8 +2526,8 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 	float maxVal = *std::max_element(phiSum.begin(), phiSum.end());
 
 	// Filter based on a normalized threshold
-	const float normalizedThreshold = 1.4;
-	// const float normalizedThreshold = 1.3;
+	// const float normalizedThreshold = 1.4;
+	const float normalizedThreshold = 1.3;
 	// const float normalizedThreshold = 1.1;
 	std::transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [normalizedThreshold](float val) {
 		return val < normalizedThreshold ? 0.0f : val;
@@ -3042,8 +3057,15 @@ void NeuronGrowth::SaveNGvars(vector<vector<float>> &NGvars, int NX, int NY, str
 
 void NeuronGrowth::PrintOutNeurons(vector<vector<int>> neurons) 
 {
-	ierr = PetscPrintf(PETSC_COMM_WORLD, "-----------------------------------------------------------------------------------------------\n");
-	int dwnRatio = 1;
+	// ierr = PetscPrintf(PETSC_COMM_WORLD, "-----------------------------------------------------------------------------------------------\n");
+	
+	int dwnRatio = (int)neurons[0].size()/(int)78 + 1; // assuming line length is 78 characters
+
+	for (size_t i = 0; i < 78; i++) {
+		ierr = PetscPrintf(PETSC_COMM_WORLD, "-");
+	}
+	ierr = PetscPrintf(PETSC_COMM_WORLD, "\n");
+
 	for (size_t i = 0; i < neurons.size(); i+=2*dwnRatio) {
 		ierr = PetscPrintf(PETSC_COMM_WORLD, "| ");
 		for (size_t j = 0; j < neurons[i].size(); j+=dwnRatio) {
@@ -3056,7 +3078,11 @@ void NeuronGrowth::PrintOutNeurons(vector<vector<int>> neurons)
 		}
 		ierr = PetscPrintf(PETSC_COMM_WORLD, "|\n");
 	}
-	ierr = PetscPrintf(PETSC_COMM_WORLD, "-----------------------------------------------------------------------------------------------\n");
+	// ierr = PetscPrintf(PETSC_COMM_WORLD, "-----------------------------------------------------------------------------------------------\n");
+	for (size_t i = 0; i < 78; i++) {
+		ierr = PetscPrintf(PETSC_COMM_WORLD, "-");
+	}
+	ierr = PetscPrintf(PETSC_COMM_WORLD, "\n");
 }
 
 PetscErrorCode FormFunction_phi(SNES snes, Vec x, Vec F, void *ctx)
@@ -3346,6 +3372,8 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 	/*==============================================================================*/
 	// Declare and initialize Neuron Growth simulation
 	NeuronGrowth NG;
+	// NG.SetVariables("./simulation_parameters.txt");
+
 	// Set the number of iterations, number of neurons, and the end iteration from provided variables
 	NG.n = iter;  // Assign iteration count
 	NG.numNeuron = seed.size();  // Set the number of neurons based on the size of 'seed'
@@ -3417,7 +3445,7 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 	// Allocate geodist and axonTip matrices
 	std::vector<std::vector<float>> geodist(NG.numNeuron, std::vector<float>(distances[0].size(), 0));
 	std::vector<std::vector<float>> axonTip(NG.numNeuron, std::vector<float>(distances[0].size(), 0));
-	PetscPrintf(PETSC_COMM_WORLD, "Pre-allocated vectors!------------------------------------------------------\n");
+	PetscPrintf(PETSC_COMM_WORLD, "Pre-allocated vectors!-------------------------------------------------------\n");
 
 	/*==============================================================================*/
 	// Main time iterations
@@ -3778,8 +3806,10 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		
 		/*==============================================================================*/
 		// Command line update
-		PetscPrintf(PETSC_COMM_WORLD, "Step:%d/%d | Phi:[%d] %.3fs | Syn:%d[%d] Tub:%d[%d] %.3fs | Tip:%.3fs | DOFs:%d |\n",\
-		NG.n, NG.end_iter, NR_itr, t_phi, reason_syn, its_syn, reason_tub, its_tub, t_synTub, t_tip, NG.phi.size()); CHKERRQ(NG.ierr);
+		if (NG.n % 10 == 0) {
+			PetscPrintf(PETSC_COMM_WORLD, "Step:%d/%d | Phi:[%d] %.3fs | Syn:%d[%d] Tub:%d[%d] %.3fs | Tip:%.3fs | DOFs:%d |\n",\
+			NG.n, NG.end_iter, NR_itr, t_phi, reason_syn, its_syn, reason_tub, its_tub, t_synTub, t_tip, NG.phi.size()); CHKERRQ(NG.ierr);
+		}
 
 		/*==============================================================================*/
 		// Writing results to files

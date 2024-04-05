@@ -678,17 +678,22 @@ void ObtainRefineID_coarse(vector<float> phi, vector<Vertex2D> cpts, int NX, int
 	rfid.clear();
 	rftype.clear();
 	int ind = 0;
-	int offset = 1 + (NY+1); // offset for using phi on cpts to determine local refinements on elements
-	// int offset = 1;
+	// int offset = 1 + (NY+1); // offset for using phi on cpts to determine local refinements on elements
+	int offset = 2 + 2*(NY+1); // offset for using phi on cpts to determine local refinements on elements
 
 	for (size_t i = offset; i < cpts.size() - offset; i++) {
 		float x = cpts[i].coor[0];
 		float y = cpts[i].coor[1];
 		// std::cout << x << " ";
 		rfid.push_back(ind - round(x/2) + originX + offset); // push back element id (calculated based on vertex id, ind)
-		float averagePhi = (phi[i-(NY+1)+1] + phi[i-(NY+1)] + phi[i-(NY+1)-1] + phi[i-1] + phi[i] + phi[i+1] + phi[i+(NY+1)+1] + phi[i+(NY+1)] + phi[i+(NY+1)-1])/9;
+		// float averagePhi = (phi[i-(NY+1)+1] + phi[i-(NY+1)] + phi[i-(NY+1)-1] + phi[i-1] + phi[i] + phi[i+1] + phi[i+(NY+1)+1] + phi[i+(NY+1)] + phi[i+(NY+1)-1])/9;
+		float averagePhi = (phi[i-2*(NY+1)+2] + phi[i-2*(NY+1)+1] + phi[i-2*(NY+1)] + phi[i-2*(NY+1)-1] + phi[i-2*(NY+1)-2] 
+			+ phi[i-(NY+1)+2] + phi[i-(NY+1)+1] + phi[i-(NY+1)] + phi[i-(NY+1)-1] + phi[i-(NY+1)-2] 
+			+ phi[i-2] + phi[i-1] + phi[i] + phi[i+1] + phi[i+2]
+			+ phi[i+(NY+1)+2] + phi[i+(NY+1)+1] + phi[i+(NY+1)] + phi[i+(NY+1)-1] + phi[i+(NY+1)-2]
+			+ phi[i+2*(NY+1)+2] + phi[i+2*(NY+1)+1] + phi[i+2*(NY+1)] + phi[i+2*(NY+1)-1] + phi[i+2*(NY+1)-2])/16;
 		
-		if ((averagePhi < 0.95) && (averagePhi > 0.01)) {
+		if ((averagePhi < 0.99) && (averagePhi > 0.01)) {
 			rftype.push_back(0); // default to type 0 local refinement
 		} else { // maintain domain element strcuture, needed for later local refinement limitation (face-face intersection)
 			rftype.push_back(5); // 5 for elemetmpnts without local refinement
