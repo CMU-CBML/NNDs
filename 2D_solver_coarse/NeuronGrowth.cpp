@@ -2116,7 +2116,7 @@ void NeuronGrowth::BuildLinearSystemProcessNG_syn_tub(const vector<Element2D> &t
 
 					// EVectorSolve_tub[m] += (dt / vars_st[2] * vars_st[11] + vars_st[6]) * Nx[m] * detJ;
 					// EVectorSolve_tub[m] += (dt / vars_st[2] + vars_st[6]) * Nx[m] * detJ;
-					EVectorSolve_tub[m] += (vars_st[2] * vars_st[6] + dt * vars_st[11]) * Nx[m] * detJ;
+					EVectorSolve_tub[m] += (vars_st[2] * vars_st[6] + dt/4 * vars_st[11]) * Nx[m] * detJ;
 
 					for (size_t n = 0; n < nen; n++) {
 						if (judge_syn == 0)
@@ -2126,7 +2126,7 @@ void NeuronGrowth::BuildLinearSystemProcessNG_syn_tub(const vector<Element2D> &t
 							// 	EMatrixSolve_syn[m][n] += (Nx[m] * Nx[n] + dt/4 * Dc * 0.5 * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])) * detJ;
 							// }
 
-						EMatrixSolve_syn[m][n] += (Nx[m] * Nx[n] + dt * Dc * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])) * detJ;
+						EMatrixSolve_syn[m][n] += (Nx[m] * Nx[n] + dt/4 * Dc * 1.5 * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])) * detJ;
 
 						// EMatrixSolve_tub[m][n] += (Nx[m] * Nx[n] - dt / vars_st[2] * (
 						// 	(- Diff * (vars_st[2] * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])))
