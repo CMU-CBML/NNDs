@@ -2527,10 +2527,10 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 
 	// Filter based on a normalized threshold
 	// const float normalizedThreshold = 1.4;
-	// const float normalizedThreshold = 1.3;
+	const float normalizedThreshold = 1.3;
 	// const float normalizedThreshold = 1.2;
 	// const float normalizedThreshold = 1.1;
-	const float normalizedThreshold = 0.8*maxVal;
+	// const float normalizedThreshold = 0.8*maxVal;
 	std::transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [normalizedThreshold](float val) {
 		return val < normalizedThreshold ? 0.0f : val;
 	});
@@ -2718,21 +2718,6 @@ bool NeuronGrowth::IsLocalMaximum(const vector<float>& matrix, const int& rows, 
 	}
 	return true;
 }
-
-// bool NeuronGrowth::IsLocalMaximum(const vector<float>& matrix, const int& rows, const int& cols, const int& x, const int& y) {
-// 	float value = matrix[x * cols + y];
-// 	for (int dx = -1; dx <= 1; ++dx) {
-// 		for (int dy = -1; dy <= 1; ++dy) {
-// 			int nx = x + dx, ny = y + dy;
-// 			if (nx >= 0 && nx < rows && ny >= 0 && ny < cols && !(dx == 0 && dy == 0)) {
-// 				if (matrix[nx * cols + ny] >= value) {  // Ensure >= for correct local maximum identification
-// 					return false;
-// 				}
-// 			}
-// 		}
-// 	}
-// 	return true;
-// }
 
 vector<float> NeuronGrowth::FindCentroidsOfLocalMaximaClusters(const vector<float>& matrix, const int& rows, const int& cols) {
 	vector<vector<pair<int, int>>> clusters = FindClusters(matrix, rows, cols);
@@ -3504,27 +3489,27 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		// 	localMaximaMatrix[maxInd] = 5;
 		// }
 
-		if (NG.n > 2000) {
-			// Iterate over axonTip using range-based for loops
-			const int range = 2 * NY + 1;
-			for (size_t k = 0; k < NG.numNeuron; ++k) {
-				for (size_t l = 1; l < cpts_fine.size() - (2 * NY + 1) - 1; ++l) {
-					if (axonTip[k][l] != 0) {
-						// // Iterate over the 3x3 neighborhood of each non-zero element
-						// for (int i = -1; i <= 1; ++i) {
-						// 	for (int j = -1; j <= 1; ++j) {
-						// 		// Skip the central element
-						// 		if (i != 0 || j != 0) {
-						// 			// Calculate the index for localMaximaMatrix
-						// 			localMaximaMatrix[l + j * range - i] = 5;
-						// 		}
-						// 	}
-						// }
-						localMaximaMatrix[l] = 5;
-					}
-				}
-			}
-		}
+		// if (NG.n > 2000) {
+		// 	// Iterate over axonTip using range-based for loops
+		// 	const int range = 2 * NY + 1;
+		// 	for (size_t k = 0; k < NG.numNeuron; ++k) {
+		// 		for (size_t l = 1; l < cpts_fine.size() - (2 * NY + 1) - 1; ++l) {
+		// 			if (axonTip[k][l] != 0) {
+		// 				// // Iterate over the 3x3 neighborhood of each non-zero element
+		// 				// for (int i = -1; i <= 1; ++i) {
+		// 				// 	for (int j = -1; j <= 1; ++j) {
+		// 				// 		// Skip the central element
+		// 				// 		if (i != 0 || j != 0) {
+		// 				// 			// Calculate the index for localMaximaMatrix
+		// 				// 			localMaximaMatrix[l + j * range - i] = 5;
+		// 				// 		}
+		// 				// 	}
+		// 				// }
+		// 				localMaximaMatrix[l] = 5;
+		// 			}
+		// 		}
+		// 	}
+		// }
 		NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, kdTree_fine, cpts);
 
 		toc(t_tip);
@@ -3810,7 +3795,7 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		
 		/*==============================================================================*/
 		// Command line update
-		if (NG.n % 10 == 0) {
+		if (NG.n % 1 == 0) {
 			PetscPrintf(PETSC_COMM_WORLD, "Step:%d/%d | Phi:[%d] %.3fs | Syn:%d[%d] Tub:%d[%d] %.3fs | Tip:%.3fs | DOFs:%d |\n",\
 			NG.n, NG.end_iter, NR_itr, t_phi, reason_syn, its_syn, reason_tub, its_tub, t_synTub, t_tip, NG.phi.size()); CHKERRQ(NG.ierr);
 		}
