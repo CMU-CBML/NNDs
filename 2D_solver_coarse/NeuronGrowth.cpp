@@ -2527,8 +2527,10 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 
 	// Filter based on a normalized threshold
 	// const float normalizedThreshold = 1.4;
-	const float normalizedThreshold = 1.3;
+	// const float normalizedThreshold = 1.3;
+	// const float normalizedThreshold = 1.2;
 	// const float normalizedThreshold = 1.1;
+	const float normalizedThreshold = 0.8*maxVal;
 	std::transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [normalizedThreshold](float val) {
 		return val < normalizedThreshold ? 0.0f : val;
 	});
@@ -2646,23 +2648,23 @@ vector<float> NeuronGrowth::KeepOneClusterWithMaxValue(const vector<float>& matr
 		}
 	}
 
-	// for (const auto& pos : maxCluster) {
-	// 	int row = pos.first;
-	// 	int col = pos.second;
-	// 	localMaxima[row * cols + col] = 1.0f;
-	// }
-
-	// Calculate centroid of local maxima
-	float sumRow = 0, sumCol = 0;
-	for (const auto& maxPos : maxCluster) {
-		sumRow += maxPos.first;
-		sumCol += maxPos.second;
+	for (const auto& pos : maxCluster) {
+		int row = pos.first;
+		int col = pos.second;
+		localMaxima[row * cols + col] = 1.0f;
 	}
 
-	int centroidRow = static_cast<int>(round(sumRow / maxCluster.size()));
-	int centroidCol = static_cast<int>(round(sumCol / maxCluster.size()));
+	// // Calculate centroid of local maxima
+	// float sumRow = 0, sumCol = 0;
+	// for (const auto& maxPos : maxCluster) {
+	// 	sumRow += maxPos.first;
+	// 	sumCol += maxPos.second;
+	// }
 
-	localMaxima[centroidRow * cols + centroidCol] = 1.0f;
+	// int centroidRow = static_cast<int>(round(sumRow / maxCluster.size()));
+	// int centroidCol = static_cast<int>(round(sumCol / maxCluster.size()));
+
+	// localMaxima[centroidRow * cols + centroidCol] = 1.0f;
 
 
 	return localMaxima;
@@ -3059,7 +3061,8 @@ void NeuronGrowth::PrintOutNeurons(vector<vector<int>> neurons)
 {
 	// ierr = PetscPrintf(PETSC_COMM_WORLD, "-----------------------------------------------------------------------------------------------\n");
 	
-	int dwnRatio = (int)neurons[0].size()/(int)78 + 1; // assuming line length is 78 characters
+	// int dwnRatio = (int)neurons[0].size()/(int)78 + 1; // assuming line length is 78 characters
+	int dwnRatio = 1; // assuming line length is 78 characters
 
 	for (size_t i = 0; i < 78; i++) {
 		ierr = PetscPrintf(PETSC_COMM_WORLD, "-");
@@ -3466,6 +3469,7 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		id = ConvertTo1DFloatVector(neurons);
 		NG.DetectTipsMulti(phi_fine, id, NG.numNeuron, tip, NX*2, NY*2);
 		localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX*2+1, NY*2+1);
+		// localMaximaMatrix = NG.FindLocalMaximaInClusters(tip, NX*2+1, NY*2+1);
 
 		distances = NG.CalculateQuasiEuclideanDistanceFromPoint(neurons, seed, originX, originY);
 		vector<vector<float>> axonTip(NG.numNeuron, vector<float>(distances[0].size(), 0));
