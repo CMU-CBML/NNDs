@@ -262,9 +262,13 @@ public:
 	void IdentifyNeurons(vector<float>& phi_in, vector<vector<int>>& neurons, const vector<vector<int>>& prev_id,
 		vector<array<float, 2>> seed, const int& NX, const int& NY, const int& originX, const int& originY);
 	bool isValid(int x, int y, int rows, int cols);
-	vector<vector<int>> CalculateGeodesicDistanceFromPoint(vector<vector<int>> grid, int startX, int startY); // single neuron
-	vector<vector<vector<int>>> CalculateGeodesicDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, const int& originX, const int& originY); // multiple neurons
+	// vector<vector<int>> CalculateGeodesicDistanceFromPoint(vector<vector<int>> grid, int startX, int startY); // single neuron
+	// vector<vector<vector<int>>> CalculateGeodesicDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, const int& originX, const int& originY); // multiple neurons
+	// vector<vector<vector<float>>> CalculateQuasiEuclideanDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, const int& originX, const int& originY);
 	vector<vector<vector<float>>> CalculateQuasiEuclideanDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, const int& originX, const int& originY);
+	// vector<vector<float>> CalculateGeodesicDistanceFromPoint(const vector<vector<int>>& neurons, int startX, int startY);
+	// vector<vector<vector<float>>> CalculateAllGeodesicDistancesFromPoints(const vector<vector<int>>& neurons, const vector<array<float, 2>>& seedPoints, const int& originX, const int& originY);
+	vector<vector<vector<float>>> CalculateGeodesicDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, const int& originX, const int& originY);
 
 	vector<vector<pair<int, int>>> TraceNeurites(vector<vector<float>>& geodist);
 	void SaveNGvars(vector<vector<float>> &NGvars, int NX, int NY, string fn);
