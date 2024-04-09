@@ -96,7 +96,7 @@ NeuronGrowth::NeuronGrowth(){
 
 	// variable setup
 	kappa			= 2.0;		// kappa;
-	dt			= 5e-4;		// time step
+	dt			= 1e-3;		// time step
 	Dc			= 3;		// syn D
 	alpha			= 0.9;		// alpha
 	alphaOverPi		= alpha / PI; 	// alphOverPix
@@ -110,6 +110,8 @@ NeuronGrowth::NeuronGrowth(){
 	betaT			= 0.001;	// beta_t
 	Diff			= 4;		// Diff
 	source_coeff		= 15;		// source_coeff
+
+	M_ratio			= 3;
 }
 
 void NeuronGrowth::AssignProcessor(vector<vector<int>> &ele_proc)
@@ -1777,13 +1779,13 @@ void NeuronGrowth::preparePhaseField() {
 					if (eleTp > 0) {
 						eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(50 * eleTb - 0) * (1 - eleS));
 						if (eleTp > 2) {
-							pre_eleMp.push_back(100);
-						} else {
 							pre_eleMp.push_back(50);
+						} else {
+							pre_eleMp.push_back(50 / M_ratio);
 						}
 					} else {
 						eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(r * eleTb - g) * (1 - eleS));
-						pre_eleMp.push_back(5);
+						pre_eleMp.push_back(5 / M_ratio);
 					}
 					
 					// ElementValue(pre_Nx[ind], eleMphi, eleMp);
@@ -2452,11 +2454,11 @@ void NeuronGrowth::BuildLinearSystemProcessNG_syn_tub(const vector<Element2D> &t
 
 					// EVectorSolve_tub[m] += (dt / vars_st[2] * vars_st[11] + vars_st[6]) * Nx[m] * detJ;
 					// EVectorSolve_tub[m] += (dt / vars_st[2] + vars_st[6]) * Nx[m] * detJ;
-					EVectorSolve_tub[m] += (vars_st[2] * vars_st[6] + (dt/4) * vars_st[11]) * Nx[m] * detJ;
+					EVectorSolve_tub[m] += (vars_st[2] * vars_st[6] + (dt/4) /M_ratio * vars_st[11]) * Nx[m] * detJ;
 
 					for (int n = 0; n < nen; n++) {
 						if (judge_syn == 0)
-							EMatrixSolve_syn[m][n] += (Nx[m] * Nx[n] + dt/4 * Dc * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])) * detJ;
+							EMatrixSolve_syn[m][n] += (Nx[m] * Nx[n] + dt/4 /M_ratio * Dc * 1.5 * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])) * detJ;
 
 						// EMatrixSolve_tub[m][n] += (Nx[m] * Nx[n] - dt / vars_st[2] * (
 						// 	(- Diff * (vars_st[2] * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])))
@@ -2464,7 +2466,7 @@ void NeuronGrowth::BuildLinearSystemProcessNG_syn_tub(const vector<Element2D> &t
 						// 	- (betaT * (vars_st[2] * Nx[m]) * Nx[n]))
 						// 	) * detJ;
 
-						EMatrixSolve_tub[m][n] += ((vars_st[0] * Nx[m] + vars_st[2] * Nx[m]) * Nx[n] - (dt/4) * (
+						EMatrixSolve_tub[m][n] += ((vars_st[0] * Nx[m] + vars_st[2] * Nx[m]) * Nx[n] - (dt/4) /M_ratio * (
 							(- Diff * (vars_st[2] * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])))
 							- (alphaT * (vars_st[2] * (dNdx[m][0] + dNdx[n][1]) + Nx[m] * (vars_st[3] + vars_st[4])) * Nx[n])
 							- (betaT * (vars_st[2] * Nx[m]) * Nx[n]))
@@ -3286,6 +3288,67 @@ vector<vector<int>> NeuronGrowth::CalculateGeodesicDistanceFromPoint(vector<vect
 	return distances;
 }
 
+
+vector<vector<float>> NeuronGrowth::CalculateQuasiEuclideanDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, const int& originX, const int& originY) {
+	int rows = neurons.size();
+	if (rows == 0) return {};
+
+	int cols = neurons[0].size();
+
+	// Initialize distances matrix with zeros
+	vector<vector<float>> distances(vector<vector<float>>(rows, vector<float>(cols, -1.0f)));
+
+	// Define the direction arrays
+	static const int dx[] = {-1, 1, 0, 0};
+	static const int dy[] = {0, 0, -1, 1};
+
+	int i = 0;
+	int startX = seed[i][0] - originX;
+	int startY = seed[i][1] - originY;
+
+	// Mark the starting point as visited
+	vector<vector<bool>> visited(rows, vector<bool>(cols, false));
+	visited[startX][startY] = true;
+
+	// Initialize the BFS queue with the starting point
+	queue<pair<int, int>> q;
+	q.push({startX, startY});
+	distances[startX][startY] = 0.0f;
+
+	// BFS loop
+	while (!q.empty()) {
+		pair<int, int> current = q.front();
+		q.pop();
+
+		int x = current.first;
+		int y = current.second;
+
+		// Check neighboring cells
+		for (int j = 0; j < 4; ++j) {
+			int newX = x + dx[j];
+			int newY = y + dy[j];
+
+			if (isValid(newX, newY, rows, cols) && neurons[newX][newY] == neurons[startX][startY] && !visited[newX][newY]) {
+				visited[newX][newY] = true;
+
+				// Calculate Quasi-Euclidean distance
+				float dx = abs(newX - startX);
+				float dy = abs(newY - startY);
+				float distance = distances[x][y] + sqrt(dx * dx + dy * dy);
+
+				// Update distance if it's smaller than the previous or uninitialized
+				if (distances[newX][newY] == -1.0f || distance < distances[newX][newY])
+					distances[newX][newY] = distance;
+
+				// Add the neighboring cell to the BFS queue
+				q.push({newX, newY});
+			}
+		}
+	}
+
+	return distances;
+}
+
 // Function to calculate geodesic distance from a point
 vector<vector<array<int, 2>>> NeuronGrowth::NeuriteTracing(vector<vector<double>> distance) 
 {
@@ -3638,10 +3701,12 @@ int RunNG(int n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D> cpt
 	
 	/*========================================================*/
 	// Initial neuron identifications and geodesic distance calculation
-	vector<vector<int>> neurons, distances;
+	vector<vector<int>> neurons;
+	vector<vector<float>> distances;
 	vector<float> id, id_lf, tip;
 	NG.IdentifyNeurons(neurons, seed, NX, NY, originX, originY);
-	distances = NG.CalculateGeodesicDistanceFromPoint(neurons, seed, originX, originY);
+	// distances = NG.CalculateGeodesicDistanceFromPoint(neurons, seed, originX, originY);
+	distances = NG.CalculateQuasiEuclideanDistanceFromPoint(neurons, seed, originX, originY);
 	PetscPrintf(PETSC_COMM_WORLD, "Calculated geodesic distances!-----------------------------------------------\n");
 	id = ConvertTo1DFloatVector(neurons);
 	NG.DetectTipsMulti(id, NG.numNeuron, tip, NX, NY);
@@ -3959,7 +4024,7 @@ int RunNG(int n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D> cpt
 		// if ((NG.n % 5 == 0) && (NG.n != 0)) {
 		vector<float> Mphi, localMaximaMatrix;
 		vector<float> geodist;
-		if ((NG.n % 1 == 0) || (NG.n == 0)) {	
+		if ((NG.n % 2 == 0) || (NG.n == 0)) {	
 
 			PetscPrintf(PETSC_COMM_WORLD, "Step:%d/%d | Phi:[%d]%.3fs | Syn:%d[%d] Tub:%d[%d] %.3fs | Mesh:%d |\n",\
 			NG.n, NG.end_iter, NR_itr, t_phi, reason_syn, its_syn, reason_tub, its_tub, t_synTub, NG.phi.size()); CHKERRQ(NG.ierr);
@@ -4010,27 +4075,33 @@ int RunNG(int n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D> cpt
 
 			// 	// localMaximaMatrix = NG.FindLocalMaximaInClusters(tip, NX+1, NY+1);
 			// 	// NG.tips = InterpolateVars(localMaximaMatrix, cpts_initial, cpts, 2);
-			distances = NG.CalculateGeodesicDistanceFromPoint(neurons, seed, originX, originY);
+			
+			// distances = NG.CalculateGeodesicDistanceFromPoint(neurons, seed, originX, originY);
+			
+			if (NG.n > 5000) {
+				distances = NG.CalculateQuasiEuclideanDistanceFromPoint(neurons, seed, originX, originY);
 
-			geodist = ConvertTo1DFloatVector(distances);
-			float maxVal = 0;
-			int maxInd;
-			for (size_t l = 0; l < geodist.size(); l++) {
-				if (geodist[l] > maxVal && geodist[l] != INF && localMaximaMatrix[l] != 0) {
-					maxVal = geodist[l];
-					maxInd = l;
+				geodist = ConvertTo1DFloatVector(distances);
+				float maxVal = 0;
+				int maxInd;
+				for (size_t l = 0; l < geodist.size(); l++) {
+					if (geodist[l] > maxVal && geodist[l] != INF && localMaximaMatrix[l] != 0) {
+						maxVal = geodist[l];
+						maxInd = l;
+					}
 				}
-			}
-			const int range = NY + 1;
-			if (maxInd > 1) {
-			// if (maxInd > 1 && maxInd < range) {
-				// for (int i = -1; i <= 1; i++) {
-				// 	for (int j = -1; j <= 1; j++) {
-				// 		// Calculate the index for localMaximaMatrix
-				// 		localMaximaMatrix[maxInd + j * range - i] = 20;
+				const int range = NY + 1;
+				if (maxInd > 1) {
+					// std::cout << maxInd << std::endl;
+				// if (maxInd > 1 && maxInd < (localMaximaMatrix.size() - range)) {
+				// 	for (int i = -1; i <= 1; i++) {
+				// 		for (int j = -1; j <= 1; j++) {
+				// 			// Calculate the index for localMaximaMatrix
+				// 			localMaximaMatrix[maxInd + j * range - i] = 20;
+				// 		}
 				// 	}
-				// }
-				localMaximaMatrix[maxInd] = 20;
+					localMaximaMatrix[maxInd] = 20;
+				}
 			}
 
 			NG.tips = localMaximaMatrix;
