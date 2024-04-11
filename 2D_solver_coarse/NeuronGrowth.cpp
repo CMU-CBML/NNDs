@@ -19,11 +19,10 @@
 using namespace std;
 typedef unsigned int uint;
 const float PI = 3.1415926;
+const int INF = 1e9;
 
 stack<clock_t> tictoc_stack;
 float t_phi, t_synTub, t_syn, t_tub, t_tip, t_write(0), t_total(0);
-
-const int INF = 1e9;
 
 void tic() 
 {
@@ -60,32 +59,6 @@ NeuronGrowth::NeuronGrowth(){
 	judge_tub = 0;
 	sum_grad_phi0_local = 0;
 	sum_grad_phi0_global = 0;
-
-	// // integer variable setup
-	// expandCK_invl		= 100; 		// var_save_invl
-	// var_save_invl		= 100; 		// var_save_invl
-	// numNeuron 		= 1;	     	// numNeuron
-	// gc_sz			= 2;	     	// gc_sz
-	// aniso 			= 6;   		// aniso
-	// gamma 			= 10;  		// gamma
-	// seed_radius 		= 15;		// seed radius
-
-	// // variable setup
-	// kappa			= 2.0;		// kappa;
-	// dt			= 1e-3;		// time step
-	// Dc			= 3;		// syn D
-	// alpha			= 0.9;		// alpha
-	// alphaOverPi		= alpha / PI; 	// alphOverPix
-	// M_phi			= 60;		// M_phi
-	// s_coeff			= 0.007;	// s_coeff
-	// delta			= 0.20;		// delta
-	// epsilonb		= 0.04;		// epsilonb
-	// r			= 5;		// r
-	// g			= 0.1;		// g
-	// alphaT 			= 0.001;			// alpha_t
-	// betaT			= 0.001;	// beta_t
-	// Diff			= 4;		// Diff
-	// source_coeff		= 15;		// source_coeff
 }
 
 void NeuronGrowth::AssignProcessor(vector<vector<int>> &ele_proc)
@@ -132,6 +105,7 @@ void NeuronGrowth::SetVariables(string fn_par) {
 		else if (variableName == "betaT") iss >> betaT;
 		else if (variableName == "Diff") iss >> Diff;
 		else if (variableName == "source_coeff") iss >> source_coeff;
+		else if (variableName == "M_ratio") iss >> M_ratio;
 	}
 	inputFile.close();
 	PetscPrintf(PETSC_COMM_WORLD, "Parameter Loaded!\n");
@@ -1625,8 +1599,8 @@ void NeuronGrowth::preparePhaseField() {
 				// ElementValue(pre_Nx[ind], eleMphi, eleMp);
 				// pre_eleMp.push_back(eleMp);
 
-				// adjust rg (assembly rate) and sg (disassembly rate) based on detected tips
-				if (n < 1) {
+								// adjust rg (assembly rate) and sg (disassembly rate) based on detected tips
+				if (n < 50) {
 					eleE = alphaOverPi*atan(gamma * (1 - eleS));
 					pre_eleMp.push_back(50);
 				} else {
@@ -1645,6 +1619,26 @@ void NeuronGrowth::preparePhaseField() {
 						// pre_eleMp.push_back(2);
 					}
 				}
+
+				// // adjust rg (assembly rate) and sg (disassembly rate) based on detected tips
+				// if (n < 50) {
+				// 	eleE = alphaOverPi*atan(gamma * (1 - eleS));
+				// 	pre_eleMp.push_back(50);
+				// } else {
+				// 	if (eleTp > 0) {
+				// 		eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(50 * eleTb - 0) * (1 - eleS));
+				// 		if (eleTp > 2) {
+				// 			pre_eleMp.push_back(60);
+				// 		} else {
+				// 			pre_eleMp.push_back(60 / M_ratio);
+				// 		}
+				// 	} else {
+				// 		eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(r * eleTb - g) * (1 - eleS));
+				// 		pre_eleMp.push_back(6 / M_ratio);
+				// 		// pre_eleMp.push_back(6);
+				// 	}
+				// }
+
 
 				// calculate C1 variable for phase field energy term
 				float C1 = eleE - pre_C0[ind]; // C1 = E - (0.5 + 6 * user->s_coeff * sqrt(pow(dThedx, 2) + pow(dThedy, 2));
@@ -2117,17 +2111,12 @@ void NeuronGrowth::BuildLinearSystemProcessNG_syn_tub(const vector<Element2D> &t
 
 					// EVectorSolve_tub[m] += (dt / vars_st[2] * vars_st[11] + vars_st[6]) * Nx[m] * detJ;
 					// EVectorSolve_tub[m] += (dt / vars_st[2] + vars_st[6]) * Nx[m] * detJ;
-					EVectorSolve_tub[m] += (vars_st[2] * vars_st[6] + dt/4 * vars_st[11]) * Nx[m] * detJ;
+					EVectorSolve_tub[m] += (vars_st[2] * vars_st[6] + (dt/4) * vars_st[11]) * Nx[m] * detJ;
 
 					for (size_t n = 0; n < nen; n++) {
 						if (judge_syn == 0)
-							// if( n < 10000) {
-							// 	EMatrixSolve_syn[m][n] += (Nx[m] * Nx[n] + dt/4 * Dc * 1.5 * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])) * detJ;
-							// } else {
-							// 	EMatrixSolve_syn[m][n] += (Nx[m] * Nx[n] + dt/4 * Dc * 0.5 * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])) * detJ;
-							// }
 
-						EMatrixSolve_syn[m][n] += (Nx[m] * Nx[n] + dt/4 * Dc * 1.5 * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])) * detJ;
+						EMatrixSolve_syn[m][n] += (Nx[m] * Nx[n] + (dt/4) * Dc * 1.75 * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])) * detJ;
 
 						// EMatrixSolve_tub[m][n] += (Nx[m] * Nx[n] - dt / vars_st[2] * (
 						// 	(- Diff * (vars_st[2] * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])))
@@ -2135,7 +2124,7 @@ void NeuronGrowth::BuildLinearSystemProcessNG_syn_tub(const vector<Element2D> &t
 						// 	- (betaT * (vars_st[2] * Nx[m]) * Nx[n]))
 						// 	) * detJ;
 
-						EMatrixSolve_tub[m][n] += ((vars_st[0] * Nx[m] + vars_st[2] * Nx[m]) * Nx[n] - dt/4 * (
+						EMatrixSolve_tub[m][n] += ((vars_st[0] * Nx[m] + vars_st[2] * Nx[m]) * Nx[n] - (dt/4) * (
 							(- Diff * (vars_st[2] * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])))
 							- (alphaT * (vars_st[2] * (dNdx[m][0] + dNdx[n][1]) + Nx[m] * (vars_st[3] + vars_st[4])) * Nx[n])
 							- (betaT * (vars_st[2] * Nx[m]) * Nx[n]))
@@ -2519,6 +2508,28 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 		}
 	}
 
+	// // Iterate with precomputed values and reduced condition checks
+	// for (int i = (5 * NY + 5); i < (length - 4 * NY - 4); ++i) {
+	// 	if (cellBoundary(phi_fine[i], threshold) > 0 && std::round(id[i]) != 9) {
+	// 		const int radius = 4; // Define the radius of the circle
+	// 		for (int j = -radius; j <= radius; ++j) {
+	// 			for (int k = -radius; k <= radius; ++k) {
+	// 				if (j * j + k * k <= radius * radius) { // Check if the point (j, k) is inside the circle
+	// 					int index = i + j * offsetY + k;
+	// 					if (index >= 0 && index < length) { // Ensure index is within bounds
+	// 						float roundedId = std::round(id[index]);
+	// 						if (roundedId == std::round(id[i])) {
+	// 							phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
+	// 						}
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 		phiSum[i] = phiSum[i] > 0 ? cellBoundary(phi_fine[i], phiThreshold) / phiSum[i] : 0;
+	// 		if (std::isnan(phiSum[i])) phiSum[i] = 0; // Handle NaN explicitly, though it should not occur now
+	// 	}
+	// }
+
 	// Normalize phiSum by the standard deviation value
 	float stdVal = RmOutlier(phiSum);
 	std::transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [stdVal](float val) { return val / stdVal; });
@@ -2528,8 +2539,8 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 
 	// Filter based on a normalized threshold
 	// const float normalizedThreshold = 1.4;
-	const float normalizedThreshold = 1.3;
-	// const float normalizedThreshold = 1.2;
+	// const float normalizedThreshold = 1.3; //
+	const float normalizedThreshold = 1.2;
 	// const float normalizedThreshold = 1.1;
 	// const float normalizedThreshold = 0.8*maxVal;
 	std::transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [normalizedThreshold](float val) {
@@ -3572,9 +3583,8 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			NG.DetectTipsMulti(phi_fine, id, NG.numNeuron, tip, NX*2, NY*2);
 			localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX*2+1, NY*2+1);
 			// localMaximaMatrix = NG.FindLocalMaximaInClusters(tip, NX*2+1, NY*2+1);
-
-			distances = NG.CalculateQuasiEuclideanDistanceFromPoint(neurons, seed, originX, originY);
-			// distances = NG.CalculateGeodesicDistanceFromPoint(neurons, seed, originX, originY);
+			// distances = NG.CalculateQuasiEuclideanDistanceFromPoint(neurons, seed, originX, originY);
+			distances = NG.CalculateGeodesicDistanceFromPoint(neurons, seed, originX, originY);
 
 			vector<vector<float>> axonTip(NG.numNeuron, vector<float>(distances[0].size(), 0));
 			for (size_t i = 0; i < distances.size(); i++) {
@@ -3582,87 +3592,49 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 				float maxVal(0);
 				int maxInd(0);
 				for (size_t l = 1; l < cpts_fine.size() - (2 * NY + 1) - 1; ++l) {
-					// if (localMaximaMatrix[l] == 1) {
-					// 	if (geodist[i][l] > maxVal) {
-					// 		maxVal = max(geodist[i][l], maxVal);
-					// 		maxInd = l;
-					// 	}
-					// }
-					if (localMaximaMatrix[l] == 1 && geodist[i][l] > maxVal) {
+					// if (localMaximaMatrix[l] == 1 && geodist[i][l] >= maxVal) {
+					// if (tip[l] != 0 && geodist[i][l] >= maxVal) {
+					if (geodist[i][l] >= maxVal) {
 						maxVal = geodist[i][l];
 						maxInd = l;
 					}
 				}
-				// std::cout << maxInd << std::endl;
 				if (maxInd != 0) {
-					// localMaximaMatrix[maxInd] = 20;
+					// localMaximaMatrix[maxInd] = 5;
 					const int range = 2 * NY + 1;
 					for (int i = -1; i <= 1; ++i) {
 						for (int j = -1; j <= 1; ++j) {
 							// Calculate the index for localMaximaMatrix
-							localMaximaMatrix[maxInd + j * range - i] = 20;
+							// localMaximaMatrix[maxInd + j * range - i] = 5;
+							localMaximaMatrix[maxInd + j * range - i] = 5;
 						}
 					}
 				}
 
 				// for (size_t j = 0; j < geodist[i].size(); j++) {
 				// 	if (tip[j] != 0) {
-				// 		// std::cout << tip[j] << " ";
 				// 		tip[j] = tip[j] * geodist[i][j];
-				// 		// std::cout << tip[j] << " " << geodist[i][j] << std::endl;
 				// 	}
 				// }
-
-				// axonTip[i] = NG.FindLocalMaximaInClusters(geodist[i], 2*NX+1, 2*NY+1);
+				// // axonTip[i] = NG.FindLocalMaximaInClusters(geodist[i], 2*NX+1, 2*NY+1);
 				// axonTip[i] = NG.KeepOneClusterWithMaxValue(tip, 2*NX+1, 2*NY+1);
+				// for (size_t l = 1; l < cpts_fine.size() - (2 * NY + 1) - 1; ++l) {
+				// 	if (axonTip[k][l] != 0) {
+				// 		// // Iterate over the 3x3 neighborhood of each non-zero element
+				// 		// for (int i = -1; i <= 1; ++i) {
+				// 		// 	for (int j = -1; j <= 1; ++j) {
+				// 		// 		// Skip the central element
+				// 		// 		if (i != 0 || j != 0) {
+				// 		// 			// Calculate the index for localMaximaMatrix
+				// 		// 			localMaximaMatrix[l + j * range - i] = 5;
+				// 		// 		}
+				// 		// 	}
+				// 		// }
+				// 		localMaximaMatrix[l] = 5;
+				// 	}
+				// }
+		
 			}
-
-			// if (NG.n > 1000) {
-			// 	// Iterate over axonTip using range-based for loops
-			// 	const int range = 2 * NY + 1;
-			// 	for (size_t k = 0; k < NG.numNeuron; ++k) {
-			// 		for (size_t l = 1; l < cpts_fine.size() - (2 * NY + 1) - 1; ++l) {
-			// 			if (axonTip[k][l] != 0) {
-			// 				// // Iterate over the 3x3 neighborhood of each non-zero element
-			// 				// for (int i = -1; i <= 1; ++i) {
-			// 				// 	for (int j = -1; j <= 1; ++j) {
-			// 				// 		// Skip the central element
-			// 				// 		if (i != 0 || j != 0) {
-			// 				// 			// Calculate the index for localMaximaMatrix
-			// 				// 			localMaximaMatrix[l + j * range - i] = 5;
-			// 				// 		}
-			// 				// 	}
-			// 				// }
-			// 				localMaximaMatrix[l] = 5;
-			// 			}
-			// 		}
-			// 	}
-			// }
-
-			// if (NG.n > 1000) {
-			// 	for (size_t i = 0; i < NG.numNeuron; i++) {
-			// 		geodist[i] = ConvertTo1DFloatVector(distances[i]);
-
-			// 		// Find the maximum element
-			// 		auto max_element_iterator = std::max_element(geodist[i].begin(), geodist[i].end());
-			// 		int max_element = *max_element_iterator;
-			// 		// Find the index of the maximum element
-			// 		int max_element_index = std::distance(geodist[i].begin(), max_element_iterator);
-
-			// 		// localMaximaMatrix[max_element_index] = 20;
-
-			// 		std::cout << max_element_index << std::endl;
-			// 		const int range = 2 * NY + 1;
-			// 		if (max_element_index > 1 && max_element_index < range) {
-			// 			for (int i = -1; i <= 1; i++) {
-			// 				for (int j = -1; j <= 1; j++) {
-			// 					// Calculate the index for localMaximaMatrix
-			// 					localMaximaMatrix[max_element_index + j * range - i] = 20;
-			// 				}
-			// 			}
-			// 		}
-			// 	}
-			// }
 
 			NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, kdTree_fine, cpts);
 		}
