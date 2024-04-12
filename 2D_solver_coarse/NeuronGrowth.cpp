@@ -1607,7 +1607,7 @@ void NeuronGrowth::preparePhaseField() {
 					if (eleTp > 0) {
 						eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(50 * eleTb - 0) * (1 - eleS));
 						if (eleTp > 3) {
-							pre_eleMp.push_back(100);
+							pre_eleMp.push_back(120);
 							// pre_eleMp.push_back(50);
 						} else {
 							pre_eleMp.push_back(50);
@@ -3619,18 +3619,19 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 				// // axonTip[i] = NG.FindLocalMaximaInClusters(geodist[i], 2*NX+1, 2*NY+1);
 				// axonTip[i] = NG.KeepOneClusterWithMaxValue(tip, 2*NX+1, 2*NY+1);
 				// for (size_t l = 1; l < cpts_fine.size() - (2 * NY + 1) - 1; ++l) {
-				// 	if (axonTip[k][l] != 0) {
-				// 		// // Iterate over the 3x3 neighborhood of each non-zero element
-				// 		// for (int i = -1; i <= 1; ++i) {
-				// 		// 	for (int j = -1; j <= 1; ++j) {
-				// 		// 		// Skip the central element
-				// 		// 		if (i != 0 || j != 0) {
-				// 		// 			// Calculate the index for localMaximaMatrix
-				// 		// 			localMaximaMatrix[l + j * range - i] = 5;
-				// 		// 		}
-				// 		// 	}
-				// 		// }
-				// 		localMaximaMatrix[l] = 5;
+				// 	if (axonTip[i][l] != 0) {
+				// 		const int range = 2 * NY + 1;
+				// 		// Iterate over the 3x3 neighborhood of each non-zero element
+				// 		for (int k = -1; k <= 1; ++k) {
+				// 			for (int j = -1; j <= 1; ++j) {
+				// 				// Skip the central element
+				// 				// if (i != 0 || j != 0) {
+				// 					// Calculate the index for localMaximaMatrix
+				// 					localMaximaMatrix[l + j * range - k] = 5;
+				// 				// }
+				// 			}
+				// 		}
+				// 		// localMaximaMatrix[l] = 5;
 				// 	}
 				// }
 		
