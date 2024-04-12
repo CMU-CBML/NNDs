@@ -52,8 +52,6 @@ public:
 	int comRank;
 	int comSize;
 	int nProcess;
-
-	int check_itr;
 	
 	// Spline parameters
 	int n_bzmesh;
@@ -77,6 +75,7 @@ public:
 	float prev_max_x, prev_min_x, prev_max_y, prev_min_y;
 
 	// element stiffness matrix and load vector
+	int check_itr;
 	uint nen;
 	vector<vector<float>> EMatrixSolve;
 	vector<float> EVectorSolve;
@@ -89,13 +88,14 @@ public:
 	int n; 								// time step
 	int judge_phi, judge_syn, judge_tub;				// assembly state	
 	vector<float> phi, tub, syn, theta, theta_fine;				// variable to be solved 
-	vector<float> phi_prev, phi_0, tub_0, tips, Mphi;			// assisting varibles
+	vector<float> phi_prev, phi_0, tub_0, tips;			// assisting varibles
+	// Mphi
 	vector<vector<int>> prev_id;
 	float sum_grad_phi0_local, sum_grad_phi0_global, dP0dx, dP0dy;	
 	vector<float> elePhi0, eleTheta;
 
 	// PETSc solvers and variables
-	SNES snes_phi;				// PETSc SNES nonlinear solver
+	// SNES snes_phi;				// PETSc SNES nonlinear solver
 	KSP ksp_phi, ksp_syn, ksp_tub;			// PETSc KSP linear solver
 	PC pc_phi, pc_syn, pc_tub;			// PETSc preconditioner
 	Mat GK_phi, GK_syn, GK_tub, J;			// Jacobian matrix
@@ -103,31 +103,31 @@ public:
 	Vec temp_phi, temp_syn, temp_tub;	// Solution vector
 
 	// Parameters for neuron growth model
-	int var_save_invl,expandCK_invl,numNeuron,gc_sz,end_iter,aniso,gamma,seed_radius;
-	float kappa,dt,Dc,alpha,alphaOverPi,M_phi,s_coeff,delta,epsilonb,r,g,alphaT,betaT,Diff,source_coeff,M_ratio;
-	// int expandCK_invl;
-	// int var_save_invl;
-	// int numNeuron;
-	// int gc_sz;
-	// int aniso;
-	// int gamma;
-	// int seed_radius;
+	int var_save_invl;
+	int expandCK_invl;
+	int numNeuron;
+	int gc_sz;
+	int end_iter;
+	int aniso;
+	int gamma;
+	int seed_radius;
 
-	// double kappa;
-	// double dt;
-	// double Dc;
-	// double alpha;
-	// double alphaOverPi;
-	// double M_phi;
-	// double s_coeff;
-	// double delta;
-	// double epsilonb;
-	// double r;
-	// double g;
-	// double alphaT;
-	// double betaT;
-	// double Diff;
-	// double source_coeff;
+	float kappa;
+	float dt;
+	float Dc;
+	float alpha;
+	float alphaOverPi;
+	float M_phi;
+	float s_coeff;
+	float delta;
+	float epsilonb;
+	float r;
+	float g;
+	float alphaT;
+	float betaT;
+	float Diff;
+	float source_coeff;
+	float M_ratio;
 
 	// Initializations
 	NeuronGrowth();
@@ -163,42 +163,39 @@ public:
 	void PointFormValue(vector<float> &Nx, const vector<float> &U, float Value);
 	void PointFormGrad(vector<array<float, 2>> &dNdx, const vector<float> &U, float Value[2]);
 	void PointFormHess(vector<array<array<float, 2>, 2>>& d2Ndx2, const vector<float> &U, float Value[2][2]);
-	void ElementValue(const vector<float> &Nx, const vector<float> value_node, float &value);
-	void ElementValueAll(const vector<float> &Nx, const vector<float> elePhiGuess, float &elePG,
-		const vector<float> elePhi, float &eleP,
-		const vector<float> eleSyn, float &eleS,
-		const vector<float> eleTips, float &eleTp,
-		const vector<float> eleTubulin, float &eleTb,
-		const vector<float> eleEpsilon, float &eleEP,
-		const vector<float> eleEpsilonP, float &eleEEP);
-	void ElementDeriv(const uint nen, vector<array<float, 2>> &dNdx, const vector<float> value_node, float &dVdx, float &dVdy);
-	void ElementDerivAll(const uint nen, vector<array<float, 2>> &dNdx,
-		const vector<float> elePhiGuess, float &dPGdx, float &dPGdy,
-		const vector<float> eleTheta, float &dThedx, float &dThedy,
-		const vector<float> eleEpsilon, float &dAdx, float &dAdy,
-		const vector<float> eleEpsilonP, float &dAPdx, float &dAPdy);
-	void ElementEvaluationAll_phi(const uint nen, const vector<float> &Nx, vector<array<float, 2>> &dNdx,
-		const vector<float> elePhiGuess, float &elePG,
-		const vector<float> elePhi, float &eleP,
-		const vector<float> eleEpsilon, float &eleEP,
-		const vector<float> eleEpsilonP, float &eleEEP,
-		float &dPGdx, float &dPGdy,
-		float &dAdx, float &dAdy,
-		float &dAPdx, float &dAPdy);
-	void ElementEvaluationAll_phi(const uint nen, const vector<float> &Nx, vector<array<float, 2>> &dNdx,
-		vector<vector<float>> &eleVal, vector<float> &vars);
-	void ElementEvaluationAll_phi(const uint nen, const vector<float> &Nx, vector<array<float, 2>> &dNdx,
-		vector<float> &elePhiGuess, vector<float> &vars);
+	void ElementValue(const vector<float>& Nx, const vector<float>& value_node, float &value);
+	void ElementValueAll(const vector<float>& Nx, const vector<float>& elePhiGuess, float &elePG,
+		const vector<float>& elePhi, float &eleP,
+		const vector<float>& eleSyn, float &eleS,
+		const vector<float>& eleTips, float &eleTp,
+		const vector<float>& eleTubulin, float &eleTb,
+		const vector<float>& eleEpsilon, float &eleEP,
+		const vector<float>& eleEpsilonP, float &eleEEP);
+	void ElementDeriv(const uint& nen, vector<array<float, 2>>& dNdx, const vector<float>& value_node, float& dVdx, float& dVdy);
+	void ElementDerivAll(const uint& nen, vector<array<float, 2>>& dNdx,
+		const vector<float>& elePhiGuess, float& dPGdx, float& dPGdy,
+		const vector<float>& eleTheta, float& dThedx, float& dThedy,
+		const vector<float>& eleEpsilon, float& dAdx, float& dAdy,
+		const vector<float>& eleEpsilonP, float& dAPdx, float& dAPdy);
+	void ElementEvaluationAll_phi(const uint& nen, const vector<float>& Nx, vector<array<float, 2>>& dNdx,
+		const vector<float>& elePhiGuess, float& elePG,
+		const vector<float>& elePhi, float& eleP,
+		const vector<float>& eleEpsilon, float& eleEP,
+		const vector<float>& eleEpsilonP, float& eleEEP,
+		float& dPGdx, float& dPGdy,
+		float& dAdx, float& dAdy,
+		float& dAPdx, float& dAPdy);
+	void ElementEvaluationAll_phi(const uint& nen, const vector<float>& Nx, vector<array<float, 2>>& dNdx,
+		vector<vector<float>>& eleVal, vector<float>& vars);
+	void ElementEvaluationAll_phi(const uint& nen, const vector<float>& Nx, vector<array<float, 2>>& dNdx,
+		vector<float>& elePhiGuess, vector<float>& vars);
 
-	void ElementEvaluationAll_syn_tub(const uint nen, const vector<float> &Nx, vector<array<float, 2>> &dNdx,
-		const vector<float> elePhiDiff, float &elePf,
-		const vector<float> eleSyn, float &eleS,
-		const vector<float> elePhi, float &eleP,
-		const vector<float> elePhiPrev, float &elePprev,
-		const vector<float> eleConct, float &eleC,
-		float &dPdx, float &dPdy);
-	void ElementEvaluationAll_syn_tub(const uint nen, const vector<float> &Nx, vector<array<float, 2>> &dNdx,
-		vector<vector<float>> &eleVal, vector<float> &vars);
+	void ElementEvaluationAll_syn_tub(const uint& nen, const vector<float>& Nx, vector<array<float, 2>>& dNdx,
+		const vector<float>& elePhiDiff, float& elePf, const vector<float>& eleSyn, float& eleS,
+		const vector<float>& elePhi, float& eleP, const vector<float>& elePhiPrev, float& elePprev,
+		const vector<float>& eleConct, float& eleC, float& dPdx, float& dPdy);
+	void ElementEvaluationAll_syn_tub(const uint& nen, const vector<float>& Nx, vector<array<float, 2>>& dNdx,
+		vector<vector<float>>& eleVal, vector<float>& vars);
 
 	// pre-calculate variables to save computational cost
 	void prepareBasis();
@@ -208,24 +205,24 @@ public:
 	void prepareEE();
 
 	// Phase field equation
-	float Regular_Heiviside_fun(float x);
-	void EvaluateOrientation(const uint nen, const vector<float> &Nx, const vector<array<float, 2>> &dNdx, const vector<float> elePhi,
-		const vector<float> eleTheta,  vector<float>& eleEpsilon, vector<float>& eleEpsilonP);
+	float Regular_Heiviside_fun(const float& x);
+	void EvaluateOrientation(const uint& nen, const vector<float>& Nx, const vector<array<float, 2>>& dNdx,
+		const vector<float>& elePhi, const vector<float>& eleTheta,  vector<float>& eleEpsilon, vector<float>& eleEpsilonP);
 	void BuildLinearSystemProcessNG_phi();
 
 	// Synaptogenesis equation
-	void BuildLinearSystemProcessNG_syn(const vector<Element2D>& tmesh, const vector<Vertex2D> &cpts);
+	void BuildLinearSystemProcessNG_syn(const vector<Element2D>& tmesh, const vector<Vertex2D>& cpts);
 	void Tangent_syn(const uint nen, vector<float>& Nx, vector<array<float, 2>>& dNdx, float detJ, vector<vector<float>>& EMatrixSolve);
 	void Residual_syn(const uint nen, vector<float>& Nx, vector<array<float, 2>>& dNdx, float detJ, float eleP, float eleS, vector<float>& EVectorSolve);
 	// Tubulin equation
-	void CalculateSumGradPhi0(const vector<Element2D> &tmesh, const vector<Vertex2D> &cpts);
-	void BuildLinearSystemProcessNG_tub(const vector<Element2D>& tmesh, const vector<Vertex2D> &cpts);
+	void CalculateSumGradPhi0(const vector<Element2D>& tmesh, const vector<Vertex2D>& cpts);
+	void BuildLinearSystemProcessNG_tub(const vector<Element2D>& tmesh, const vector<Vertex2D>& cpts);
 	void Tangent_tub(const uint nen, vector<float>& Nx, vector<array<float, 2>>& dNdx, float detJ, float eleC, float eleP, float dPdx, float dPdy,
 		float elePprev, float mag_grad_phi0, vector<vector<float>>& EMatrixSolve);
 	void Residual_tub(const uint nen, vector<float>& Nx, vector<array<float, 2>>& dNdx, float detJ, float eleC, float eleP, float elePprev,
 		float mag_grad_phi0, vector<float>& EVectorSolve);
 	// Build Synaptogenesis and Tubulin together
-	void BuildLinearSystemProcessNG_syn_tub(const vector<Element2D> &tmesh, const vector<Vertex2D> &cpts);
+	void BuildLinearSystemProcessNG_syn_tub(const vector<Element2D>& tmesh, const vector<Vertex2D>& cpts);
 
 	// Domain expansion
 	int CheckExpansion(vector<float> input, int NX, int NY); // for when NX != NY
@@ -252,6 +249,8 @@ public:
 	vector<float> FindCentroidsInClusters(const vector<float>& matrix, const int& rows, const int& cols);
 	bool IsLocalMaximum(const vector<float>& matrix, const int& rows, const int& cols, const int& x, const int& y);
 	vector<float> FindCentroidsOfLocalMaximaClusters(const vector<float>& matrix, const int& rows, const int& cols);
+	// vector<vector<float>> ComputeMaxFilter(const vector<vector<float>>& geodist, int NY);
+	std::vector<float> ComputeMaxFilter(const std::vector<float>& geodist, int numRows, int numCols, int windowRadius);
 
 	// Neuron detection
 	vector<vector<int>> ConvertTo2DIntVector_PushBoundary(const vector<float>& input, const int& NX, const int& NY);
@@ -261,18 +260,13 @@ public:
 	void FloodFill(vector<vector<int>>& image, int x, int y, int newColor, int originalColor, const vector<vector<int>>& prev_id); // label neuron with a value
 	void IdentifyNeurons(vector<float>& phi_in, vector<vector<int>>& neurons, const vector<vector<int>>& prev_id,
 		vector<array<float, 2>> seed, const int& NX, const int& NY, const int& originX, const int& originY);
-	bool isValid(int x, int y, int rows, int cols);
-	// vector<vector<int>> CalculateGeodesicDistanceFromPoint(vector<vector<int>> grid, int startX, int startY); // single neuron
-	// vector<vector<vector<int>>> CalculateGeodesicDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, const int& originX, const int& originY); // multiple neurons
-	// vector<vector<vector<float>>> CalculateQuasiEuclideanDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, const int& originX, const int& originY);
-	vector<vector<vector<float>>> CalculateQuasiEuclideanDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, const int& originX, const int& originY);
-	// vector<vector<float>> CalculateGeodesicDistanceFromPoint(const vector<vector<int>>& neurons, int startX, int startY);
-	// vector<vector<vector<float>>> CalculateAllGeodesicDistancesFromPoints(const vector<vector<int>>& neurons, const vector<array<float, 2>>& seedPoints, const int& originX, const int& originY);
-	vector<vector<vector<float>>> CalculateGeodesicDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, const int& originX, const int& originY);
+	bool isValid(const int& x, const int& y, const int& rows, const int& cols);
+	vector<vector<vector<float>>> CalculateQuasiEuclideanDistanceFromPoint(const vector<vector<int>>& neurons, vector<array<float, 2>>& seed, const int& originX, const int& originY);
+	vector<vector<vector<float>>> CalculateGeodesicDistanceFromPoint(const vector<vector<int>>& neurons, vector<array<float, 2>>& seed, const int& originX, const int& originY);
 
 	vector<vector<pair<int, int>>> TraceNeurites(vector<vector<float>>& geodist);
-	void SaveNGvars(vector<vector<float>> &NGvars, int NX, int NY, string fn);
-	void PrintOutNeurons(vector<vector<int>> neurons);
+	void SaveNGvars(vector<vector<float>>& NGvars, int NX, int NY, string fn);
+	void PrintOutNeurons(const vector<vector<int>>& neurons);
 
 };
 
@@ -284,11 +278,18 @@ PetscErrorCode MySNESMonitor(SNES snes, PetscInt its, PetscReal fnorm, PetscView
 PetscErrorCode CleanUpSolvers(NeuronGrowth &NG);
 
 // Main function
-int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& cpts_initial, const vector<Element2D>& tmesh_initial,
-	vector<Vertex2D>& cpts_fine, const vector<Element2D>& tmesh_fine, vector<Vertex2D>& cpts,
-	vector<Vertex2D>& prev_cpts, vector<Vertex2D>& prev_cpts_fine, const vector<Element2D>& tmesh,
-	string path_in, string path_out, int& iter, int end_iter_in, vector<vector<float>> &NGvars, 
-	int &NX, int &NY, vector<array<float, 2>> &seed, int &originX, int &originY,
+int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in,
+	vector<Vertex2D>& cpts_initial, const vector<Element2D>& tmesh_initial,
+	vector<Vertex2D>& cpts_fine, const vector<Element2D>& tmesh_fine, 
+	vector<Vertex2D>& cpts,
+	vector<Vertex2D>& prev_cpts, vector<Vertex2D>& prev_cpts_fine, 
+	const vector<Element2D>& tmesh,
+	string path_in, string path_out, 
+	int& iter, int end_iter_in, 
+	vector<vector<float>> &NGvars, 
+	int &NX, int &NY, 
+	vector<array<float, 2>> &seed, 
+	int &originX, int &originY,
 	vector<int> &rfid, vector<int> &rftype, bool &localRefine);
 
 #endif

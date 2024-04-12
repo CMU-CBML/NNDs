@@ -28,7 +28,7 @@ void tic()
 {
 	tictoc_stack.push(clock());
 }
-void toc(float &t) 
+void toc(float& t) 
 {
 	t = ((float)(clock() - tictoc_stack.top())) / CLOCKS_PER_SEC;
 	tictoc_stack.pop();
@@ -59,6 +59,8 @@ NeuronGrowth::NeuronGrowth(){
 	judge_tub = 0;
 	sum_grad_phi0_local = 0;
 	sum_grad_phi0_global = 0;
+
+	SetVariables("./simulation_parameters.txt");
 }
 
 void NeuronGrowth::AssignProcessor(vector<vector<int>> &ele_proc)
@@ -115,7 +117,7 @@ void NeuronGrowth::SetVariables(string fn_par) {
 }
 
 void NeuronGrowth::InitializeProblemNG(const int n_bz, vector<Vertex2D>& cpts, vector<Vertex2D> prev_cpts, const KDTree& kdTree_prev,
-	vector<Vertex2D>& cpts_fine, vector<Vertex2D>& prev_cpts_fine, const KDTree& kdTree_prev_fine, vector<vector<float>> &NGvars, vector<array<float, 2>> &seed, const int& NX, const int& NY)
+	vector<Vertex2D>& cpts_fine, vector<Vertex2D>& prev_cpts_fine, const KDTree& kdTree_prev_fine, vector<vector<float>> &NGvars, vector<array<float, 2>>& seed, const int& NX, const int& NY)
 {
 	MPI_Barrier(PETSC_COMM_WORLD);
 	PetscPrintf(PETSC_COMM_WORLD, "Initializing-----------------------------------------------------------------\n");
@@ -173,7 +175,6 @@ void NeuronGrowth::InitializeProblemNG(const int n_bz, vector<Vertex2D>& cpts, v
 			phi.push_back(0.f);
 			tub.push_back(0.f);
 			syn.push_back(0.f); // synaptogenesis
-			Mphi.push_back(M_phi);
 		}
 		for (size_t i = 0; i<cpts_fine.size(); i++) {
 			theta_fine.push_back((float)(rand()%100)/(float)100); // orientation theta
@@ -227,10 +228,6 @@ void NeuronGrowth::InitializeProblemNG(const int n_bz, vector<Vertex2D>& cpts, v
 		phi_0 = InterpolateVars_coarseKDtree(NGvars[4], prev_cpts, kdTree_prev, cpts, 1, 0);
 		tub_0 = InterpolateVars_coarseKDtree(NGvars[5], prev_cpts, kdTree_prev, cpts, 1, 0);
 		prev_id = ConvertTo2DIntVector(InterpolateValues_closest(NGvars[6], prev_cpts_fine, cpts_fine), NX*2, NY*2);
-		for (size_t i = 0; i < cpts.size(); i++) {	
-			Mphi.push_back(M_phi);
-		}
-
 	}
 
 	this->cpts = cpts; // for passing into formFunction
@@ -465,8 +462,8 @@ void NeuronGrowth::GaussInfo(int ng)
 	}
 }
 
-void NeuronGrowth::BasisFunction(float u, float v, const vector<array<float, 2>> &pt, const vector<array<float, 16>> &cmat,
-	vector<float> &Nx, vector<array<float, 2>> &dNdx, float dudx[2][2], float &detJ)
+void NeuronGrowth::BasisFunction(float u, float v, const vector<array<float, 2>>& pt, const vector<array<float, 16>> &cmat,
+	vector<float> &Nx, vector<array<float, 2>>& dNdx, float dudx[2][2], float& detJ)
 {
 	float Nu[4] = {(1 - u) * (1 - u) * (1 - u), 3 * (1 - u) * (1 - u) * u, 3 * (1 - u) * u * u, u * u * u};
 	float Nv[4] = {(1 - v) * (1 - v) * (1 - v), 3 * (1 - v) * (1 - v) * v, 3 * (1 - v) * v * v, v * v * v};
@@ -535,8 +532,8 @@ void NeuronGrowth::BasisFunction(float u, float v, const vector<array<float, 2>>
 	}
 }
 
-void NeuronGrowth::BasisFunction(float u, float v, int nen, const vector<array<float, 2>> &pt, const vector<array<float, 16>> &cmat,
-	vector<float> &Nx, vector<array<float, 2>> &dNdx, vector<array<array<float, 2>, 2>> &dN2dx2, float dudx[2][2], float &detJ)
+void NeuronGrowth::BasisFunction(float u, float v, int nen, const vector<array<float, 2>>& pt, const vector<array<float, 16>> &cmat,
+	vector<float> &Nx, vector<array<float, 2>>& dNdx, vector<array<array<float, 2>, 2>> &dN2dx2, float dudx[2][2], float& detJ)
 {
 	float Nu[4] = {(1 - u) * (1 - u) * (1 - u), 3 * (1 - u) * (1 - u) * u, 3 * (1 - u) * u * u, u * u * u};
 	float Nv[4] = {(1 - v) * (1 - v) * (1 - v), 3 * (1 - v) * (1 - v) * v, 3 * (1 - v) * v * v, v * v * v};
@@ -728,7 +725,7 @@ void NeuronGrowth::ResidualAssembly(vector<float> &EVectorSolve, const vector<in
 	delete tmpGR;
 }
 
-void NeuronGrowth::VisualizeVTK_ControlMesh(const vector<Vertex2D> &spt, const vector<Element2D> &mesh, int step, string fn, vector<float> var, string varName)
+void NeuronGrowth::VisualizeVTK_ControlMesh(const vector<Vertex2D>& spt, const vector<Element2D>& mesh, int step, string fn, vector<float> var, string varName)
 {
 	string fname;
 	stringstream ss;
@@ -770,7 +767,7 @@ void NeuronGrowth::VisualizeVTK_ControlMesh(const vector<Vertex2D> &spt, const v
 	}
 }
 
-void NeuronGrowth::ConcentrationCal_Coupling_Bezier(float u, float v, const Element2D &bzel, float pt[2], float &disp, float dudx[2], float &detJ)
+void NeuronGrowth::ConcentrationCal_Coupling_Bezier(float u, float v, const Element2D &bzel, float pt[2], float& disp, float dudx[2], float& detJ)
 {
 	float dUdx[2][2];
 	vector<float> Nx(bzel.IEN.size());
@@ -977,7 +974,8 @@ void NeuronGrowth::WriteVTK(const vector<array<float, 3>> spt, const vector<floa
 	}
 }
 
-void NeuronGrowth::CalculateVarsForOutput(vector<array<float, 3>> &spt_all, vector<float> &sresult_all, vector<array<int, 4>> &sele_all) {
+void NeuronGrowth::CalculateVarsForOutput(vector<array<float, 3>> &spt_all, vector<float> &sresult_all, vector<array<int, 4>> &sele_all) 
+{
 	float detJ;
 	int num_bzmesh_ele = bzmesh_process.size();
 	float spt_proc[num_bzmesh_ele * 4 * 3];
@@ -1211,7 +1209,7 @@ void NeuronGrowth::PointFormValue(vector<float> &Nx, const vector<float> &U, flo
 		Value += U[j] * Nx[j];
 }
 
-void NeuronGrowth::PointFormGrad(vector<array<float, 2>> &dNdx, const vector<float> &U, float Value[2])
+void NeuronGrowth::PointFormGrad(vector<array<float, 2>>& dNdx, const vector<float> &U, float Value[2])
 {
 	for (int j = 0; j < 2; j++)
 		Value[j] = 0.;
@@ -1242,17 +1240,17 @@ void NeuronGrowth::PointFormHess(vector<array<array<float, 2>, 2>> &d2Ndx2, cons
 	}
 }
 
-void NeuronGrowth::ElementValue(const vector<float> &Nx, const vector<float> value_node, float &value)
+void NeuronGrowth::ElementValue(const vector<float>& Nx, const vector<float>& value_node, float& value)
 {
 	value = 0.;
 	for (size_t i = 0; i < Nx.size(); i++)
 		value += value_node[i] * Nx[i];
 }
 
-void NeuronGrowth::ElementValueAll(const vector<float> &Nx, const vector<float> elePhiGuess, float &elePG,
-	const vector<float> elePhi, float &eleP, const vector<float> eleSyn, float &eleS,
-	const vector<float> eleTips, float &eleTp, const vector<float> eleTubulin, float &eleTb,
-	const vector<float> eleEpsilon, float &eleEP, const vector<float> eleEpsilonP, float &eleEEP)
+void NeuronGrowth::ElementValueAll(const vector<float>& Nx, const vector<float>& elePhiGuess, float& elePG,
+	const vector<float>& elePhi, float& eleP, const vector<float>& eleSyn, float& eleS,
+	const vector<float>& eleTips, float& eleTp, const vector<float>& eleTubulin, float& eleTb,
+	const vector<float>& eleEpsilon, float& eleEP, const vector<float>& eleEpsilonP, float& eleEEP)
 {
 	elePG = 0.;
 	eleP = 0.;
@@ -1272,7 +1270,7 @@ void NeuronGrowth::ElementValueAll(const vector<float> &Nx, const vector<float> 
 	}
 }
 
-void NeuronGrowth::ElementDeriv(const uint nen, vector<array<float, 2>> &dNdx, const vector<float> value_node, float &dVdx, float &dVdy)
+void NeuronGrowth::ElementDeriv(const uint& nen, vector<array<float, 2>>& dNdx, const vector<float>& value_node, float& dVdx, float& dVdy)
 {
 	dVdx = 0;
 	dVdy = 0.;
@@ -1283,10 +1281,10 @@ void NeuronGrowth::ElementDeriv(const uint nen, vector<array<float, 2>> &dNdx, c
 }
 
 
-void NeuronGrowth::ElementDerivAll(const uint nen, vector<array<float, 2>> &dNdx,
-	const vector<float> elePhiGuess, float &dPGdx, float &dPGdy,
-	const vector<float> eleTheta, float &dThedx, float &dThedy, const vector<float> eleEpsilon,
-	float &dAdx, float &dAdy, const vector<float> eleEpsilonP, float &dAPdx, float &dAPdy)
+void NeuronGrowth::ElementDerivAll(const uint& nen, vector<array<float, 2>>& dNdx,
+	const vector<float>& elePhiGuess, float& dPGdx, float& dPGdy,
+	const vector<float>& eleTheta, float& dThedx, float& dThedy, const vector<float>& eleEpsilon,
+	float& dAdx, float& dAdy, const vector<float>& eleEpsilonP, float& dAPdx, float& dAPdy)
 {	
 	dPGdx = 0; dPGdy = 0.;
 	dThedx = 0; dThedy = 0.;
@@ -1300,10 +1298,10 @@ void NeuronGrowth::ElementDerivAll(const uint nen, vector<array<float, 2>> &dNdx
 	}
 }
 
-void NeuronGrowth::ElementEvaluationAll_phi(const uint nen, const vector<float> &Nx, vector<array<float, 2>> &dNdx,
-	const vector<float> elePhiGuess, float &elePG, const vector<float> elePhi, float &eleP,
-	const vector<float> eleEpsilon, float &eleEP, const vector<float> eleEpsilonP, float &eleEEP,
-	float &dPGdx, float &dPGdy, float &dAdx, float &dAdy, float &dAPdx, float &dAPdy)
+void NeuronGrowth::ElementEvaluationAll_phi(const uint& nen, const vector<float>& Nx, vector<array<float, 2>>& dNdx,
+	const vector<float>& elePhiGuess, float& elePG, const vector<float>& elePhi, float& eleP,
+	const vector<float>& eleEpsilon, float& eleEP, const vector<float>& eleEpsilonP, float& eleEEP,
+	float& dPGdx, float& dPGdy, float& dAdx, float& dAdy, float& dAPdx, float& dAPdy)
 {
 	elePG = 0.;
 	eleP = 0.;
@@ -1327,7 +1325,7 @@ void NeuronGrowth::ElementEvaluationAll_phi(const uint nen, const vector<float> 
 }
 
 
-void NeuronGrowth::ElementEvaluationAll_phi(const uint nen, const vector<float> &Nx, vector<array<float, 2>> &dNdx, vector<vector<float>> &eleVal, vector<float> &vars)
+void NeuronGrowth::ElementEvaluationAll_phi(const uint& nen, const vector<float>& Nx, vector<array<float, 2>>& dNdx, vector<vector<float>>& eleVal, vector<float>& vars)
 {
 	// eleVal Array Definitions:
 	// Index	Description
@@ -1369,8 +1367,7 @@ void NeuronGrowth::ElementEvaluationAll_phi(const uint nen, const vector<float> 
 	}
 }
 
-// void NeuronGrowth::ElementEvaluationAll_phi(const uint nen, const vector<float> &Nx, vector<array<float, 2>> &dNdx, vector<vector<float>> &eleVal, vector<float> &vars)
-void NeuronGrowth::ElementEvaluationAll_phi(const uint nen, const vector<float> &Nx, vector<array<float, 2>> &dNdx, vector<float> &elePhiGuess, vector<float> &vars)
+void NeuronGrowth::ElementEvaluationAll_phi(const uint& nen, const vector<float>& Nx, vector<array<float, 2>>& dNdx, vector<float>& elePhiGuess, vector<float>& vars)
 {
 	// eleVal Array Definitions:
 	// Index	Description
@@ -1412,10 +1409,10 @@ void NeuronGrowth::ElementEvaluationAll_phi(const uint nen, const vector<float> 
 	}
 }
 
-void NeuronGrowth::ElementEvaluationAll_syn_tub(const uint nen, const vector<float> &Nx, vector<array<float, 2>> &dNdx,
-	const vector<float> elePhiDiff, float &elePf, const vector<float> eleSyn, float &eleS,
-	const vector<float> elePhi, float &eleP, const vector<float> elePhiPrev, float &elePprev,
-	const vector<float> eleConct, float &eleC, float &dPdx, float &dPdy)
+void NeuronGrowth::ElementEvaluationAll_syn_tub(const uint& nen, const vector<float>& Nx, vector<array<float, 2>>& dNdx,
+	const vector<float>& elePhiDiff, float& elePf, const vector<float>& eleSyn, float& eleS,
+	const vector<float>& elePhi, float& eleP, const vector<float>& elePhiPrev, float& elePprev,
+	const vector<float>& eleConct, float& eleC, float& dPdx, float& dPdy)
 {
 	elePf = 0.;
 	eleS = 0.;
@@ -1437,7 +1434,7 @@ void NeuronGrowth::ElementEvaluationAll_syn_tub(const uint nen, const vector<flo
 	}
 }
 
-void NeuronGrowth::ElementEvaluationAll_syn_tub(const uint nen, const vector<float> &Nx, vector<array<float, 2>> &dNdx, vector<vector<float>> &eleVal, vector<float> &vars)
+void NeuronGrowth::ElementEvaluationAll_syn_tub(const uint& nen, const vector<float>& Nx, vector<array<float, 2>>& dNdx, vector<vector<float>>& eleVal, vector<float>& vars)
 {
 	// eleVal Array Definitions:
 	// Index    Description
@@ -1484,8 +1481,8 @@ void NeuronGrowth::ElementEvaluationAll_syn_tub(const uint nen, const vector<flo
 	}
 }
 
-void NeuronGrowth::prepareBasis() {
-
+void NeuronGrowth::prepareBasis() 
+{
 	/*Build linear system in each process*/
 	float detJ;
 	float dudx[2][2];
@@ -1493,14 +1490,8 @@ void NeuronGrowth::prepareBasis() {
 	float dThedx, dThedy;
 	sum_grad_phi0_local = 0;
 
-	// float eleP0(0);
-	// cout << comRank << " " << bzmesh_process.size() << endl;
-
 	for (size_t e = 0; e < bzmesh_process.size(); e++) {
-		uint nen = bzmesh_process[e].IEN.size();
-
-		// if (comRank == 1)
-			// cout << comRank << " " << e << "/" << bzmesh_process.size() << endl;
+		size_t nen = bzmesh_process[e].IEN.size();
 
 		elePhi0.resize(nen);
 		eleTheta.resize(nen);
@@ -1536,8 +1527,8 @@ void NeuronGrowth::prepareBasis() {
 	MPI_Barrier(PETSC_COMM_WORLD);
 }
 
-void NeuronGrowth::preparePhaseField() {
-
+void NeuronGrowth::preparePhaseField() 
+{
 	pre_eleEP.clear();
 	pre_eleEEP.clear();
 	pre_dAdx.clear();
@@ -1549,15 +1540,13 @@ void NeuronGrowth::preparePhaseField() {
 
 	float eleEP(0), eleEEP(0), dAdx(0), dAdy(0), 
 		eleP(0), eleTh(0), eleS(0), eleTb(0), eleTp(0), eleE(0);
-		// eleMp(0); 
-	uint e, ind(0);
+	uint ind(0);
 
-	for (e = 0; e < bzmesh_process.size(); e++) {
-		uint nen = bzmesh_process[e].IEN.size();
+	for (size_t e = 0; e < bzmesh_process.size(); e++) {
+		size_t nen = bzmesh_process[e].IEN.size();
 
 		vector<float> elePhi(nen, 0), eleTheta(nen, 0), eleEpsilon(nen, 0), eleEpsilonP(nen, 0);
 		vector<float> eleSyn(nen, 0), eleTubulin(nen, 0), eleTips(nen, 0);
-		// , eleMphi(nen, 0);
 
 		for (size_t i = 0; i < nen; i++) {
 
@@ -1566,11 +1555,6 @@ void NeuronGrowth::preparePhaseField() {
 			eleSyn[i] = syn[bzmesh_process[e].IEN[i]];			// eleSyn
 			eleTubulin[i] = tub[bzmesh_process[e].IEN[i]];			// eleTubulin
 			eleTips[i] = tips[bzmesh_process[e].IEN[i]];			// eleTips
-			// if (n < 1) {
-			// 	eleMphi[i] = 60;
-			// } else {
-			// 	eleMphi[i] = Mphi[bzmesh_process[e].IEN[i]];
-			// }
 		}
 
 		for (size_t i = 0; i < Gpt.size(); i++) {
@@ -1595,11 +1579,7 @@ void NeuronGrowth::preparePhaseField() {
 				ElementValue(pre_Nx[ind], eleTubulin, eleTb);
 				ElementValue(pre_Nx[ind], eleTips, eleTp);
 
-				// float eleMp;
-				// ElementValue(pre_Nx[ind], eleMphi, eleMp);
-				// pre_eleMp.push_back(eleMp);
-
-								// adjust rg (assembly rate) and sg (disassembly rate) based on detected tips
+				// adjust rg (assembly rate) and sg (disassembly rate) based on detected tips
 				if (n < 50) {
 					eleE = alphaOverPi*atan(gamma * (1 - eleS));
 					pre_eleMp.push_back(50);
@@ -1608,37 +1588,14 @@ void NeuronGrowth::preparePhaseField() {
 						eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(50 * eleTb - 0) * (1 - eleS));
 						if (eleTp > 3) {
 							pre_eleMp.push_back(120);
-							// pre_eleMp.push_back(50);
 						} else {
-							pre_eleMp.push_back(50);
-							// pre_eleMp.push_back(20);
+							pre_eleMp.push_back(40);
 						}
 					} else {
 						eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(r * eleTb - g) * (1 - eleS));
 						pre_eleMp.push_back(5);
-						// pre_eleMp.push_back(2);
 					}
 				}
-
-				// // adjust rg (assembly rate) and sg (disassembly rate) based on detected tips
-				// if (n < 50) {
-				// 	eleE = alphaOverPi*atan(gamma * (1 - eleS));
-				// 	pre_eleMp.push_back(50);
-				// } else {
-				// 	if (eleTp > 0) {
-				// 		eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(50 * eleTb - 0) * (1 - eleS));
-				// 		if (eleTp > 2) {
-				// 			pre_eleMp.push_back(60);
-				// 		} else {
-				// 			pre_eleMp.push_back(60 / M_ratio);
-				// 		}
-				// 	} else {
-				// 		eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(r * eleTb - g) * (1 - eleS));
-				// 		pre_eleMp.push_back(6 / M_ratio);
-				// 		// pre_eleMp.push_back(6);
-				// 	}
-				// }
-
 
 				// calculate C1 variable for phase field energy term
 				float C1 = eleE - pre_C0[ind]; // C1 = E - (0.5 + 6 * user->s_coeff * sqrt(pow(dThedx, 2) + pow(dThedy, 2));
@@ -1650,8 +1607,8 @@ void NeuronGrowth::preparePhaseField() {
 	}
 }
 
-void NeuronGrowth::prepareSourceSum() {
-
+void NeuronGrowth::prepareSourceSum() 
+{
 	/*Build linear system in each process*/
 	sum_grad_phi0_local = 0;
 
@@ -1683,7 +1640,8 @@ void NeuronGrowth::prepareSourceSum() {
 	}
 }
 
-void NeuronGrowth::prepareTerm_source() {
+void NeuronGrowth::prepareTerm_source() 
+{
 	uint ind(0);
 	pre_term_source.clear();
 	for (size_t e = 0; e < bzmesh_process.size(); e++) {
@@ -1695,15 +1653,15 @@ void NeuronGrowth::prepareTerm_source() {
 	}
 }
 
-float NeuronGrowth::Regular_Heiviside_fun(float x) 
+float NeuronGrowth::Regular_Heiviside_fun(const float& x) 
 {
 	// float epsilon = 0.0001; // the number is not fixed.
 	float epsilon = 1e-15; // the number is not fixed.
 	return 0.5*(1+(2/PI)*atan(x/epsilon));
 }
 
-void NeuronGrowth::EvaluateOrientation(const uint nen, const vector<float> &Nx, const vector<array<float, 2>> &dNdx,
-	const vector<float> elePhi, const vector<float> eleTheta,  vector<float>& eleEpsilon, vector<float>& eleEpsilonP)
+void NeuronGrowth::EvaluateOrientation(const uint& nen, const vector<float>& Nx, const vector<array<float, 2>>& dNdx,
+	const vector<float>& elePhi, const vector<float>& eleTheta,  vector<float>& eleEpsilon, vector<float>& eleEpsilonP)
 {
 	for (size_t i = 0; i < nen; i++) {
 		eleEpsilon[i] += epsilonb * (1.0 + delta * cos(aniso * (atan2(elePhi[i] * dNdx[i][0], elePhi[i] * dNdx[i][1]) - eleTheta[i] * Nx[i])));
@@ -1801,7 +1759,7 @@ void NeuronGrowth::BuildLinearSystemProcessNG_phi()
 	MatAssemblyBegin(GK_phi, MAT_FINAL_ASSEMBLY);
 }
 
-void NeuronGrowth::BuildLinearSystemProcessNG_syn(const vector<Element2D> &tmesh, const vector<Vertex2D> &cpts)
+void NeuronGrowth::BuildLinearSystemProcessNG_syn(const vector<Element2D>& tmesh, const vector<Vertex2D>& cpts)
 {
 	/*Build linear system in each process*/
 	for (size_t e = 0; e < bzmesh_process.size(); e++) {
@@ -1874,7 +1832,7 @@ void NeuronGrowth::BuildLinearSystemProcessNG_syn(const vector<Element2D> &tmesh
 		MatAssemblyBegin(GK_syn, MAT_FINAL_ASSEMBLY);
 }
 
-void NeuronGrowth::Tangent_syn(const uint nen, vector<float> &Nx, vector<array<float, 2>> &dNdx, float detJ, vector<vector<float>> &EMatrixSolve)
+void NeuronGrowth::Tangent_syn(const uint nen, vector<float> &Nx, vector<array<float, 2>>& dNdx, float detJ, vector<vector<float>> &EMatrixSolve)
 {
 	/*calculate tangent matrix*/
 	for (size_t i = 0; i < nen; i++) {
@@ -1885,7 +1843,7 @@ void NeuronGrowth::Tangent_syn(const uint nen, vector<float> &Nx, vector<array<f
 	}
 }
 
-void NeuronGrowth::Residual_syn(const uint nen, vector<float> &Nx, vector<array<float, 2>> &dNdx, float detJ, float elePf, float eleS, vector<float> &EVectorSolve)
+void NeuronGrowth::Residual_syn(const uint nen, vector<float> &Nx, vector<array<float, 2>>& dNdx, float detJ, float elePf, float eleS, vector<float> &EVectorSolve)
 {
 	/*calculate residual of the equation*/
 	for (size_t i = 0; i < nen; i++) {
@@ -1895,7 +1853,7 @@ void NeuronGrowth::Residual_syn(const uint nen, vector<float> &Nx, vector<array<
 	}
 }
 
-void NeuronGrowth::CalculateSumGradPhi0(const vector<Element2D> &tmesh, const vector<Vertex2D> &cpts)
+void NeuronGrowth::CalculateSumGradPhi0(const vector<Element2D>& tmesh, const vector<Vertex2D>& cpts)
 {
 	/*Build linear system in each process*/
 	for (size_t e = 0; e < bzmesh_process.size(); e++) {
@@ -1922,7 +1880,7 @@ void NeuronGrowth::CalculateSumGradPhi0(const vector<Element2D> &tmesh, const ve
 	}
 }
 
-void NeuronGrowth::BuildLinearSystemProcessNG_tub(const vector<Element2D> &tmesh, const vector<Vertex2D> &cpts)
+void NeuronGrowth::BuildLinearSystemProcessNG_tub(const vector<Element2D>& tmesh, const vector<Vertex2D>& cpts)
 {
 	/*Build linear system in each process*/
 	for (size_t e = 0; e < bzmesh_process.size(); e++) {
@@ -2002,7 +1960,7 @@ void NeuronGrowth::BuildLinearSystemProcessNG_tub(const vector<Element2D> &tmesh
 	MatAssemblyBegin(GK_tub, MAT_FINAL_ASSEMBLY);
 }
 
-void NeuronGrowth::Tangent_tub(const uint nen, vector<float> &Nx, vector<array<float, 2>> &dNdx, float detJ,
+void NeuronGrowth::Tangent_tub(const uint nen, vector<float> &Nx, vector<array<float, 2>>& dNdx, float detJ,
 	float eleC, float eleP, float dPdx, float dPdy, float elePprev, float mag_grad_phi0, vector<vector<float>> &EMatrixSolve)
 {
 	float term_diff, term_alph, term_beta;
@@ -2019,7 +1977,7 @@ void NeuronGrowth::Tangent_tub(const uint nen, vector<float> &Nx, vector<array<f
 	}
 }
 
-void NeuronGrowth::Residual_tub(const uint nen, vector<float> &Nx, vector<array<float, 2>> &dNdx, float detJ,
+void NeuronGrowth::Residual_tub(const uint nen, vector<float> &Nx, vector<array<float, 2>>& dNdx, float detJ,
 	float eleC, float eleP, float elePprev, float mag_grad_phi0, vector<float> &EVectorSolve)
 {
 	float term_source;
@@ -2031,7 +1989,7 @@ void NeuronGrowth::Residual_tub(const uint nen, vector<float> &Nx, vector<array<
 	}
 }
 
-void NeuronGrowth::BuildLinearSystemProcessNG_syn_tub(const vector<Element2D> &tmesh, const vector<Vertex2D> &cpts)
+void NeuronGrowth::BuildLinearSystemProcessNG_syn_tub(const vector<Element2D>& tmesh, const vector<Vertex2D>& cpts)
 {
 	/*Build linear system in each process*/
 	int ind(0);
@@ -2191,7 +2149,8 @@ int NeuronGrowth::CheckExpansion(vector<float> input, int NX, int NY)
 	return 4;
 }
 
-void NeuronGrowth::PopulateRandom(vector<float> &input) {
+void NeuronGrowth::PopulateRandom(vector<float> &input) 
+{
 
 	uint length = input.size();
 	for (size_t i = 0; i < length; i++) {
@@ -2200,12 +2159,12 @@ void NeuronGrowth::PopulateRandom(vector<float> &input) {
 	}
 }
 
-
 // Function to interpolate values for new control points
 vector<float> NeuronGrowth::InterpolateValues_closest(
 	const vector<float>& phi_in,
 	const vector<Vertex2D>& cpt,
-	const vector<Vertex2D>& cpt_out) {
+	const vector<Vertex2D>& cpt_out) 
+{
 
 	vector<float> interpolatedValues(cpt_out.size());
 
@@ -2234,7 +2193,8 @@ vector<float> NeuronGrowth::InterpolateValues_closest(
 	return interpolatedValues;
 }
 
-vector<float> NeuronGrowth::InterpolateValues_closest(const vector<float>& input, const KDTree& kdTree, const vector<Vertex2D>& cpt_out) {
+vector<float> NeuronGrowth::InterpolateValues_closest(const vector<float>& input, const KDTree& kdTree, const vector<Vertex2D>& cpt_out) 
+{
 
 	vector<float> interpolatedValues(cpt_out.size());
 	for (size_t i = 0; i < cpt_out.size(); ++i) {
@@ -2262,7 +2222,8 @@ vector<float> NeuronGrowth::InterpolateValues_closest(const vector<float>& input
 	return interpolatedValues;
 }
 
-vector<float> NeuronGrowth::InterpolateValues_closest_pushBoundary(const vector<float>& input, const KDTree& kdTree, const vector<Vertex2D>& cpt_out) {
+vector<float> NeuronGrowth::InterpolateValues_closest_pushBoundary(const vector<float>& input, const KDTree& kdTree, const vector<Vertex2D>& cpt_out) 
+{
 
 	vector<float> interpolatedValues(cpt_out.size());
 	for (size_t i = 0; i < cpt_out.size(); ++i) {
@@ -2356,7 +2317,8 @@ vector<float> NeuronGrowth::InterpolateVars_coarseKDtree(vector<float> input, ve
 	return output;
 }
 
-bool NeuronGrowth::KD_SearchPair(const vector<Vertex2D> prev_cpts, const KDTree& kdTree, float targetX, float targetY, int &ind) {
+bool NeuronGrowth::KD_SearchPair(const vector<Vertex2D> prev_cpts, const KDTree& kdTree, float targetX, float targetY, int &ind) 
+{
 
 	const float query_pt[2] = {targetX, targetY};
 	size_t closestIndex;
@@ -2380,7 +2342,8 @@ bool NeuronGrowth::KD_SearchPair(const vector<Vertex2D> prev_cpts, const KDTree&
 	}
 }
 
-float NeuronGrowth::RmOutlier(const vector<float>& data) {
+float NeuronGrowth::RmOutlier(const vector<float>& data) 
+{
 	float sum = 0.0, mean, standardDeviation = 0.0;
 
 	for (float val : data) {
@@ -2407,19 +2370,22 @@ float NeuronGrowth::RmOutlier(const vector<float>& data) {
 	return (mean + 3.29 * standardDeviation);
 }
 
-float NeuronGrowth::CellBoundary(const float& phi, const float& threshold) {
+float NeuronGrowth::CellBoundary(const float& phi, const float& threshold) 
+{
 	return (phi > threshold) ? 1.0f : 0.0f;
 }
 
 // Check if point coordinates are within the bounds defined by center and dx dy dz
-bool NeuronGrowth::isInBox(const Vertex2D& point, const Vertex2D& center, float dx, float dy) {
+bool NeuronGrowth::isInBox(const Vertex2D& point, const Vertex2D& center, float dx, float dy) 
+{
 	return point.coor[0] >= (center.coor[0] - dx/2) && point.coor[0] <= (center.coor[0] + dx/2) &&
 		point.coor[1] >= (center.coor[1] - dy/2) && point.coor[1] <= (center.coor[1] + dy/2);
 }
 
 // Calculates the sum of phi values around each vertex in a given set, applying
 // a threshold to identify significant points, potentially indicating neuron growth tips.
-vector<float> NeuronGrowth::calculatePhiSum(const vector<Vertex2D>& cpts, float dx, float dy, vector<float> id) {
+vector<float> NeuronGrowth::calculatePhiSum(const vector<Vertex2D>& cpts, float dx, float dy, vector<float> id) 
+{
 	vector<float> tp(cpts.size(), 0); // Initialize the result vector with zeros
 	tp.clear(); tp.resize(cpts.size());
 	float threshold = 0.9; // Threshold for filtering tp
@@ -2474,7 +2440,8 @@ vector<float> NeuronGrowth::calculatePhiSum(const vector<Vertex2D>& cpts, float 
 	return tp;
 }
 
-void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std::vector<float>& id, const int& numNeuron, std::vector<float>& phiSum, const int& NX, const int& NY) {
+void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std::vector<float>& id, const int& numNeuron, std::vector<float>& phiSum, const int& NX, const int& NY) 
+{
 	const int length = (NX + 1) * (NY + 1);
 	phiSum.assign(length, 0); // Clear and resize with zero initialization
 
@@ -2550,7 +2517,8 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 
 // Function to perform Breadth-First Search (BFS) for clustering
 float NeuronGrowth::bfs(const vector<float>& matrix, const int& rows, const int& cols, const int& row, const int& col,
-	vector<bool>& visited, vector<pair<int, int>>& cluster) {
+	vector<bool>& visited, vector<pair<int, int>>& cluster) 
+{
 	
 	static const int dx[] = {-1, 0, 1, 0, -1, -1, 1, 1}; // Including diagonal directions
 	static const int dy[] = {0, -1, 0, 1, -1, 1, -1, 1}; // Including diagonal directions
@@ -2586,7 +2554,8 @@ float NeuronGrowth::bfs(const vector<float>& matrix, const int& rows, const int&
 }
 
 // Function to find connected clusters in the matrix
-vector<vector<pair<int, int>>> NeuronGrowth::FindClusters(const vector<float>& matrix, const int& rows, const int& cols) {
+vector<vector<pair<int, int>>> NeuronGrowth::FindClusters(const vector<float>& matrix, const int& rows, const int& cols) 
+{
     vector<bool> visited(rows * cols, false);
     vector<vector<pair<int, int>>> clusters;
 
@@ -2606,7 +2575,8 @@ vector<vector<pair<int, int>>> NeuronGrowth::FindClusters(const vector<float>& m
 }
 
 // Function to find local maxima within connected clusters in the matrix
-vector<float> NeuronGrowth::FindLocalMaximaInClusters(const vector<float>& matrix, const int& rows, const int& cols) {
+vector<float> NeuronGrowth::FindLocalMaximaInClusters(const vector<float>& matrix, const int& rows, const int& cols) 
+{
 	vector<vector<pair<int, int>>> clusters = FindClusters(matrix, rows, cols);
 	vector<float> localMaxima(rows * cols, 0.0f);
 
@@ -2640,7 +2610,8 @@ vector<float> NeuronGrowth::FindLocalMaximaInClusters(const vector<float>& matri
 	return localMaxima;
 }
 
-vector<float> NeuronGrowth::KeepOneClusterWithMaxValue(const vector<float>& matrix, const int& rows, const int& cols) {
+vector<float> NeuronGrowth::KeepOneClusterWithMaxValue(const vector<float>& matrix, const int& rows, const int& cols) 
+{
 	vector<bool> visited(rows * cols, false);
 	vector<float> localMaxima(rows * cols, 0.0f);
 	float maxClusterValue = -numeric_limits<float>::max();
@@ -2683,7 +2654,8 @@ vector<float> NeuronGrowth::KeepOneClusterWithMaxValue(const vector<float>& matr
 }
 
 // Function to find centroids of connected clusters in the matrix
-vector<float> NeuronGrowth::FindCentroidsInClusters(const vector<float>& matrix, const int& rows, const int& cols) {
+vector<float> NeuronGrowth::FindCentroidsInClusters(const vector<float>& matrix, const int& rows, const int& cols) 
+{
 	vector<vector<pair<int, int>>> clusters = FindClusters(matrix, rows, cols);
 	vector<float> centroids(rows * cols, 0.0f);
 
@@ -2716,7 +2688,8 @@ vector<float> NeuronGrowth::FindCentroidsInClusters(const vector<float>& matrix,
 	return centroids;
 }
 
-bool NeuronGrowth::IsLocalMaximum(const vector<float>& matrix, const int& rows, const int& cols, const int& x, const int& y) {
+bool NeuronGrowth::IsLocalMaximum(const vector<float>& matrix, const int& rows, const int& cols, const int& x, const int& y) 
+{
 	float value = matrix[x * cols + y];
 	for (int dx = -1; dx <= 1; ++dx) {
 		for (int dy = -1; dy <= 1; ++dy) {
@@ -2731,7 +2704,8 @@ bool NeuronGrowth::IsLocalMaximum(const vector<float>& matrix, const int& rows, 
 	return true;
 }
 
-vector<float> NeuronGrowth::FindCentroidsOfLocalMaximaClusters(const vector<float>& matrix, const int& rows, const int& cols) {
+vector<float> NeuronGrowth::FindCentroidsOfLocalMaximaClusters(const vector<float>& matrix, const int& rows, const int& cols) 
+{
 	vector<vector<pair<int, int>>> clusters = FindClusters(matrix, rows, cols);
 	vector<float> centroids(rows * cols, 0.0f);
 
@@ -2770,7 +2744,54 @@ vector<float> NeuronGrowth::FindCentroidsOfLocalMaximaClusters(const vector<floa
 	return centroids;
 }
 
-vector<vector<int>> NeuronGrowth::ConvertTo2DIntVector_PushBoundary(const vector<float>& input, const int& NX, const int& NY) {
+// std::vector<std::vector<float>> NeuronGrowth::ComputeMaxFilter(const std::vector<std::vector<float>>& geodist, int NY) {
+// 	int rows = geodist.size();
+// 	int cols = geodist[0].size();
+// 	std::vector<std::vector<float>> maxMatrix(rows, std::vector<float>(cols, std::numeric_limits<float>::lowest()));
+
+// 	for (int i = 0; i < rows; ++i) {
+// 		for (int j = 0; j < cols; ++j) {
+// 			// Calculate the bounds of the 5x5 window
+// 			int startRow = std::max(0, i - 2);
+// 			int endRow = std::min(rows - 1, i + 2);
+// 			int startCol = std::max(0, j - 2);
+// 			int endCol = std::min(cols - 1, j + 2);
+
+// 			// Compute the maximum within the window
+// 			for (int r = startRow; r <= endRow; ++r) {
+// 				for (int c = startCol; c <= endCol; ++c) {
+// 					maxMatrix[i][j] = std::max(maxMatrix[i][j], geodist[r][c]);
+// 				}
+// 			}
+// 		}
+// 	}
+// 	return maxMatrix;
+// }
+
+std::vector<float> NeuronGrowth::ComputeMaxFilter(const std::vector<float>& geodist, int numRows, int numCols, int windowRadius) {
+    std::vector<float> maxGeodist(geodist.size(), std::numeric_limits<float>::lowest());
+
+    for (int row = 0; row < numRows; ++row) {
+        for (int col = 0; col < numCols; ++col) {
+            int startIndex = row * numCols + col;
+            int startRow = std::max(0, row - windowRadius);
+            int endRow = std::min(numRows - 1, row + windowRadius);
+            int startCol = std::max(0, col - windowRadius);
+            int endCol = std::min(numCols - 1, col + windowRadius);
+
+            for (int r = startRow; r <= endRow; ++r) {
+                for (int c = startCol; c <= endCol; ++c) {
+                    int index = r * numCols + c;
+                    maxGeodist[startIndex] = std::max(maxGeodist[startIndex], geodist[index]);
+                }
+            }
+        }
+    }
+    return maxGeodist;
+}
+
+vector<vector<int>> NeuronGrowth::ConvertTo2DIntVector_PushBoundary(const vector<float>& input, const int& NX, const int& NY) 
+{
 	vector<vector<int>> output;
 	output.reserve(NX + 1); // Reserve space for rows
 
@@ -2790,7 +2811,8 @@ vector<vector<int>> NeuronGrowth::ConvertTo2DIntVector_PushBoundary(const vector
 	return output;
 }
 
-std::vector<std::vector<int>> NeuronGrowth::ConvertTo2DIntVector(const std::vector<float>& input, int NX, int NY) {
+std::vector<std::vector<int>> NeuronGrowth::ConvertTo2DIntVector(const std::vector<float>& input, int NX, int NY) 
+{
 	std::vector<std::vector<int>> output;
 	output.reserve(NX + 1); // Preallocate memory for rows
 
@@ -2807,7 +2829,8 @@ std::vector<std::vector<int>> NeuronGrowth::ConvertTo2DIntVector(const std::vect
 	return output;
 }
 
-std::vector<std::vector<float>> NeuronGrowth::ConvertTo2DFloatVector(const std::vector<float>& input, int NX, int NY) {
+std::vector<std::vector<float>> NeuronGrowth::ConvertTo2DFloatVector(const std::vector<float>& input, int NX, int NY) 
+{
 	std::vector<std::vector<float>> output;
 	output.reserve(NX); // Preallocate memory for rows
 
@@ -2859,103 +2882,13 @@ void NeuronGrowth::IdentifyNeurons(vector<float>& phi_in, vector<vector<int>>& n
 }
 
 // Check if a point is valid in the grid
-bool NeuronGrowth::isValid(int x, int y, int rows, int cols)
+bool NeuronGrowth::isValid(const int& x, const int& y, const int& rows, const int& cols)
 {
     return (x >= 0 && x < rows && y >= 0 && y < cols);
 }
 
-// // Function to calculate geodesic distance from a point
-// vector<vector<int>> NeuronGrowth::CalculateGeodesicDistanceFromPoint(vector<vector<int>> neurons, int startX, int startY)
-// {
-// 	int rows = neurons.size();
-// 	if (rows == 0) return {};
-
-// 	int cols = neurons[0].size();
-
-// 	// vector<vector<int>> distances(rows, vector<int>(cols, INF));
-// 	vector<vector<int>> distances(rows, vector<int>(cols, 0));
-// 	vector<vector<bool>> visited(rows, vector<bool>(cols, false));
-
-// 	distances[startX][startY] = 0;
-// 	visited[startX][startY] = true;
-
-// 	queue<pair<int, int>> q;
-// 	q.push({startX, startY});
-
-// 	int dx[] = {-1, 1, 0, 0};
-// 	int dy[] = {0, 0, -1, 1};
-
-// 	while (!q.empty()) {
-// 		pair<int, int> current = q.front();
-// 		q.pop();
-
-// 		int x = current.first;
-// 		int y = current.second;
-
-// 		for (int i = 0; i < 4; ++i) {
-// 			int newX = x + dx[i];
-// 			int newY = y + dy[i];
-
-// 			if (isValid(newX, newY, rows, cols) && neurons[newX][newY] == 1 && !visited[newX][newY]) {
-// 				visited[newX][newY] = true;
-// 				distances[newX][newY] = distances[x][y] + 1;
-// 				q.push({newX, newY});
-// 			}
-// 		}
-// 	}
-// 	return distances;
-// }
-
-// // Function to calculate geodesic distance from a point
-// vector<vector<vector<int>>> NeuronGrowth::CalculateGeodesicDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, const int& originX, const int& originY) 
-// {
-// 	int rows = neurons.size();
-// 	if (rows == 0) return {};
-
-// 	int cols = neurons[0].size();
-
-// 	// vector<vector<int>> distances(rows, vector<int>(cols, INF));
-// 	vector<vector<vector<int>>> distances(seed.size(), vector<vector<int>>(rows, vector<int>(cols, 0)));
-// 	// vector<vector<int>> distances(rows, vector<int>(cols, 0));
-// 	vector<vector<bool>> visited(rows, vector<bool>(cols, false));
-
-// 	int startX, startY;
-// 	for (size_t i = 0; i < seed.size(); i++) {
-// 		startX = seed[i][0] - originX;
-// 		startY = seed[i][1] - originY;
-
-// 		distances[i][startX][startY] = 0;
-// 		visited[startX][startY] = true;
-
-// 		queue<pair<int, int>> q;
-// 		q.push({startX, startY});
-
-// 		int dx[] = {-1, 1, 0, 0};
-// 		int dy[] = {0, 0, -1, 1};
-
-// 		while (!q.empty()) {
-// 			pair<int, int> current = q.front();
-// 			q.pop();
-
-// 			int x = current.first;
-// 			int y = current.second;
-
-// 			for (int j = 0; j < 4; ++j) {
-// 				int newX = x + dx[j];
-// 				int newY = y + dy[j];
-
-// 				if (isValid(newX, newY, rows, cols) && neurons[newX][newY] == neurons[startX][startY] && !visited[newX][newY]) {
-// 					visited[newX][newY] = true;
-// 					distances[i][newX][newY] = distances[i][x][y] + 1;
-// 					q.push({newX, newY});
-// 				}
-// 			}
-// 		}
-// 	}
-// 	return distances;
-// }
-
-vector<vector<vector<float>>> NeuronGrowth::CalculateQuasiEuclideanDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, const int& originX, const int& originY) {
+vector<vector<vector<float>>> NeuronGrowth::CalculateQuasiEuclideanDistanceFromPoint(const vector<vector<int>>& neurons, vector<array<float, 2>>& seed, const int& originX, const int& originY) 
+{
 	int rows = neurons.size();
 	if (rows == 0) return {};
 
@@ -3016,7 +2949,8 @@ vector<vector<vector<float>>> NeuronGrowth::CalculateQuasiEuclideanDistanceFromP
 	return distances;
 }
 
-vector<vector<vector<float>>> NeuronGrowth::CalculateGeodesicDistanceFromPoint(vector<vector<int>> neurons, vector<array<float, 2>> &seed, const int& originX, const int& originY) {
+vector<vector<vector<float>>> NeuronGrowth::CalculateGeodesicDistanceFromPoint(const vector<vector<int>>& neurons, vector<array<float, 2>>& seed, const int& originX, const int& originY)
+{
 	int rows = neurons.size();
 	if (rows == 0) return {};
 
@@ -3071,63 +3005,9 @@ vector<vector<vector<float>>> NeuronGrowth::CalculateGeodesicDistanceFromPoint(v
 	return distances;
 }
 
-// std::vector<std::vector<float>> NeuronGrowth::CalculateGeodesicDistanceFromPoint(const std::vector<std::vector<int>>& neurons, int startX, int startY) {
-//     int rows = neurons.size();
-//     if (rows == 0) return {};
-
-//     int cols = neurons[0].size();
-
-//     std::vector<std::vector<float>> distances(rows, std::vector<float>(cols, std::numeric_limits<float>::infinity()));
-//     distances[startX][startY] = 0.0f;
-
-//     std::priority_queue<std::pair<float, std::pair<int, int>>, std::vector<std::pair<float, std::pair<int, int>>>, std::greater<std::pair<float, std::pair<int, int>>>> pq;
-//     pq.push({0.0f, {startX, startY}});
-
-//     while (!pq.empty()) {
-//         auto current = pq.top();
-//         pq.pop();
-
-//         int x = current.second.first;
-//         int y = current.second.second;
-//         float distance = current.first;
-
-//         if (distance > distances[x][y]) continue;
-
-//         // Explore neighboring cells
-//         static const int dx[] = {-1, 1, 0, 0};
-//         static const int dy[] = {0, 0, -1, 1};
-//         for (int i = 0; i < 4; ++i) {
-//             int newX = x + dx[i];
-//             int newY = y + dy[i];
-//             if (newX >= 0 && newX < rows && newY >= 0 && newY < cols) {
-//                 float newDistance = distance + std::sqrt(dx[i] * dx[i] + dy[i] * dy[i]); // Using unit distance for simplicity
-//                 if (newDistance < distances[newX][newY]) {
-//                     distances[newX][newY] = newDistance;
-//                     pq.push({newDistance, {newX, newY}});
-//                 }
-//             }
-//         }
-//     }
-
-//     return distances;
-// }
-
-// std::vector<std::vector<std::vector<float>>> NeuronGrowth::CalculateAllGeodesicDistancesFromPoints(const std::vector<std::vector<int>>& neurons, const std::vector<std::array<float, 2>>& seedPoints, const int& originX, const int& originY) {
-//     std::vector<std::vector<std::vector<float>>> allDistances;
-//     for (const auto& seed : seedPoints) {
-//         int adjustedX = seed[0] - originX;
-//         int adjustedY = seed[1] - originY;
-//         if (adjustedX >= 0 && adjustedX < neurons.size() && adjustedY >= 0 && adjustedY < neurons[0].size()) {
-//             allDistances.push_back(CalculateGeodesicDistanceFromPoint(neurons, adjustedX, adjustedY));
-//         } else {
-//             allDistances.push_back({}); // Empty distances if seed point is out of bounds
-//         }
-//     }
-//     return allDistances;
-// }
-
 // Function to trace neurites
-vector<vector<pair<int, int>>> NeuronGrowth::TraceNeurites(vector<vector<float>>& geodist) {
+vector<vector<pair<int, int>>> NeuronGrowth::TraceNeurites(vector<vector<float>>& geodist) 
+{
 	// // Step 1: Set geodist values below 20 to 0
 	// for (auto& row : geodist) {
 	// 	for (auto& val : row) {
@@ -3157,7 +3037,7 @@ vector<vector<pair<int, int>>> NeuronGrowth::TraceNeurites(vector<vector<float>>
 }
 
 // Function to calculate geodesic distance from a point
-void NeuronGrowth::SaveNGvars(vector<vector<float>> &NGvars, int NX, int NY, string fn) 
+void NeuronGrowth::SaveNGvars(vector<vector<float>>& NGvars, int NX, int NY, string fn) 
 {
 	// writing initialized variables for debugging purposes
 	bool visualization = true;
@@ -3169,10 +3049,8 @@ void NeuronGrowth::SaveNGvars(vector<vector<float>> &NGvars, int NX, int NY, str
 	PrintVec2TXT(NGvars[5], fn + "/tub_0_" + to_string(n) + ".txt", visualization);
 }
 
-void NeuronGrowth::PrintOutNeurons(vector<vector<int>> neurons) 
-{
-	// ierr = PetscPrintf(PETSC_COMM_WORLD, "-----------------------------------------------------------------------------------------------\n");
-	
+void NeuronGrowth::PrintOutNeurons(const vector<vector<int>>& neurons) 
+{	
 	// int dwnRatio = (int)neurons[0].size()/(int)78 + 1; // assuming line length is 78 characters
 	int dwnRatio = 1; // assuming line length is 78 characters
 
@@ -3193,7 +3071,6 @@ void NeuronGrowth::PrintOutNeurons(vector<vector<int>> neurons)
 		}
 		ierr = PetscPrintf(PETSC_COMM_WORLD, "|\n");
 	}
-	// ierr = PetscPrintf(PETSC_COMM_WORLD, "-----------------------------------------------------------------------------------------------\n");
 	for (size_t i = 0; i < 78; i++) {
 		ierr = PetscPrintf(PETSC_COMM_WORLD, "-");
 	}
@@ -3453,7 +3330,7 @@ PetscErrorCode MySNESMonitor(SNES snes, PetscInt its, PetscReal fnorm, PetscView
 	PetscFunctionReturn(PETSC_SUCCESS);
 }
 
-PetscErrorCode CleanUpSolvers(NeuronGrowth &NG)
+PetscErrorCode CleanUpSolvers(NeuronGrowth& NG)
 {
 	// NG.ierr = SNESDestroy(&NG.snes_phi); CHKERRQ(NG.ierr);
 	// NG.ierr = MatDestroy(&NG.J); CHKERRQ(NG.ierr);
@@ -3481,13 +3358,12 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 	vector<Vertex2D>& cpts_fine, const vector<Element2D>& tmesh_fine, vector<Vertex2D>& cpts,
 	vector<Vertex2D>& prev_cpts, vector<Vertex2D>& prev_cpts_fine, const vector<Element2D>& tmesh,
 	string path_in, string path_out, int& iter, int end_iter_in, vector<vector<float>> &NGvars, 
-	int &NX, int &NY, vector<array<float, 2>> &seed, int &originX, int &originY,
+	int &NX, int &NY, vector<array<float, 2>>& seed, int &originX, int &originY,
 	vector<int> &rfid, vector<int> &rftype, bool &localRefine)
 {	
 	/*==============================================================================*/
 	// Declare and initialize Neuron Growth simulation
 	NeuronGrowth NG;
-	NG.SetVariables("./simulation_parameters.txt");
 
 	// Set the number of iterations, number of neurons, and the end iteration from provided variables
 	NG.n = iter;  // Assign iteration count
@@ -3551,15 +3427,15 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 
 	/*==============================================================================*/
 	// Pre-allocate variables for tip detections (will be used every iter)
+	int NX_fine(2 * NX + 1), NY_fine(2 * NY + 1);
 	// Allocate neurons matrix
-	std::vector<std::vector<int>> neurons(2 * NX + 1, std::vector<int>(2 * NY + 1, 0));
+	std::vector<std::vector<int>> neurons(NX_fine, std::vector<int>(NY_fine, 0));
 	// Allocate distances 3D matrix
-	std::vector<std::vector<std::vector<float>>> distances(NG.numNeuron, std::vector<std::vector<float>>(2 * NX + 1, std::vector<float>(2 * NY + 1, 0)));
+	std::vector<std::vector<std::vector<float>>> distances(NG.numNeuron, std::vector<std::vector<float>>(NX_fine, std::vector<float>(NY_fine, 0)));
 	// Allocate vectors for phi_fine, id, tip, and localMaximaMatrix
 	std::vector<float> phi_fine(cpts_fine.size(), 0), id(cpts_fine.size(), 0), tip(cpts_fine.size(), 0), localMaximaMatrix(cpts_fine.size(), 0);
 	// Allocate geodist and axonTip matrices
 	std::vector<std::vector<float>> geodist(NG.numNeuron, std::vector<float>(distances[0].size(), 0));
-	std::vector<std::vector<float>> axonTip(NG.numNeuron, std::vector<float>(distances[0].size(), 0));
 	PetscPrintf(PETSC_COMM_WORLD, "Pre-allocated vectors!-------------------------------------------------------\n");
 
 	/*==============================================================================*/
@@ -3569,7 +3445,8 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		tic();
 		/*==============================================================================*/
 		// Neuron identification and tip detection
-		if (NG.n % 2 == 0 || NG.n % 100 == 1 || NG.n == 0) {
+
+		if (NG.n % 1 == 0 || NG.n % 100 == 1 || NG.n == 0) {
 			phi_fine = NG.InterpolateValues_closest(NG.phi, kdTree, cpts_fine);
 			NG.IdentifyNeurons(phi_fine, neurons, NG.prev_id, seed, NX*2, NY*2, originX, originY);
 			// Apply the transformation directly to NG.prev_id
@@ -3581,64 +3458,79 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			}
 			id = ConvertTo1DFloatVector(neurons);
 			NG.DetectTipsMulti(phi_fine, id, NG.numNeuron, tip, NX*2, NY*2);
-			localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX*2+1, NY*2+1);
+			localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine);
 			// localMaximaMatrix = NG.FindLocalMaximaInClusters(tip, NX*2+1, NY*2+1);
 			// distances = NG.CalculateQuasiEuclideanDistanceFromPoint(neurons, seed, originX, originY);
 			distances = NG.CalculateGeodesicDistanceFromPoint(neurons, seed, originX, originY);
 
-			vector<vector<float>> axonTip(NG.numNeuron, vector<float>(distances[0].size(), 0));
 			for (size_t i = 0; i < distances.size(); i++) {
 				geodist[i] = ConvertTo1DFloatVector(distances[i]);
-				float maxVal(0);
-				int maxInd(0);
-				for (size_t l = 1; l < cpts_fine.size() - (2 * NY + 1) - 1; ++l) {
-					// if (localMaximaMatrix[l] == 1 && geodist[i][l] >= maxVal) {
-					// if (tip[l] != 0 && geodist[i][l] >= maxVal) {
-					if (geodist[i][l] >= maxVal) {
-						maxVal = geodist[i][l];
-						maxInd = l;
+				// float maxVal(0);
+				// int maxInd(0);
+				// for (size_t l = 1; l < cpts_fine.size() - (2 * NY + 1) - 1; ++l) {
+				// 	if (localMaximaMatrix[l] == 1 && geodist[i][l] >= maxVal) {
+				// 	// if (tip[l] != 0 && geodist[i][l] >= maxVal) {
+				// 	// if (geodist[i][l] >= maxVal) {
+				// 		maxVal = geodist[i][l];
+				// 		maxInd = l;
+				// 	}
+				// }
+
+				// Use the modified function
+				std::vector<float> maxGeodist = NG.ComputeMaxFilter(geodist[i], NX_fine, NY_fine, 2);
+
+				float maxVal = -std::numeric_limits<float>::max();
+				int maxInd = 0;
+				for (size_t i = 0; i < maxGeodist.size(); ++i) {
+					if (localMaximaMatrix[i] != 0 && maxGeodist[i] >= maxVal) {
+						maxVal = maxGeodist[i];
+						maxInd = i;
 					}
 				}
+
 				if (maxInd != 0) {
 					// localMaximaMatrix[maxInd] = 5;
-					const int range = 2 * NY + 1;
 					for (int i = -1; i <= 1; ++i) {
 						for (int j = -1; j <= 1; ++j) {
-							// Calculate the index for localMaximaMatrix
-							// localMaximaMatrix[maxInd + j * range - i] = 5;
-							localMaximaMatrix[maxInd + j * range - i] = 5;
+							localMaximaMatrix[maxInd + j * NY_fine - i] = 5;
 						}
 					}
 				}
-
-				// for (size_t j = 0; j < geodist[i].size(); j++) {
-				// 	if (tip[j] != 0) {
-				// 		tip[j] = tip[j] * geodist[i][j];
-				// 	}
-				// }
-				// // axonTip[i] = NG.FindLocalMaximaInClusters(geodist[i], 2*NX+1, 2*NY+1);
-				// axonTip[i] = NG.KeepOneClusterWithMaxValue(tip, 2*NX+1, 2*NY+1);
-				// for (size_t l = 1; l < cpts_fine.size() - (2 * NY + 1) - 1; ++l) {
-				// 	if (axonTip[i][l] != 0) {
-				// 		const int range = 2 * NY + 1;
-				// 		// Iterate over the 3x3 neighborhood of each non-zero element
-				// 		for (int k = -1; k <= 1; ++k) {
-				// 			for (int j = -1; j <= 1; ++j) {
-				// 				// Skip the central element
-				// 				// if (i != 0 || j != 0) {
-				// 					// Calculate the index for localMaximaMatrix
-				// 					localMaximaMatrix[l + j * range - k] = 5;
-				// 				// }
-				// 			}
-				// 		}
-				// 		// localMaximaMatrix[l] = 5;
-				// 	}
-				// }
-		
 			}
-
 			NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, kdTree_fine, cpts);
 		}
+
+		// if (NG.n % 1 == 0 || NG.n % 100 == 1 || NG.n == 0) {
+		// 	phi_fine = NG.InterpolateValues_closest(NG.phi, kdTree, cpts_fine);
+		// 	NG.IdentifyNeurons(phi_fine, neurons, NG.prev_id, seed, NX*2, NY*2, originX, originY);
+			
+		// 	for (auto &prev_id_row : NG.prev_id) {
+		// 		std::transform(prev_id_row.begin(), prev_id_row.end(), neurons.begin(), prev_id_row.begin(),
+		// 		[](int prevVal, int neuronVal) { return prevVal == 0 ? neuronVal : std::min(prevVal, neuronVal); });
+		// 	}
+
+		// 	id = ConvertTo1DFloatVector(neurons);
+		// 	NG.DetectTipsMulti(phi_fine, id, NG.numNeuron, tip, NX*2, NY*2);
+		// 	localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX*2+1, NY*2+1);
+		// 	distances = NG.CalculateGeodesicDistanceFromPoint(neurons, seed, originX, originY);
+
+		// 	for (size_t i = 0; i < distances.size(); i++) {
+		// 		geodist[i] = ConvertTo1DFloatVector(distances[i]);
+		// 		auto maxIt = std::max_element(geodist[i].begin() + 2 * NY + 1, geodist[i].end() - 2 * NY + 1);
+		// 		int maxInd = std::distance(geodist[i].begin(), maxIt);
+
+		// 		if (maxInd > 0) {
+		// 			for (int offset = -1; offset <= 1; ++offset) {
+		// 				for (int j = -1; j <= 1; ++j) {
+		// 				localMaximaMatrix[maxInd + j * 2 * NY + 1 - offset] = 5;
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+
+		// 	NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, kdTree_fine, cpts);
+		// }
+
 		toc(t_tip);
 		tic();
 		t_total += t_tip;
@@ -3646,7 +3538,6 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		/*==============================================================================*/
 		/*Implcit Non-liear Newton Raphson solver for Phase field equation*/
 		NG.phi_prev = NG.phi;	
-	
 		NG.preparePhaseField();
 
 		float tol = 1e-4;
@@ -3724,7 +3615,6 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		// /*==============================================================================*/
 		// /*Implcit Non-liear SNES solver for Phase field equation*/
 		// NG.phi_prev = NG.phi;	
-	
 		// NG.preparePhaseField();
 
 		// NG.check_itr = 0;
