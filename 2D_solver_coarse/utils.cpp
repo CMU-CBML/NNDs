@@ -303,8 +303,8 @@ void THS2D(const std::string& path_in, const std::vector<int>& rfid, const std::
 	std::cout << "******************************************************************************" << std::endl;
 	std::cout << "Local refinement based on Xiaodong's THS3D code ... " << std::endl;
 	std::cout << "  - see: Truncated T-splines: Fundamentals and methods (2017)" << std::endl << std::endl;
-	std::cout << "-----------------------------------------------------------------------------" << std::endl;
-	std::cout << "Calling command | input mesh directory | refine ID | refine element type" << std::endl << std::endl;
+	// std::cout << "-----------------------------------------------------------------------------" << std::endl;
+	// std::cout << "Calling command | input mesh directory | refine ID | refine element type" << std::endl << std::endl;
 
 	std::string ths2d_cmd_tmp("../THS2D/TTSP2D " + path_in + " ");
 	for (size_t i = 0; i < rfid.size(); ++i) {
@@ -313,7 +313,8 @@ void THS2D(const std::string& path_in, const std::vector<int>& rfid, const std::
 	for (size_t i = 0; i < rftype.size(); ++i) {
 		ths2d_cmd_tmp += std::to_string(rftype[i]) + " ";
 	}
-	std::cout << ths2d_cmd_tmp << std::endl;
+	// (Optional) output local refine element ID and type
+	// std::cout << ths2d_cmd_tmp << std::endl;
 
 	if (system(ths2d_cmd_tmp.c_str()) != 0) {
 		std::cerr << "Command failed to execute." << std::endl;

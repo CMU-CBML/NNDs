@@ -2066,6 +2066,7 @@ void NeuronGrowth::BuildLinearSystemProcessNG_syn_tub(const vector<Element2D>& t
 
 				for (size_t m = 0; m < nen; m++) {
 					EVectorSolve_syn[m] += Nx[m] * (vars_st[1] + kappa * vars_st[0]) * detJ;
+					// EVectorSolve_syn[m] += Nx[m] * (vars_st[1] + (kappa - 1 * vars_st[1]) * vars_st[0]) * detJ;
 
 					// EVectorSolve_tub[m] += (dt / vars_st[2] * vars_st[11] + vars_st[6]) * Nx[m] * detJ;
 					// EVectorSolve_tub[m] += (dt / vars_st[2] + vars_st[6]) * Nx[m] * detJ;
@@ -2457,38 +2458,16 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 		return phi > threshold ? 1.0f : 0.0f;
 	};
 
-	// Iterate with precomputed values and reduced condition checks
-	for (int i = (5 * NY + 5); i < (length - 4 * NY - 4); ++i) {
-		if (cellBoundary(phi_fine[i], threshold) > 0 && std::round(id[i]) != 9) {
-			for (int j = -4; j <= 4; ++j) {
-				for (int k = -4; k <= 4; ++k) {
-					int index = i + j * offsetY + k;
-					float roundedId = std::round(id[index]);
-					// if (roundedId == std::round(id[i]) || roundedId == 0 || roundedId == 9) {
-					if (roundedId == std::round(id[i])) {
-						phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
-					}
-				}
-			}
-			phiSum[i] = phiSum[i] > 0 ? cellBoundary(phi_fine[i], phiThreshold) / phiSum[i] : 0;
-			if (std::isnan(phiSum[i])) phiSum[i] = 0; // Handle NaN explicitly, though it should not occur now
-		}
-	}
-
 	// // Iterate with precomputed values and reduced condition checks
 	// for (int i = (5 * NY + 5); i < (length - 4 * NY - 4); ++i) {
 	// 	if (cellBoundary(phi_fine[i], threshold) > 0 && std::round(id[i]) != 9) {
-	// 		const int radius = 4; // Define the radius of the circle
-	// 		for (int j = -radius; j <= radius; ++j) {
-	// 			for (int k = -radius; k <= radius; ++k) {
-	// 				if (j * j + k * k <= radius * radius) { // Check if the point (j, k) is inside the circle
-	// 					int index = i + j * offsetY + k;
-	// 					if (index >= 0 && index < length) { // Ensure index is within bounds
-	// 						float roundedId = std::round(id[index]);
-	// 						if (roundedId == std::round(id[i])) {
-	// 							phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
-	// 						}
-	// 					}
+	// 		for (int j = -4; j <= 4; ++j) {
+	// 			for (int k = -4; k <= 4; ++k) {
+	// 				int index = i + j * offsetY + k;
+	// 				float roundedId = std::round(id[index]);
+	// 				// if (roundedId == std::round(id[i]) || roundedId == 0 || roundedId == 9) {
+	// 				if (roundedId == std::round(id[i])) {
+	// 					phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
 	// 				}
 	// 			}
 	// 		}
@@ -2496,6 +2475,28 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 	// 		if (std::isnan(phiSum[i])) phiSum[i] = 0; // Handle NaN explicitly, though it should not occur now
 	// 	}
 	// }
+
+	// Iterate with precomputed values and reduced condition checks
+	for (int i = (5 * NY + 5); i < (length - 4 * NY - 4); ++i) {
+		if (cellBoundary(phi_fine[i], threshold) > 0 && std::round(id[i]) != 9) {
+			const int radius = 4; // Define the radius of the circle
+			for (int j = -radius; j <= radius; ++j) {
+				for (int k = -radius; k <= radius; ++k) {
+					if (j * j + k * k <= radius * radius) { // Check if the point (j, k) is inside the circle
+						int index = i + j * offsetY + k;
+						if (index >= 0 && index < length) { // Ensure index is within bounds
+							float roundedId = std::round(id[index]);
+							if (roundedId == std::round(id[i])) {
+								phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
+							}
+						}
+					}
+				}
+			}
+			phiSum[i] = phiSum[i] > 0 ? cellBoundary(phi_fine[i], phiThreshold) / phiSum[i] : 0;
+			if (std::isnan(phiSum[i])) phiSum[i] = 0; // Handle NaN explicitly, though it should not occur now
+		}
+	}
 
 	// Normalize phiSum by the standard deviation value
 	float stdVal = RmOutlier(phiSum);
@@ -2507,8 +2508,8 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 	// Filter based on a normalized threshold
 	// const float normalizedThreshold = 1.4;
 	// const float normalizedThreshold = 1.3; //
-	const float normalizedThreshold = 1.2;
-	// const float normalizedThreshold = 1.1;
+	// const float normalizedThreshold = 1.2;
+	const float normalizedThreshold = 1.1;
 	// const float normalizedThreshold = 0.8*maxVal;
 	std::transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [normalizedThreshold](float val) {
 		return val < normalizedThreshold ? 0.0f : val;
@@ -2739,6 +2740,42 @@ vector<float> NeuronGrowth::FindCentroidsOfLocalMaximaClusters(const vector<floa
 		// centroids[centroidRow * cols + centroidCol + cols + 1] = 1.0f;
 		// centroids[centroidRow * cols + centroidCol + cols] = 1.0f;
 		// centroids[centroidRow * cols + centroidCol + cols - 1] = 1.0f;
+	}
+
+	return centroids;
+}
+
+vector<float> NeuronGrowth::FindCentroidsOfLocalMaximaClusters(const vector<float>& matrix, const int& rows, const int& cols, vector<int>& centroidIndices)
+{
+	vector<vector<pair<int, int>>> clusters = FindClusters(matrix, rows, cols);
+	vector<float> centroids(rows * cols, 0.0f);
+	centroidIndices.clear();  // Clearing existing indices to ensure fresh data on each call
+
+	for (const auto& cluster : clusters) {
+		vector<pair<int, int>> localMaxima;
+
+		// Find all local maxima in the cluster
+		for (const auto& pos : cluster) {
+			if (IsLocalMaximum(matrix, rows, cols, pos.first, pos.second)) {
+				localMaxima.push_back(pos);
+			}
+		}
+
+		if (!localMaxima.empty()) {  // Ensure there are local maxima to calculate centroid
+			// Calculate centroid of local maxima
+			float sumRow = 0, sumCol = 0;
+			for (const auto& maxPos : localMaxima) {
+				sumRow += maxPos.first;
+				sumCol += maxPos.second;
+			}
+
+			int centroidRow = static_cast<int>(round(sumRow / localMaxima.size()));
+			int centroidCol = static_cast<int>(round(sumCol / localMaxima.size()));
+			int centroidIndex = centroidRow * cols + centroidCol;
+
+			centroids[centroidIndex] = 1.0f;
+			centroidIndices.push_back(centroidIndex);  // Store the index of the centroid
+		}
 	}
 
 	return centroids;
@@ -3445,7 +3482,6 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		tic();
 		/*==============================================================================*/
 		// Neuron identification and tip detection
-
 		if (NG.n % 1 == 0 || NG.n % 100 == 1 || NG.n == 0) {
 			phi_fine = NG.InterpolateValues_closest(NG.phi, kdTree, cpts_fine);
 			NG.IdentifyNeurons(phi_fine, neurons, NG.prev_id, seed, NX*2, NY*2, originX, originY);
@@ -3458,9 +3494,11 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			}
 			id = ConvertTo1DFloatVector(neurons);
 			NG.DetectTipsMulti(phi_fine, id, NG.numNeuron, tip, NX*2, NY*2);
-			localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine);
+
+			vector<int> centroidIndices;
+			localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine, centroidIndices);
+			// localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine);
 			// localMaximaMatrix = NG.FindLocalMaximaInClusters(tip, NX*2+1, NY*2+1);
-			// distances = NG.CalculateQuasiEuclideanDistanceFromPoint(neurons, seed, originX, originY);
 			distances = NG.CalculateGeodesicDistanceFromPoint(neurons, seed, originX, originY);
 
 			for (size_t i = 0; i < distances.size(); i++) {
@@ -3478,58 +3516,34 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 
 				// Use the modified function
 				std::vector<float> maxGeodist = NG.ComputeMaxFilter(geodist[i], NX_fine, NY_fine, 2);
-
 				float maxVal = -std::numeric_limits<float>::max();
 				int maxInd = 0;
-				for (size_t i = 0; i < maxGeodist.size(); ++i) {
-					if (localMaximaMatrix[i] != 0 && maxGeodist[i] >= maxVal) {
-						maxVal = maxGeodist[i];
-						maxInd = i;
+
+				for (size_t j = 0; j < centroidIndices.size(); ++j) {
+					if (maxGeodist[centroidIndices[j]] >= maxVal) {
+						maxVal = maxGeodist[centroidIndices[j]];
+						maxInd = centroidIndices[j];
 					}
 				}
+				
+				// for (size_t j = 0; j < maxGeodist.size(); ++j) {
+				// 	if (localMaximaMatrix[j] != 0 && maxGeodist[j] >= maxVal) {
+				// 		maxVal = maxGeodist[j];
+				// 		maxInd = j;
+				// 	}
+				// }
 
 				if (maxInd != 0) {
 					// localMaximaMatrix[maxInd] = 5;
-					for (int i = -1; i <= 1; ++i) {
-						for (int j = -1; j <= 1; ++j) {
-							localMaximaMatrix[maxInd + j * NY_fine - i] = 5;
+					for (int j = -1; j <= 1; ++j) {
+						for (int k = -1; k <= 1; ++k) {
+							localMaximaMatrix[maxInd + k * NY_fine - j] = 5;
 						}
 					}
 				}
 			}
 			NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, kdTree_fine, cpts);
 		}
-
-		// if (NG.n % 1 == 0 || NG.n % 100 == 1 || NG.n == 0) {
-		// 	phi_fine = NG.InterpolateValues_closest(NG.phi, kdTree, cpts_fine);
-		// 	NG.IdentifyNeurons(phi_fine, neurons, NG.prev_id, seed, NX*2, NY*2, originX, originY);
-			
-		// 	for (auto &prev_id_row : NG.prev_id) {
-		// 		std::transform(prev_id_row.begin(), prev_id_row.end(), neurons.begin(), prev_id_row.begin(),
-		// 		[](int prevVal, int neuronVal) { return prevVal == 0 ? neuronVal : std::min(prevVal, neuronVal); });
-		// 	}
-
-		// 	id = ConvertTo1DFloatVector(neurons);
-		// 	NG.DetectTipsMulti(phi_fine, id, NG.numNeuron, tip, NX*2, NY*2);
-		// 	localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX*2+1, NY*2+1);
-		// 	distances = NG.CalculateGeodesicDistanceFromPoint(neurons, seed, originX, originY);
-
-		// 	for (size_t i = 0; i < distances.size(); i++) {
-		// 		geodist[i] = ConvertTo1DFloatVector(distances[i]);
-		// 		auto maxIt = std::max_element(geodist[i].begin() + 2 * NY + 1, geodist[i].end() - 2 * NY + 1);
-		// 		int maxInd = std::distance(geodist[i].begin(), maxIt);
-
-		// 		if (maxInd > 0) {
-		// 			for (int offset = -1; offset <= 1; ++offset) {
-		// 				for (int j = -1; j <= 1; ++j) {
-		// 				localMaximaMatrix[maxInd + j * 2 * NY + 1 - offset] = 5;
-		// 				}
-		// 			}
-		// 		}
-		// 	}
-
-		// 	NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, kdTree_fine, cpts);
-		// }
 
 		toc(t_tip);
 		tic();

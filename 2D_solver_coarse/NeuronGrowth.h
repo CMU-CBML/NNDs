@@ -249,7 +249,7 @@ public:
 	vector<float> FindCentroidsInClusters(const vector<float>& matrix, const int& rows, const int& cols);
 	bool IsLocalMaximum(const vector<float>& matrix, const int& rows, const int& cols, const int& x, const int& y);
 	vector<float> FindCentroidsOfLocalMaximaClusters(const vector<float>& matrix, const int& rows, const int& cols);
-	// vector<vector<float>> ComputeMaxFilter(const vector<vector<float>>& geodist, int NY);
+	vector<float> FindCentroidsOfLocalMaximaClusters(const vector<float>& matrix, const int& rows, const int& cols, vector<int>& centroidIndices);
 	std::vector<float> ComputeMaxFilter(const std::vector<float>& geodist, int numRows, int numCols, int windowRadius);
 
 	// Neuron detection
