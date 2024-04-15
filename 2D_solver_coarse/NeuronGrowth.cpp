@@ -1587,9 +1587,9 @@ void NeuronGrowth::preparePhaseField()
 					if (eleTp > 0) {
 						eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(50 * eleTb - 0) * (1 - eleS));
 						if (eleTp > 3) {
-							pre_eleMp.push_back(120);
+							pre_eleMp.push_back(100);
 						} else {
-							pre_eleMp.push_back(40);
+							pre_eleMp.push_back(50);
 						}
 					} else {
 						eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(r * eleTb - g) * (1 - eleS));
@@ -2075,7 +2075,7 @@ void NeuronGrowth::BuildLinearSystemProcessNG_syn_tub(const vector<Element2D>& t
 					for (size_t n = 0; n < nen; n++) {
 						if (judge_syn == 0)
 
-						EMatrixSolve_syn[m][n] += (Nx[m] * Nx[n] + (dt/4) * Dc * 1.75 * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])) * detJ;
+						EMatrixSolve_syn[m][n] += (Nx[m] * Nx[n] + (dt/4) * Dc * 2 * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])) * detJ;
 
 						// EMatrixSolve_tub[m][n] += (Nx[m] * Nx[n] - dt / vars_st[2] * (
 						// 	(- Diff * (vars_st[2] * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])))
@@ -2509,8 +2509,9 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 	// const float normalizedThreshold = 1.4;
 	// const float normalizedThreshold = 1.3; //
 	// const float normalizedThreshold = 1.2;
-	const float normalizedThreshold = 1.1;
-	// const float normalizedThreshold = 0.8*maxVal;
+	// const float normalizedThreshold = 1.1;
+	// const float normalizedThreshold = 1.0;
+	const float normalizedThreshold = 0.8*maxVal;
 	std::transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [normalizedThreshold](float val) {
 		return val < normalizedThreshold ? 0.0f : val;
 	});
@@ -2806,25 +2807,25 @@ vector<float> NeuronGrowth::FindCentroidsOfLocalMaximaClusters(const vector<floa
 // }
 
 std::vector<float> NeuronGrowth::ComputeMaxFilter(const std::vector<float>& geodist, int numRows, int numCols, int windowRadius) {
-    std::vector<float> maxGeodist(geodist.size(), std::numeric_limits<float>::lowest());
+	std::vector<float> maxGeodist(geodist.size(), std::numeric_limits<float>::lowest());
 
-    for (int row = 0; row < numRows; ++row) {
-        for (int col = 0; col < numCols; ++col) {
-            int startIndex = row * numCols + col;
-            int startRow = std::max(0, row - windowRadius);
-            int endRow = std::min(numRows - 1, row + windowRadius);
-            int startCol = std::max(0, col - windowRadius);
-            int endCol = std::min(numCols - 1, col + windowRadius);
+	for (int row = 0; row < numRows; ++row) {
+		for (int col = 0; col < numCols; ++col) {
+			int startIndex = row * numCols + col;
+			int startRow = std::max(0, row - windowRadius);
+			int endRow = std::min(numRows - 1, row + windowRadius);
+			int startCol = std::max(0, col - windowRadius);
+			int endCol = std::min(numCols - 1, col + windowRadius);
 
-            for (int r = startRow; r <= endRow; ++r) {
-                for (int c = startCol; c <= endCol; ++c) {
-                    int index = r * numCols + c;
-                    maxGeodist[startIndex] = std::max(maxGeodist[startIndex], geodist[index]);
-                }
-            }
-        }
-    }
-    return maxGeodist;
+			for (int r = startRow; r <= endRow; ++r) {
+				for (int c = startCol; c <= endCol; ++c) {
+					int index = r * numCols + c;
+					maxGeodist[startIndex] = std::max(maxGeodist[startIndex], geodist[index]);
+				}
+			}
+		}
+	}
+	return maxGeodist;
 }
 
 vector<vector<int>> NeuronGrowth::ConvertTo2DIntVector_PushBoundary(const vector<float>& input, const int& NX, const int& NY) 
@@ -3499,32 +3500,32 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine, centroidIndices);
 			// localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine);
 			// localMaximaMatrix = NG.FindLocalMaximaInClusters(tip, NX*2+1, NY*2+1);
-			distances = NG.CalculateGeodesicDistanceFromPoint(neurons, seed, originX, originY);
+			// distances = NG.CalculateGeodesicDistanceFromPoint(neurons, seed, originX, originY);
+			distances = NG.CalculateQuasiEuclideanDistanceFromPoint(neurons, seed, originX, originY);
 
 			for (size_t i = 0; i < distances.size(); i++) {
 				geodist[i] = ConvertTo1DFloatVector(distances[i]);
-				// float maxVal(0);
-				// int maxInd(0);
-				// for (size_t l = 1; l < cpts_fine.size() - (2 * NY + 1) - 1; ++l) {
-				// 	if (localMaximaMatrix[l] == 1 && geodist[i][l] >= maxVal) {
-				// 	// if (tip[l] != 0 && geodist[i][l] >= maxVal) {
-				// 	// if (geodist[i][l] >= maxVal) {
-				// 		maxVal = geodist[i][l];
-				// 		maxInd = l;
-				// 	}
-				// }
-
-				// Use the modified function
-				std::vector<float> maxGeodist = NG.ComputeMaxFilter(geodist[i], NX_fine, NY_fine, 2);
-				float maxVal = -std::numeric_limits<float>::max();
-				int maxInd = 0;
-
-				for (size_t j = 0; j < centroidIndices.size(); ++j) {
-					if (maxGeodist[centroidIndices[j]] >= maxVal) {
-						maxVal = maxGeodist[centroidIndices[j]];
-						maxInd = centroidIndices[j];
+				float maxVal(0);
+				int maxInd(0);
+				for (size_t l = 1; l < cpts_fine.size() - (2 * NY + 1) - 1; ++l) {
+					// if (localMaximaMatrix[l] == 1 && geodist[i][l] >= maxVal) {
+					// if (tip[l] != 0 && geodist[i][l] >= maxVal) {
+					if (geodist[i][l] >= maxVal) {
+						maxVal = geodist[i][l];
+						maxInd = l;
 					}
 				}
+
+				// // Use the modified function
+				// std::vector<float> maxGeodist = NG.ComputeMaxFilter(geodist[i], NX_fine, NY_fine, 2);
+				// float maxVal = -std::numeric_limits<float>::max();
+				// int maxInd = 0;
+				// for (size_t j = 0; j < centroidIndices.size(); ++j) {
+				// 	if (maxGeodist[centroidIndices[j]] >= maxVal) {
+				// 		maxVal = maxGeodist[centroidIndices[j]];
+				// 		maxInd = centroidIndices[j];
+				// 	}
+				// }
 				
 				// for (size_t j = 0; j < maxGeodist.size(); ++j) {
 				// 	if (localMaximaMatrix[j] != 0 && maxGeodist[j] >= maxVal) {
