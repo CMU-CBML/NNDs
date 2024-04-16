@@ -241,6 +241,9 @@ public:
 	bool isInBox(const Vertex2D& point, const Vertex2D& center, float dx, float dy);
 	vector<float> calculatePhiSum(const vector<Vertex2D>& cpts, float dx, float dy, vector<float> id);
 	void DetectTipsMulti(const vector<float>& phi_fine, const vector<float>& id, const int& numNeuron, vector<float>& phiSum, const int& NX, const int& NY);
+	
+	void DetectTipsMulti_test(const std::vector<float>& phi_fine, int NX, int NY, float gradientThreshold);
+
 	float bfs(const vector<float>& matrix, const int& rows, const int& cols, const int& row, const int& col,
 		vector<bool>& visited, vector<pair<int, int>>& cluster);
 	vector<vector<pair<int, int>>> FindClusters(const vector<float>& matrix, const int& rows, const int& cols);

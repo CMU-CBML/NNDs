@@ -1,22 +1,16 @@
-# I am a comment, and I want to say that the variable CC will be
-# the compiler to use.
-# Hey!, I am comment number 2. I want to say that CFLAGS will be the
-# options I'll pass to the compiler.
-
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 	Compiler=g++
-	EIGEN_DIR = /home/kuanrenqian/Research/eigen-3.4.0
 endif
 ifeq ($(UNAME_S),Darwin)
 	Compiler=/opt/homebrew/Cellar/gcc/13.2.0/bin/aarch64-apple-darwin23-g++-13
-	EIGEN_DIR = /Users/kuanrenqian/eigen-3.4.0
 endif
+
+EIGEN_DIR = ../eigen-3.4.0
 
 CFLAGS= --fast-math -O3 -c -std=c++11 -I ${EIGEN_DIR} -Wall 
 #-DMKL_ILP64
 FLAGS_LINK = -fopenmp -lpthread -lm -ldl
-
 
 all: spline
 

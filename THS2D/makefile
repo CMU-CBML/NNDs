@@ -1,16 +1,14 @@
-
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
-	PETSC_DIR = /home/kuanrenqian/Research/petsc
-	EIGEN_DIR = /home/kuanrenqian/Research/eigen-3.4.0
 	Compiler=g++
 endif
 ifeq ($(UNAME_S),Darwin)
-	PETSC_DIR = /Users/kuanrenqian/petsc
-	EIGEN_DIR = /Users/kuanrenqian/eigen-3.4.0
 	Compiler=/opt/homebrew/Cellar/gcc/13.2.0/bin/aarch64-apple-darwin23-g++-13
 endif
-CFLAGS= ${PETSC_CC_INCLUDES} ${CXX_FLAGS} ${CXXFLAGS} ${CPPFLAGS}  ${PSOURCECXX} --fast-math -O3 -std=c++11 -fopenmp -Wall -I ${EIGEN_DIR}
+
+EIGEN_DIR = ../eigen-3.4.0
+
+CFLAGS= ${CXX_FLAGS} ${CXXFLAGS} ${CPPFLAGS}  ${PSOURCECXX} --fast-math -O3 -std=c++11 -fopenmp -Wall -I ${EIGEN_DIR}
 
 all: TTSP2D
 

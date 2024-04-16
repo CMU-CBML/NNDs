@@ -2458,38 +2458,16 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 		return phi > threshold ? 1.0f : 0.0f;
 	};
 
-	// // Iterate with precomputed values and reduced condition checks
-	// for (int i = (5 * NY + 5); i < (length - 4 * NY - 4); ++i) {
-	// 	if (cellBoundary(phi_fine[i], threshold) > 0 && std::round(id[i]) != 9) {
-	// 		for (int j = -4; j <= 4; ++j) {
-	// 			for (int k = -4; k <= 4; ++k) {
-	// 				int index = i + j * offsetY + k;
-	// 				float roundedId = std::round(id[index]);
-	// 				// if (roundedId == std::round(id[i]) || roundedId == 0 || roundedId == 9) {
-	// 				if (roundedId == std::round(id[i])) {
-	// 					phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
-	// 				}
-	// 			}
-	// 		}
-	// 		phiSum[i] = phiSum[i] > 0 ? cellBoundary(phi_fine[i], phiThreshold) / phiSum[i] : 0;
-	// 		if (std::isnan(phiSum[i])) phiSum[i] = 0; // Handle NaN explicitly, though it should not occur now
-	// 	}
-	// }
-
 	// Iterate with precomputed values and reduced condition checks
 	for (int i = (5 * NY + 5); i < (length - 4 * NY - 4); ++i) {
 		if (cellBoundary(phi_fine[i], threshold) > 0 && std::round(id[i]) != 9) {
-			const int radius = 4; // Define the radius of the circle
-			for (int j = -radius; j <= radius; ++j) {
-				for (int k = -radius; k <= radius; ++k) {
-					if (j * j + k * k <= radius * radius) { // Check if the point (j, k) is inside the circle
-						int index = i + j * offsetY + k;
-						if (index >= 0 && index < length) { // Ensure index is within bounds
-							float roundedId = std::round(id[index]);
-							if (roundedId == std::round(id[i])) {
-								phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
-							}
-						}
+			for (int j = -4; j <= 4; ++j) {
+				for (int k = -4; k <= 4; ++k) {
+					int index = i + j * offsetY + k;
+					float roundedId = std::round(id[index]);
+					// if (roundedId == std::round(id[i]) || roundedId == 0 || roundedId == 9) {
+					if (roundedId == std::round(id[i])) {
+						phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
 					}
 				}
 			}
@@ -2497,6 +2475,28 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 			if (std::isnan(phiSum[i])) phiSum[i] = 0; // Handle NaN explicitly, though it should not occur now
 		}
 	}
+
+	// // Iterate with precomputed values and reduced condition checks
+	// for (int i = (5 * NY + 5); i < (length - 4 * NY - 4); ++i) {
+	// 	if (cellBoundary(phi_fine[i], threshold) > 0 && std::round(id[i]) != 9) {
+	// 		const int radius = 4; // Define the radius of the circle
+	// 		for (int j = -radius; j <= radius; ++j) {
+	// 			for (int k = -radius; k <= radius; ++k) {
+	// 				if (j * j + k * k <= radius * radius) { // Check if the point (j, k) is inside the circle
+	// 					int index = i + j * offsetY + k;
+	// 					if (index >= 0 && index < length) { // Ensure index is within bounds
+	// 						float roundedId = std::round(id[index]);
+	// 						if (roundedId == std::round(id[i])) {
+	// 							phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
+	// 						}
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 		phiSum[i] = phiSum[i] > 0 ? cellBoundary(phi_fine[i], phiThreshold) / phiSum[i] : 0;
+	// 		if (std::isnan(phiSum[i])) phiSum[i] = 0; // Handle NaN explicitly, though it should not occur now
+	// 	}
+	// }
 
 	// Normalize phiSum by the standard deviation value
 	float stdVal = RmOutlier(phiSum);
@@ -2511,10 +2511,60 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 	// const float normalizedThreshold = 1.2;
 	// const float normalizedThreshold = 1.1;
 	// const float normalizedThreshold = 1.0;
-	const float normalizedThreshold = 0.8*maxVal;
+	// const float normalizedThreshold = 0.8*maxVal;
+	// std::cout << normalizedThreshold << std::endl;
+
+	float normalizedThreshold;
+	if (n<10000) {
+		normalizedThreshold = 0.8*maxVal;
+	} else {
+		normalizedThreshold = 0.6*maxVal;
+	}
 	std::transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [normalizedThreshold](float val) {
 		return val < normalizedThreshold ? 0.0f : val;
 	});
+}
+
+void NeuronGrowth::DetectTipsMulti_test(const std::vector<float>& phi_fine, int NX, int NY, float gradientThreshold) {
+	const int width = NY + 1;
+	std::vector<float> gradientMagnitude(phi_fine.size(), 0);
+	std::vector<float> tipsLocations(phi_fine.size(), 0);
+
+	// Sobel kernels for detecting gradients in the X and Y directions
+	std::vector<int> sobelX = {-1, 0, 1, -2, 0, 2, -1, 0, 1};
+	std::vector<int> sobelY = {-1, -2, -1, 0, 0, 0, 1, 2, 1};
+
+	// Apply the Sobel operator to compute the gradient magnitude
+	for (int x = 1; x < NX; ++x) {  // Note: Adjust bounds to avoid boundary issues
+		for (int y = 1; y < NY; ++y) {
+			float gx = 0, gy = 0;
+			for (int i = -1; i <= 1; ++i) {
+				for (int j = -1; j <= 1; ++j) {
+					int index = (x + i) * width + (y + j);
+					gx += phi_fine[index] * sobelX[(i+1)*3 + (j+1)];
+					gy += phi_fine[index] * sobelY[(i+1)*3 + (j+1)];
+				}
+			}
+			int idx = x * width + y;
+			gradientMagnitude[idx] = std::sqrt(gx * gx + gy * gy);
+		}
+	}
+
+	// Threshold the gradient magnitude to detect tips
+	for (size_t i = 0; i < gradientMagnitude.size(); ++i) {
+		tipsLocations[i] = gradientMagnitude[i] > gradientThreshold ? 1.0f : 0.0f;
+	}
+
+	// // Output the results (For demonstration purposes, you might want to handle this differently)
+	// for (int x = 0; x <= NX; ++x) {
+	// 	for (int y = 0; y <= NY; ++y) {
+	// 	int idx = x * width + y;
+	// 	std::cout << tipsLocations[idx] << " ";
+	// 	}
+	// 	std::cout << std::endl;
+	// }
+
+	return tipsLocations;
 }
 
 // Function to perform Breadth-First Search (BFS) for clustering
@@ -3483,7 +3533,7 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		tic();
 		/*==============================================================================*/
 		// Neuron identification and tip detection
-		if (NG.n % 1 == 0 || NG.n % 100 == 1 || NG.n == 0) {
+		if (NG.n % 10 == 0 || NG.n % 100 == 1 || NG.n == 0) {
 			phi_fine = NG.InterpolateValues_closest(NG.phi, kdTree, cpts_fine);
 			NG.IdentifyNeurons(phi_fine, neurons, NG.prev_id, seed, NX*2, NY*2, originX, originY);
 			// Apply the transformation directly to NG.prev_id
@@ -3505,27 +3555,27 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 
 			for (size_t i = 0; i < distances.size(); i++) {
 				geodist[i] = ConvertTo1DFloatVector(distances[i]);
-				float maxVal(0);
-				int maxInd(0);
-				for (size_t l = 1; l < cpts_fine.size() - (2 * NY + 1) - 1; ++l) {
-					// if (localMaximaMatrix[l] == 1 && geodist[i][l] >= maxVal) {
-					// if (tip[l] != 0 && geodist[i][l] >= maxVal) {
-					if (geodist[i][l] >= maxVal) {
-						maxVal = geodist[i][l];
-						maxInd = l;
-					}
-				}
-
-				// // Use the modified function
-				// std::vector<float> maxGeodist = NG.ComputeMaxFilter(geodist[i], NX_fine, NY_fine, 2);
-				// float maxVal = -std::numeric_limits<float>::max();
-				// int maxInd = 0;
-				// for (size_t j = 0; j < centroidIndices.size(); ++j) {
-				// 	if (maxGeodist[centroidIndices[j]] >= maxVal) {
-				// 		maxVal = maxGeodist[centroidIndices[j]];
-				// 		maxInd = centroidIndices[j];
+				// float maxVal(0);
+				// int maxInd(0);
+				// for (size_t l = 1; l < cpts_fine.size() - (2 * NY + 1) - 1; ++l) {
+				// 	// if (localMaximaMatrix[l] == 1 && geodist[i][l] >= 0.95*maxVal) {
+				// 	// if (tip[l] != 0 && geodist[i][l] >= maxVal) {
+				// 	if (geodist[i][l] >= maxVal) {
+				// 		maxVal = geodist[i][l];
+				// 		maxInd = l;
 				// 	}
 				// }
+
+				// Use the modified function
+				std::vector<float> maxGeodist = NG.ComputeMaxFilter(geodist[i], NX_fine, NY_fine, 2);
+				float maxVal = -std::numeric_limits<float>::max();
+				int maxInd = 0;
+				for (size_t j = 0; j < centroidIndices.size(); ++j) {
+					if (maxGeodist[centroidIndices[j]] >= maxVal) {
+						maxVal = maxGeodist[centroidIndices[j]];
+						maxInd = centroidIndices[j];
+					}
+				}
 				
 				// for (size_t j = 0; j < maxGeodist.size(); ++j) {
 				// 	if (localMaximaMatrix[j] != 0 && maxGeodist[j] >= maxVal) {
