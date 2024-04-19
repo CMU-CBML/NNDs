@@ -1584,9 +1584,9 @@ void NeuronGrowth::preparePhaseField()
 					eleE = alphaOverPi*atan(gamma * (1 - eleS));
 					pre_eleMp.push_back(50);
 				} else {
-					if (eleTp > 0) {
+					if (eleTp != 0) {
 						eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(50 * eleTb - 0) * (1 - eleS));
-						if (eleTp > 3) {
+						if (eleTp < 0) {
 							pre_eleMp.push_back(100);
 						} else {
 							pre_eleMp.push_back(50);
@@ -2511,21 +2511,21 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 	// const float normalizedThreshold = 1.2;
 	// const float normalizedThreshold = 1.1;
 	// const float normalizedThreshold = 1.0;
-	// const float normalizedThreshold = 0.8*maxVal;
+	const float normalizedThreshold = 0.8*maxVal;
 	// std::cout << normalizedThreshold << std::endl;
 
-	float normalizedThreshold;
-	if (n<10000) {
-		normalizedThreshold = 0.8*maxVal;
-	} else {
-		normalizedThreshold = 0.6*maxVal;
-	}
+	// float normalizedThreshold;
+	// if (n<10000) {
+	// 	normalizedThreshold = 0.8*maxVal;
+	// } else {
+	// 	normalizedThreshold = 0.6*maxVal;
+	// }
 	std::transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [normalizedThreshold](float val) {
 		return val < normalizedThreshold ? 0.0f : val;
 	});
 }
 
-void NeuronGrowth::DetectTipsMulti_test(const std::vector<float>& phi_fine, int NX, int NY, float gradientThreshold) {
+vector<float> NeuronGrowth::DetectTipsMulti_test(const std::vector<float>& phi_fine, int NX, int NY, float gradientThreshold) {
 	const int width = NY + 1;
 	std::vector<float> gradientMagnitude(phi_fine.size(), 0);
 	std::vector<float> tipsLocations(phi_fine.size(), 0);
@@ -2825,6 +2825,16 @@ vector<float> NeuronGrowth::FindCentroidsOfLocalMaximaClusters(const vector<floa
 			int centroidIndex = centroidRow * cols + centroidCol;
 
 			centroids[centroidIndex] = 1.0f;
+
+			// centroids[centroidRow * cols + centroidCol - cols + 1] = 1.0f;
+			// centroids[centroidRow * cols + centroidCol- cols] = 1.0f;
+			// centroids[centroidRow * cols + centroidCol - cols - 1] = 1.0f;
+			// centroids[centroidRow * cols + centroidCol - 1] = 1.0f;
+			// centroids[centroidRow * cols + centroidCol + 1] = 1.0f;
+			// centroids[centroidRow * cols + centroidCol + cols + 1] = 1.0f;
+			// centroids[centroidRow * cols + centroidCol + cols] = 1.0f;
+			// centroids[centroidRow * cols + centroidCol + cols - 1] = 1.0f;
+
 			centroidIndices.push_back(centroidIndex);  // Store the index of the centroid
 		}
 	}
@@ -3163,6 +3173,79 @@ void NeuronGrowth::PrintOutNeurons(const vector<vector<int>>& neurons)
 		ierr = PetscPrintf(PETSC_COMM_WORLD, "-");
 	}
 	ierr = PetscPrintf(PETSC_COMM_WORLD, "\n");
+}
+
+
+bool NeuronGrowth::ReadPointData(const std::string& filename, std::vector<float>& dataVector1, std::vector<float>& dataVector2, std::vector<float>& dataVector3, std::vector<float>& dataVector4, std::vector<float>& dataVector5) {
+	std::ifstream file(filename);
+	if (!file.is_open()) {
+		std::cerr << "Failed to open file: " << filename << std::endl;
+		return false;
+	}
+
+	std::string line;
+	while (std::getline(file, line)) {
+		// Look for the POINT_DATA section
+		if (line.find("POINT_DATA") != std::string::npos) {
+			return ParsePointData(file, dataVector1, dataVector2, dataVector3, dataVector4, dataVector5);
+		}
+	}
+
+	std::cerr << "POINT_DATA section not found." << std::endl;
+	return false;
+}
+
+bool NeuronGrowth::ParsePointData(std::ifstream& file, std::vector<float>& dataVector1, std::vector<float>& dataVector2, std::vector<float>& dataVector3, std::vector<float>& dataVector4, std::vector<float>& dataVector5) {
+	std::string line;
+	int vectorCounter = 0;
+
+	while (std::getline(file, line) && vectorCounter < 5) {
+		std::stringstream ss(line);
+		std::string word;
+		ss >> word;
+
+		if (word == "SCALARS" || word == "VECTORS") {
+			std::string fieldName, fieldType;
+			ss >> fieldName >> fieldType;
+
+			// Skip the lookup table line if it's a scalar
+			if (word == "SCALARS") {
+				std::getline(file, line);  // This should read the LOOKUP_TABLE line
+			}
+
+			// Read and store the data
+			std::vector<float> tempData;
+			while (std::getline(file, line) && !line.empty()) {
+				std::istringstream iss(line);
+				float value;
+				while (iss >> value) {
+					tempData.push_back(value);
+				}
+			}
+
+			// Assign to the correct vector based on the counter
+			switch (vectorCounter) {
+				case 0:
+					dataVector1 = tempData;
+					break;
+				case 1:
+					dataVector2 = tempData;
+					break;
+				case 2:
+					dataVector3 = tempData;
+					break;
+				case 3:
+					dataVector4 = tempData;
+					break;
+				case 4:
+					dataVector5 = tempData;
+					break;
+			}
+			vectorCounter++;
+		}
+	}
+
+	return true;
 }
 
 PetscErrorCode FormFunction_phi(SNES snes, Vec x, Vec F, void *ctx)
@@ -3533,8 +3616,10 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		tic();
 		/*==============================================================================*/
 		// Neuron identification and tip detection
-		if (NG.n % 10 == 0 || NG.n % 100 == 1 || NG.n == 0) {
+		if (NG.n % 1 == 0 || NG.n % 100 == 1 || NG.n == 0) {
 			phi_fine = NG.InterpolateValues_closest(NG.phi, kdTree, cpts_fine);
+			// phi_fine = NG.InterpolateVars_coarseKDtree(NG.phi, cpts, kdTree, cpts_fine, 1, 0);
+
 			NG.IdentifyNeurons(phi_fine, neurons, NG.prev_id, seed, NX*2, NY*2, originX, originY);
 			// Apply the transformation directly to NG.prev_id
 			for (size_t i = 0; i < NG.prev_id.size(); i++) {
@@ -3547,7 +3632,12 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			NG.DetectTipsMulti(phi_fine, id, NG.numNeuron, tip, NX*2, NY*2);
 
 			vector<int> centroidIndices;
+			vector<float> tmp;
 			localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine, centroidIndices);
+			// tmp = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine, centroidIndices);
+			// if (NG.n > 5000) 
+			// 	std::fill(localMaximaMatrix.begin(), localMaximaMatrix.end(), 0);
+
 			// localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine);
 			// localMaximaMatrix = NG.FindLocalMaximaInClusters(tip, NX*2+1, NY*2+1);
 			// distances = NG.CalculateGeodesicDistanceFromPoint(neurons, seed, originX, originY);
@@ -3565,9 +3655,20 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 				// 		maxInd = l;
 				// 	}
 				// }
-
+				// for (size_t j = 0; j < centroidIndices.size(); ++j) {
+				// 	if (geodist[i][centroidIndices[j]] >= 0.9*maxVal) {
+				// 		if (centroidIndices[j] != 0) {
+				// 			for (int jj = -1; jj <= 1; ++jj) {
+				// 				for (int kk = -1; kk <= 1; ++kk) {
+				// 					localMaximaMatrix[centroidIndices[j] + kk * NY_fine - jj] = 5;
+				// 				}
+				// 			}
+				// 		}
+				// 	}
+				// }
+				
 				// Use the modified function
-				std::vector<float> maxGeodist = NG.ComputeMaxFilter(geodist[i], NX_fine, NY_fine, 2);
+				std::vector<float> maxGeodist = NG.ComputeMaxFilter(geodist[i], NX_fine, NY_fine, 5);
 				float maxVal = -std::numeric_limits<float>::max();
 				int maxInd = 0;
 				for (size_t j = 0; j < centroidIndices.size(); ++j) {
@@ -3585,15 +3686,16 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 				// }
 
 				if (maxInd != 0) {
-					// localMaximaMatrix[maxInd] = 5;
-					for (int j = -1; j <= 1; ++j) {
-						for (int k = -1; k <= 1; ++k) {
-							localMaximaMatrix[maxInd + k * NY_fine - j] = 5;
-						}
-					}
+					localMaximaMatrix[maxInd] = -5;
+					// for (int j = -1; j <= 1; ++j) {
+					// 	for (int k = -1; k <= 1; ++k) {
+					// 		localMaximaMatrix[maxInd + k * NY_fine - j] = -5;
+					// 	}
+					// }
 				}
 			}
 			NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, kdTree_fine, cpts);
+			// NG.tips = NG.InterpolateVars_coarseKDtree(localMaximaMatrix, cpts_fine, kdTree_fine, cpts, 1, 0);
 		}
 
 		toc(t_tip);
@@ -3891,23 +3993,23 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			PetscPrintf(PETSC_COMM_WORLD, "-----------------------------------------------------------------------------\n");
 			NG.VisualizeVTK_PhysicalDomain_All(NG.n, path_out);
 			
-			string varName;	
-			// if (NG.n > 1500) {
-			varName = "geoDist0_running_";
-			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geodist[0], varName); // solution on control points
-			// varName = "geoDist1_running_";
-			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geodist[1], varName); // solution on control points
-			// }
-			varName = "phi_fine_running_";
-			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, phi_fine, varName); // solution on control points
-			varName = "localMax_running_";
-			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, localMaximaMatrix, varName); // solution on control points
+			// string varName;	
+			// // if (NG.n > 1500) {
+			// varName = "geoDist0_running_";
+			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geodist[0], varName); // solution on control points
+			// // varName = "geoDist1_running_";
+			// // NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geodist[1], varName); // solution on control points
+			// // }
+			// varName = "phi_fine_running_";
+			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, phi_fine, varName); // solution on control points
+			// varName = "localMax_running_";
+			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, localMaximaMatrix, varName); // solution on control points
 			varName = "theta_running_"; // 0 since only theta is constant
 			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, 0, path_out, NG.theta_fine, varName); // solution on control points
-			varName = "tip_running_";
-			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, tip, varName); // solution on control points
-			varName = "id_running_";
-			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, id, varName); // solution on control points
+			// varName = "tip_running_";
+			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, tip, varName); // solution on control points
+			// varName = "id_running_";
+			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, id, varName); // solution on control points
 
 			toc(t_write);
 			tic();

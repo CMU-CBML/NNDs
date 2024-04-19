@@ -332,22 +332,22 @@ void InitializeSoma(const int& numNeuron, vector<array<float, 2>> &seed, int &NX
 		seed = {{24, 24}};
 		break;
         case 2:
-		NX = 45;
-		NY = 20;
-		seed = {{20, 20}, {65, 20}};
+		NX = 60;
+		NY = 30;
+		seed = {{30, 30}, {100, 30}};
 		// NX = 40;
 		// NY = 20;
 		// seed = {{20, 20}, {55, 20}};
 		break;
         case 3:
-		NX = 45;
-		NY = 45;
-		seed = {{19, 21}, {65, 22}, {42.5, 65}};
+		NX = 65;
+		NY = 65;
+		seed = {{30, 30}, {100, 30}, {65, 100}};
 		break;
 	case 4:
-		NX = 45;
-		NY = 45;
-		seed = {{19, 21}, {65, 22}, {20, 20}, {65, 65}};
+		NX = 65;
+		NY = 65;
+		seed = {{30, 30}, {100, 30}, {30, 100}, {100, 100}};
 		break;
 	// case 5:
         //     NX = 60;

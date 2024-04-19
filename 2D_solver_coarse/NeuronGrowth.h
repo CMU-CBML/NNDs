@@ -242,7 +242,7 @@ public:
 	vector<float> calculatePhiSum(const vector<Vertex2D>& cpts, float dx, float dy, vector<float> id);
 	void DetectTipsMulti(const vector<float>& phi_fine, const vector<float>& id, const int& numNeuron, vector<float>& phiSum, const int& NX, const int& NY);
 	
-	void DetectTipsMulti_test(const std::vector<float>& phi_fine, int NX, int NY, float gradientThreshold);
+	vector<float> DetectTipsMulti_test(const std::vector<float>& phi_fine, int NX, int NY, float gradientThreshold);
 
 	float bfs(const vector<float>& matrix, const int& rows, const int& cols, const int& row, const int& col,
 		vector<bool>& visited, vector<pair<int, int>>& cluster);
@@ -270,6 +270,8 @@ public:
 	vector<vector<pair<int, int>>> TraceNeurites(vector<vector<float>>& geodist);
 	void SaveNGvars(vector<vector<float>>& NGvars, int NX, int NY, string fn);
 	void PrintOutNeurons(const vector<vector<int>>& neurons);
+	bool ReadPointData(const std::string& filename, std::vector<float>& dataVector1, std::vector<float>& dataVector2, std::vector<float>& dataVector3, std::vector<float>& dataVector4, std::vector<float>& dataVector5);
+	bool ParsePointData(std::ifstream& file, std::vector<float>& dataVector1, std::vector<float>& dataVector2, std::vector<float>& dataVector3, std::vector<float>& dataVector4, std::vector<float>& dataVector5);
 
 };
 
