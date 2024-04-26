@@ -16,6 +16,8 @@
 
 #include "../nanoflann/1.5.5/include/nanoflann.hpp"
 
+#include <map>		// for std::map in tip detection
+
 using namespace std;
 typedef unsigned int uint;
 const float PI = 3.1415926;
@@ -96,8 +98,13 @@ void NeuronGrowth::SetVariables(string fn_par) {
 		else if (variableName == "kappa") iss >> kappa;
 		else if (variableName == "dt") iss >> dt;
 		else if (variableName == "Dc") iss >> Dc;
+		else if (variableName == "kp75") iss >> kp75;
+		else if (variableName == "k2") iss >> k2;
+		else if (variableName == "c_opt") iss >> c_opt;
 		else if (variableName == "alpha") iss >> alpha;
 		else if (variableName == "M_phi") iss >> M_phi;
+		else if (variableName == "M_axon") iss >> M_axon;
+		else if (variableName == "M_neurite") iss >> M_neurite;
 		else if (variableName == "s_coeff") iss >> s_coeff;
 		else if (variableName == "delta") iss >> delta;
 		else if (variableName == "epsilonb") iss >> epsilonb;
@@ -1581,18 +1588,21 @@ void NeuronGrowth::preparePhaseField()
 
 				// adjust rg (assembly rate) and sg (disassembly rate) based on detected tips
 				if (n < 50) {
-					eleE = alphaOverPi*atan(gamma * (1 - eleS));
-					pre_eleMp.push_back(50);
+					eleE = alphaOverPi*atan(gamma * (c_opt - eleS));
+					pre_eleMp.push_back(M_neurite);
+					// pre_eleMp.push_back(50);
 				} else {
 					if (eleTp != 0) {
-						eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(50 * eleTb - 0) * (1 - eleS));
+						eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(50 * eleTb - 0) * (c_opt - eleS));
 						if (eleTp < 0) {
-							pre_eleMp.push_back(100);
+							pre_eleMp.push_back(M_axon);
+							// pre_eleMp.push_back(100);
 						} else {
-							pre_eleMp.push_back(50);
+							pre_eleMp.push_back(M_neurite);
+							// pre_eleMp.push_back(50);
 						}
 					} else {
-						eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(r * eleTb - g) * (1 - eleS));
+						eleE = alphaOverPi*atan(gamma * Regular_Heiviside_fun(r * eleTb - g) * (c_opt - eleS));
 						pre_eleMp.push_back(5);
 					}
 				}
@@ -2065,8 +2075,8 @@ void NeuronGrowth::BuildLinearSystemProcessNG_syn_tub(const vector<Element2D>& t
 				ElementEvaluationAll_syn_tub(nen, Nx, dNdx, eleVal_st, vars_st);
 
 				for (size_t m = 0; m < nen; m++) {
-					EVectorSolve_syn[m] += Nx[m] * (vars_st[1] + kappa * vars_st[0]) * detJ;
-					// EVectorSolve_syn[m] += Nx[m] * (vars_st[1] + (kappa - 1 * vars_st[1]) * vars_st[0]) * detJ;
+					// EVectorSolve_syn[m] += Nx[m] * (vars_st[1] + kappa * vars_st[0]) * detJ;
+					EVectorSolve_syn[m] += Nx[m] * (vars_st[1] + (kappa - kp75 * vars_st[1]) * vars_st[0] - k2 * vars_st[1]) * detJ;
 
 					// EVectorSolve_tub[m] += (dt / vars_st[2] * vars_st[11] + vars_st[6]) * Nx[m] * detJ;
 					// EVectorSolve_tub[m] += (dt / vars_st[2] + vars_st[6]) * Nx[m] * detJ;
@@ -2075,7 +2085,7 @@ void NeuronGrowth::BuildLinearSystemProcessNG_syn_tub(const vector<Element2D>& t
 					for (size_t n = 0; n < nen; n++) {
 						if (judge_syn == 0)
 
-						EMatrixSolve_syn[m][n] += (Nx[m] * Nx[n] + (dt/4) * Dc * 2 * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])) * detJ;
+						EMatrixSolve_syn[m][n] += (Nx[m] * Nx[n] + (dt/4) * Dc * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])) * detJ;
 
 						// EMatrixSolve_tub[m][n] += (Nx[m] * Nx[n] - dt / vars_st[2] * (
 						// 	(- Diff * (vars_st[2] * (dNdx[m][0] * dNdx[n][0] + dNdx[m][1] * dNdx[n][1])))
@@ -2507,11 +2517,12 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 
 	// Filter based on a normalized threshold
 	// const float normalizedThreshold = 1.4;
-	// const float normalizedThreshold = 1.3; //
-	// const float normalizedThreshold = 1.2;
+	// const float normalizedThreshold = 1.3; 
+	// const float normalizedThreshold = 1.2;//
 	// const float normalizedThreshold = 1.1;
 	// const float normalizedThreshold = 1.0;
 	const float normalizedThreshold = 0.8*maxVal;
+	// const float normalizedThreshold = 0.75*maxVal;
 	// std::cout << normalizedThreshold << std::endl;
 
 	// float normalizedThreshold;
@@ -2523,6 +2534,55 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 	std::transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [normalizedThreshold](float val) {
 		return val < normalizedThreshold ? 0.0f : val;
 	});
+
+	// const int length = (NX + 1) * (NY + 1);
+	// phiSum.assign(length, 0); // Clear and resize with zero initialization
+
+	// const float threshold = 0.25; // Threshold for where to detect neurites
+	// const float intensityThreshold = 0.1; // Threshold for whether to use the value for detection
+	// const int offsetY = NY + 1; // Offset to avoid index issue
+	// const float phiThreshold = 0; // Threshold for scaling
+
+	// // Lambda to replace CellBoundary and reduce condition checks - mostly for optimization
+	// auto cellBoundary = [](float phi, float threshold) -> float {
+	// 	return phi > threshold ? 1.0f : 0.0f;
+	// };
+
+	// // Using a map to store max values for each ID
+	// std::map<int, float> maxValues;
+
+	// // Iterate with precomputed values and reduced condition checks
+	// for (int i = (5 * NY + 5); i < (length - 4 * NY - 4); ++i) {
+	// 	if (cellBoundary(phi_fine[i], threshold) > 0 && std::round(id[i]) != 9) {
+	// 		for (int j = -4; j <= 4; ++j) {
+	// 			for (int k = -4; k <= 4; ++k) {
+	// 				int index = i + j * offsetY + k;
+	// 				float roundedId = std::round(id[index]);
+	// 				if (roundedId == std::round(id[i])) {
+	// 					phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
+	// 				}
+	// 			}
+	// 		}
+	// 		phiSum[i] = phiSum[i] > 0 ? cellBoundary(phi_fine[i], phiThreshold) / phiSum[i] : 0;
+	// 		if (std::isnan(phiSum[i])) phiSum[i] = 0; // Handle NaN explicitly, though it should not occur now
+
+	// 		// Update max value for each ID
+	// 		int idKey = static_cast<int>(std::round(id[i]));
+	// 		if (maxValues.find(idKey) == maxValues.end() || maxValues[idKey] < phiSum[i]) {
+	// 			maxValues[idKey] = phiSum[i];
+	// 		}
+	// 	}
+	// }
+
+	// // Normalize phiSum by the max value for each ID and apply thresholding
+	// for (int i = 0; i < length; ++i) {
+	// 	int idKey = static_cast<int>(std::round(id[i]));
+	// 	if (maxValues.find(idKey) != maxValues.end() && maxValues[idKey] != 0) {
+	// 		// float normalizedThreshold = 0.75 * maxValues[idKey];
+	// 		float normalizedThreshold = 0.8 * maxValues[idKey];
+	// 		phiSum[i] = (phiSum[i] < normalizedThreshold) ? 0.0f : phiSum[i] / maxValues[idKey];
+	// 	}
+	// }
 }
 
 vector<float> NeuronGrowth::DetectTipsMulti_test(const std::vector<float>& phi_fine, int NX, int NY, float gradientThreshold) {
@@ -2781,7 +2841,7 @@ vector<float> NeuronGrowth::FindCentroidsOfLocalMaximaClusters(const vector<floa
 		int centroidRow = static_cast<int>(round(sumRow / localMaxima.size()));
 		int centroidCol = static_cast<int>(round(sumCol / localMaxima.size()));
 
-		centroids[centroidRow * cols + centroidCol] = 1.0f;
+		centroids[centroidRow * cols + centroidCol] = 5.0f;
 
 		// centroids[centroidRow * cols + centroidCol - cols + 1] = 1.0f;
 		// centroids[centroidRow * cols + centroidCol- cols] = 1.0f;
@@ -2824,7 +2884,7 @@ vector<float> NeuronGrowth::FindCentroidsOfLocalMaximaClusters(const vector<floa
 			int centroidCol = static_cast<int>(round(sumCol / localMaxima.size()));
 			int centroidIndex = centroidRow * cols + centroidCol;
 
-			centroids[centroidIndex] = 1.0f;
+			centroids[centroidIndex] = 5.0f;
 
 			// centroids[centroidRow * cols + centroidCol - cols + 1] = 1.0f;
 			// centroids[centroidRow * cols + centroidCol- cols] = 1.0f;
@@ -3993,23 +4053,27 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			PetscPrintf(PETSC_COMM_WORLD, "-----------------------------------------------------------------------------\n");
 			NG.VisualizeVTK_PhysicalDomain_All(NG.n, path_out);
 			
-			// string varName;	
-			// // if (NG.n > 1500) {
-			// varName = "geoDist0_running_";
-			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geodist[0], varName); // solution on control points
-			// // varName = "geoDist1_running_";
-			// // NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geodist[1], varName); // solution on control points
+			string varName;	
+			// // // if (NG.n > 1500) {
+			varName = "geoDist0_running_";
+			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geodist[0], varName); // solution on control points
+			// varName = "geoDist1_running_";
+			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geodist[1], varName); // solution on control points
+			// varName = "geoDist2_running_";
+			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geodist[2], varName); // solution on control points
+			// varName = "geoDist3_running_";
+			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geodist[3], varName); // solution on control points
 			// // }
 			// varName = "phi_fine_running_";
 			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, phi_fine, varName); // solution on control points
-			// varName = "localMax_running_";
-			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, localMaximaMatrix, varName); // solution on control points
+			varName = "localMax_running_";
+			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, localMaximaMatrix, varName); // solution on control points
 			varName = "theta_running_"; // 0 since only theta is constant
 			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, 0, path_out, NG.theta_fine, varName); // solution on control points
-			// varName = "tip_running_";
-			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, tip, varName); // solution on control points
-			// varName = "id_running_";
-			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, id, varName); // solution on control points
+			varName = "tip_running_";
+			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, tip, varName); // solution on control points
+			varName = "id_running_";
+			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, id, varName); // solution on control points
 
 			toc(t_write);
 			tic();

@@ -115,9 +115,14 @@ public:
 	float kappa;
 	float dt;
 	float Dc;
+	float kp75;
+	float k2;
+	float c_opt;
 	float alpha;
 	float alphaOverPi;
 	float M_phi;
+	float M_axon;
+	float M_neurite;
 	float s_coeff;
 	float delta;
 	float epsilonb;
