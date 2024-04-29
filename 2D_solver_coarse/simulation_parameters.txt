@@ -24,4 +24,3 @@ alphaT = 0.001
 betaT = 0.001
 Diff = 4
 source_coeff = 15
-M_ratio = 3

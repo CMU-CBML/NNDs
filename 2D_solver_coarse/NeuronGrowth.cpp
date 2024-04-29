@@ -114,7 +114,6 @@ void NeuronGrowth::SetVariables(string fn_par) {
 		else if (variableName == "betaT") iss >> betaT;
 		else if (variableName == "Diff") iss >> Diff;
 		else if (variableName == "source_coeff") iss >> source_coeff;
-		else if (variableName == "M_ratio") iss >> M_ratio;
 	}
 	inputFile.close();
 	PetscPrintf(PETSC_COMM_WORLD, "Parameter Loaded!\n");
@@ -2453,103 +2452,20 @@ vector<float> NeuronGrowth::calculatePhiSum(const vector<Vertex2D>& cpts, float 
 
 void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std::vector<float>& id, const int& numNeuron, std::vector<float>& phiSum, const int& NX, const int& NY) 
 {
-	const int length = (NX + 1) * (NY + 1);
-	phiSum.assign(length, 0); // Clear and resize with zero initialization
-
-	const float threshold = 0.25; // threshould for where to detect neurites
-	const float intensityThreshold = 0.1; // threshould for whether to use the value for detection
-	// const float threshold = 0.5;
-	// const float intensityThreshold = 0.5;
-	const int offsetY = NY + 1; // offset to avoid index issue
-	const float phiThreshold = 0; // threshould for scaling
-
-	// Lambda to replace CellBoundary and reduce condition checks - mostly for optimization
-	auto cellBoundary = [](float phi, float threshold) -> float {
-		return phi > threshold ? 1.0f : 0.0f;
-	};
-
-	// Iterate with precomputed values and reduced condition checks
-	for (int i = (5 * NY + 5); i < (length - 4 * NY - 4); ++i) {
-		if (cellBoundary(phi_fine[i], threshold) > 0 && std::round(id[i]) != 9) {
-			for (int j = -4; j <= 4; ++j) {
-				for (int k = -4; k <= 4; ++k) {
-					int index = i + j * offsetY + k;
-					float roundedId = std::round(id[index]);
-					// if (roundedId == std::round(id[i]) || roundedId == 0 || roundedId == 9) {
-					if (roundedId == std::round(id[i])) {
-						phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
-					}
-				}
-			}
-			phiSum[i] = phiSum[i] > 0 ? cellBoundary(phi_fine[i], phiThreshold) / phiSum[i] : 0;
-			if (std::isnan(phiSum[i])) phiSum[i] = 0; // Handle NaN explicitly, though it should not occur now
-		}
-	}
-
-	// // Iterate with precomputed values and reduced condition checks
-	// for (int i = (5 * NY + 5); i < (length - 4 * NY - 4); ++i) {
-	// 	if (cellBoundary(phi_fine[i], threshold) > 0 && std::round(id[i]) != 9) {
-	// 		const int radius = 4; // Define the radius of the circle
-	// 		for (int j = -radius; j <= radius; ++j) {
-	// 			for (int k = -radius; k <= radius; ++k) {
-	// 				if (j * j + k * k <= radius * radius) { // Check if the point (j, k) is inside the circle
-	// 					int index = i + j * offsetY + k;
-	// 					if (index >= 0 && index < length) { // Ensure index is within bounds
-	// 						float roundedId = std::round(id[index]);
-	// 						if (roundedId == std::round(id[i])) {
-	// 							phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
-	// 						}
-	// 					}
-	// 				}
-	// 			}
-	// 		}
-	// 		phiSum[i] = phiSum[i] > 0 ? cellBoundary(phi_fine[i], phiThreshold) / phiSum[i] : 0;
-	// 		if (std::isnan(phiSum[i])) phiSum[i] = 0; // Handle NaN explicitly, though it should not occur now
-	// 	}
-	// }
-
-	// Normalize phiSum by the standard deviation value
-	float stdVal = RmOutlier(phiSum);
-	std::transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [stdVal](float val) { return val / stdVal; });
-
-	// Find the maximum value in phiSum for potential use
-	float maxVal = *std::max_element(phiSum.begin(), phiSum.end());
-
-	// Filter based on a normalized threshold
-	// const float normalizedThreshold = 1.4;
-	// const float normalizedThreshold = 1.3; 
-	// const float normalizedThreshold = 1.2;//
-	// const float normalizedThreshold = 1.1;
-	// const float normalizedThreshold = 1.0;
-	const float normalizedThreshold = 0.8*maxVal;
-	// const float normalizedThreshold = 0.75*maxVal;
-	// std::cout << normalizedThreshold << std::endl;
-
-	// float normalizedThreshold;
-	// if (n<10000) {
-	// 	normalizedThreshold = 0.8*maxVal;
-	// } else {
-	// 	normalizedThreshold = 0.6*maxVal;
-	// }
-	std::transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [normalizedThreshold](float val) {
-		return val < normalizedThreshold ? 0.0f : val;
-	});
-
 	// const int length = (NX + 1) * (NY + 1);
 	// phiSum.assign(length, 0); // Clear and resize with zero initialization
 
-	// const float threshold = 0.25; // Threshold for where to detect neurites
-	// const float intensityThreshold = 0.1; // Threshold for whether to use the value for detection
-	// const int offsetY = NY + 1; // Offset to avoid index issue
-	// const float phiThreshold = 0; // Threshold for scaling
+	// const float threshold = 0.25; // threshould for where to detect neurites
+	// const float intensityThreshold = 0.1; // threshould for whether to use the value for detection
+	// // const float threshold = 0.5;
+	// // const float intensityThreshold = 0.5;
+	// const int offsetY = NY + 1; // offset to avoid index issue
+	// const float phiThreshold = 0; // threshould for scaling
 
 	// // Lambda to replace CellBoundary and reduce condition checks - mostly for optimization
 	// auto cellBoundary = [](float phi, float threshold) -> float {
 	// 	return phi > threshold ? 1.0f : 0.0f;
 	// };
-
-	// // Using a map to store max values for each ID
-	// std::map<int, float> maxValues;
 
 	// // Iterate with precomputed values and reduced condition checks
 	// for (int i = (5 * NY + 5); i < (length - 4 * NY - 4); ++i) {
@@ -2558,6 +2474,7 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 	// 			for (int k = -4; k <= 4; ++k) {
 	// 				int index = i + j * offsetY + k;
 	// 				float roundedId = std::round(id[index]);
+	// 				// if (roundedId == std::round(id[i]) || roundedId == 0 || roundedId == 9) {
 	// 				if (roundedId == std::round(id[i])) {
 	// 					phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
 	// 				}
@@ -2565,24 +2482,106 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 	// 		}
 	// 		phiSum[i] = phiSum[i] > 0 ? cellBoundary(phi_fine[i], phiThreshold) / phiSum[i] : 0;
 	// 		if (std::isnan(phiSum[i])) phiSum[i] = 0; // Handle NaN explicitly, though it should not occur now
-
-	// 		// Update max value for each ID
-	// 		int idKey = static_cast<int>(std::round(id[i]));
-	// 		if (maxValues.find(idKey) == maxValues.end() || maxValues[idKey] < phiSum[i]) {
-	// 			maxValues[idKey] = phiSum[i];
-	// 		}
 	// 	}
 	// }
 
-	// // Normalize phiSum by the max value for each ID and apply thresholding
-	// for (int i = 0; i < length; ++i) {
-	// 	int idKey = static_cast<int>(std::round(id[i]));
-	// 	if (maxValues.find(idKey) != maxValues.end() && maxValues[idKey] != 0) {
-	// 		// float normalizedThreshold = 0.75 * maxValues[idKey];
-	// 		float normalizedThreshold = 0.8 * maxValues[idKey];
-	// 		phiSum[i] = (phiSum[i] < normalizedThreshold) ? 0.0f : phiSum[i] / maxValues[idKey];
-	// 	}
-	// }
+	// // // Iterate with precomputed values and reduced condition checks
+	// // for (int i = (5 * NY + 5); i < (length - 4 * NY - 4); ++i) {
+	// // 	if (cellBoundary(phi_fine[i], threshold) > 0 && std::round(id[i]) != 9) {
+	// // 		const int radius = 4; // Define the radius of the circle
+	// // 		for (int j = -radius; j <= radius; ++j) {
+	// // 			for (int k = -radius; k <= radius; ++k) {
+	// // 				if (j * j + k * k <= radius * radius) { // Check if the point (j, k) is inside the circle
+	// // 					int index = i + j * offsetY + k;
+	// // 					if (index >= 0 && index < length) { // Ensure index is within bounds
+	// // 						float roundedId = std::round(id[index]);
+	// // 						if (roundedId == std::round(id[i])) {
+	// // 							phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
+	// // 						}
+	// // 					}
+	// // 				}
+	// // 			}
+	// // 		}
+	// // 		phiSum[i] = phiSum[i] > 0 ? cellBoundary(phi_fine[i], phiThreshold) / phiSum[i] : 0;
+	// // 		if (std::isnan(phiSum[i])) phiSum[i] = 0; // Handle NaN explicitly, though it should not occur now
+	// // 	}
+	// // }
+
+	// // Normalize phiSum by the standard deviation value
+	// float stdVal = RmOutlier(phiSum);
+	// std::transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [stdVal](float val) { return val / stdVal; });
+
+	// // Find the maximum value in phiSum for potential use
+	// float maxVal = *std::max_element(phiSum.begin(), phiSum.end());
+
+	// // Filter based on a normalized threshold
+	// // const float normalizedThreshold = 1.4;
+	// // const float normalizedThreshold = 1.3; 
+	// // const float normalizedThreshold = 1.2;//
+	// // const float normalizedThreshold = 1.1;
+	// // const float normalizedThreshold = 1.0;
+	// const float normalizedThreshold = 0.8*maxVal;
+	// // const float normalizedThreshold = 0.75*maxVal;
+	// // std::cout << normalizedThreshold << std::endl;
+
+	// // float normalizedThreshold;
+	// // if (n<10000) {
+	// // 	normalizedThreshold = 0.8*maxVal;
+	// // } else {
+	// // 	normalizedThreshold = 0.6*maxVal;
+	// // }
+	// std::transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [normalizedThreshold](float val) {
+	// 	return val < normalizedThreshold ? 0.0f : val;
+	// });
+
+	const int length = (NX + 1) * (NY + 1);
+	phiSum.assign(length, 0); // Clear and resize with zero initialization
+
+	const float threshold = 0.25; // Threshold for where to detect neurites
+	const float intensityThreshold = 0.1; // Threshold for whether to use the value for detection
+	const int offsetY = NY + 1; // Offset to avoid index issue
+	const float phiThreshold = 0; // Threshold for scaling
+
+	// Lambda to replace CellBoundary and reduce condition checks - mostly for optimization
+	auto cellBoundary = [](float phi, float threshold) -> float {
+		return phi > threshold ? 1.0f : 0.0f;
+	};
+
+	// Using a map to store max values for each ID
+	std::map<int, float> maxValues;
+
+	// Iterate with precomputed values and reduced condition checks
+	for (int i = (5 * NY + 5); i < (length - 4 * NY - 4); ++i) {
+		if (cellBoundary(phi_fine[i], threshold) > 0 && std::round(id[i]) != 9) {
+			for (int j = -4; j <= 4; ++j) {
+				for (int k = -4; k <= 4; ++k) {
+					int index = i + j * offsetY + k;
+					float roundedId = std::round(id[index]);
+					if (roundedId == std::round(id[i])) {
+						phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
+					}
+				}
+			}
+			phiSum[i] = phiSum[i] > 0 ? cellBoundary(phi_fine[i], phiThreshold) / phiSum[i] : 0;
+			if (std::isnan(phiSum[i])) phiSum[i] = 0; // Handle NaN explicitly, though it should not occur now
+
+			// Update max value for each ID
+			int idKey = static_cast<int>(std::round(id[i]));
+			if (maxValues.find(idKey) == maxValues.end() || maxValues[idKey] < phiSum[i]) {
+				maxValues[idKey] = phiSum[i];
+			}
+		}
+	}
+
+	// Normalize phiSum by the max value for each ID and apply thresholding
+	for (int i = 0; i < length; ++i) {
+		int idKey = static_cast<int>(std::round(id[i]));
+		if (maxValues.find(idKey) != maxValues.end() && maxValues[idKey] != 0) {
+			// float normalizedThreshold = 0.75 * maxValues[idKey];
+			float normalizedThreshold = 0.8 * maxValues[idKey];
+			phiSum[i] = (phiSum[i] < normalizedThreshold) ? 0.0f : phiSum[i] / maxValues[idKey];
+		}
+	}
 }
 
 vector<float> NeuronGrowth::DetectTipsMulti_test(const std::vector<float>& phi_fine, int NX, int NY, float gradientThreshold) {
@@ -3036,6 +3035,56 @@ void NeuronGrowth::IdentifyNeurons(vector<float>& phi_in, vector<vector<int>>& n
 		int newColor = i+1;
 		int originalColor = neurons[startX][startY];
 		FloodFill(neurons, startX, startY, newColor, originalColor, prev_id);
+	}
+}
+
+// Helper function to check if a cell is within the grid and not already processed as a connection
+bool isValid_test(int x, int y, int rows, int cols, const vector<vector<int>>& grid) {
+    return x >= 0 && x < rows && y >= 0 && y < cols && grid[x][y] != -1;
+}
+
+// Function to modify the grid where clusters are connected
+void NeuronGrowth::DetectConnections(vector<vector<int>>& grid) {
+
+	const vector<pair<int, int>> directions = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+
+	int rows = grid.size(), cols = grid[0].size();
+	vector<vector<bool>> visited(rows, vector<bool>(cols, false));
+
+	for (int i = 0; i < rows; ++i) {
+		for (int j = 0; j < cols; ++j) {
+			if (grid[i][j] > 0 && !visited[i][j]) {
+				int clusterId = grid[i][j];
+				queue<pair<int, int>> q;
+				q.push({i, j});
+				visited[i][j] = true;
+
+				while (!q.empty()) {
+					auto [x, y] = q.front();
+					q.pop();
+
+					// Explore the four possible directions
+					for (auto& dir : directions) {
+						int nx = x + dir.first;
+						int ny = y + dir.second;
+
+						if (isValid_test(nx, ny, rows, cols, grid)) {
+							if (grid[nx][ny] == clusterId) {
+								if (!visited[nx][ny]) {
+									visited[nx][ny] = true;
+									q.push({nx, ny});
+								}
+							} else if (grid[nx][ny] > 0 && grid[nx][ny] != clusterId) {
+								// Mark the current and adjacent cells as connection points
+								grid[nx][ny] = -1;
+								grid[x][y] = -1;
+								visited[nx][ny] = true;  // Prevent reprocessing the marked connection
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -3633,7 +3682,7 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 	// Read Bezier mesh for the simulation setup
 	NG.ReadBezierElementProcess(path_in);
 	PetscPrintf(PETSC_COMM_WORLD, "Read bzmesh!-----------------------------------------------------------------\n");
-	// (Optional) Set initial guess for SNES based on the current configuration
+	// (Optional) Set initial guess for nonlinear solver based on the current configuration
 	// NG.ToPETScVec(NG.phi, NG.temp_phi);
 	// PetscPrintf(PETSC_COMM_WORLD, "Set initial guess!-----------------------------------------------------------\n");
 	
@@ -3676,9 +3725,8 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		tic();
 		/*==============================================================================*/
 		// Neuron identification and tip detection
-		if (NG.n % 1 == 0 || NG.n % 100 == 1 || NG.n == 0) {
+		// if (NG.n % 1 == 0 || NG.n % 100 == 1 || NG.n == 0) {
 			phi_fine = NG.InterpolateValues_closest(NG.phi, kdTree, cpts_fine);
-			// phi_fine = NG.InterpolateVars_coarseKDtree(NG.phi, cpts, kdTree, cpts_fine, 1, 0);
 
 			NG.IdentifyNeurons(phi_fine, neurons, NG.prev_id, seed, NX*2, NY*2, originX, originY);
 			// Apply the transformation directly to NG.prev_id
@@ -3688,46 +3736,17 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 						return prevVal == 0 ? neuronVal : std::min(prevVal, neuronVal);
 					});
 			}
+			NG.DetectConnections(neurons);
 			id = ConvertTo1DFloatVector(neurons);
 			NG.DetectTipsMulti(phi_fine, id, NG.numNeuron, tip, NX*2, NY*2);
 
 			vector<int> centroidIndices;
 			vector<float> tmp;
 			localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine, centroidIndices);
-			// tmp = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine, centroidIndices);
-			// if (NG.n > 5000) 
-			// 	std::fill(localMaximaMatrix.begin(), localMaximaMatrix.end(), 0);
-
-			// localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine);
-			// localMaximaMatrix = NG.FindLocalMaximaInClusters(tip, NX*2+1, NY*2+1);
-			// distances = NG.CalculateGeodesicDistanceFromPoint(neurons, seed, originX, originY);
 			distances = NG.CalculateQuasiEuclideanDistanceFromPoint(neurons, seed, originX, originY);
 
 			for (size_t i = 0; i < distances.size(); i++) {
 				geodist[i] = ConvertTo1DFloatVector(distances[i]);
-				// float maxVal(0);
-				// int maxInd(0);
-				// for (size_t l = 1; l < cpts_fine.size() - (2 * NY + 1) - 1; ++l) {
-				// 	// if (localMaximaMatrix[l] == 1 && geodist[i][l] >= 0.95*maxVal) {
-				// 	// if (tip[l] != 0 && geodist[i][l] >= maxVal) {
-				// 	if (geodist[i][l] >= maxVal) {
-				// 		maxVal = geodist[i][l];
-				// 		maxInd = l;
-				// 	}
-				// }
-				// for (size_t j = 0; j < centroidIndices.size(); ++j) {
-				// 	if (geodist[i][centroidIndices[j]] >= 0.9*maxVal) {
-				// 		if (centroidIndices[j] != 0) {
-				// 			for (int jj = -1; jj <= 1; ++jj) {
-				// 				for (int kk = -1; kk <= 1; ++kk) {
-				// 					localMaximaMatrix[centroidIndices[j] + kk * NY_fine - jj] = 5;
-				// 				}
-				// 			}
-				// 		}
-				// 	}
-				// }
-				
-				// Use the modified function
 				std::vector<float> maxGeodist = NG.ComputeMaxFilter(geodist[i], NX_fine, NY_fine, 5);
 				float maxVal = -std::numeric_limits<float>::max();
 				int maxInd = 0;
@@ -3737,26 +3756,13 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 						maxInd = centroidIndices[j];
 					}
 				}
-				
-				// for (size_t j = 0; j < maxGeodist.size(); ++j) {
-				// 	if (localMaximaMatrix[j] != 0 && maxGeodist[j] >= maxVal) {
-				// 		maxVal = maxGeodist[j];
-				// 		maxInd = j;
-				// 	}
-				// }
 
 				if (maxInd != 0) {
 					localMaximaMatrix[maxInd] = -5;
-					// for (int j = -1; j <= 1; ++j) {
-					// 	for (int k = -1; k <= 1; ++k) {
-					// 		localMaximaMatrix[maxInd + k * NY_fine - j] = -5;
-					// 	}
-					// }
 				}
 			}
 			NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, kdTree_fine, cpts);
-			// NG.tips = NG.InterpolateVars_coarseKDtree(localMaximaMatrix, cpts_fine, kdTree_fine, cpts, 1, 0);
-		}
+		// }
 
 		toc(t_tip);
 		tic();
@@ -4049,36 +4055,42 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		/*==============================================================================*/
 		// Writing results to files
 		if ((NG.n % NG.var_save_invl == 0) && (NG.n != 0)) {	
-			NG.PrintOutNeurons(neurons);
-			PetscPrintf(PETSC_COMM_WORLD, "-----------------------------------------------------------------------------\n");
 			NG.VisualizeVTK_PhysicalDomain_All(NG.n, path_out);
 			
+			// Make sure to have more than 6 threads
 			string varName;	
-			// // // if (NG.n > 1500) {
-			varName = "geoDist0_running_";
-			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geodist[0], varName); // solution on control points
-			// varName = "geoDist1_running_";
-			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geodist[1], varName); // solution on control points
-			// varName = "geoDist2_running_";
-			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geodist[2], varName); // solution on control points
-			// varName = "geoDist3_running_";
-			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geodist[3], varName); // solution on control points
-			// // }
-			// varName = "phi_fine_running_";
-			// NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, phi_fine, varName); // solution on control points
-			varName = "localMax_running_";
-			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, localMaximaMatrix, varName); // solution on control points
-			varName = "theta_running_"; // 0 since only theta is constant
-			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, 0, path_out, NG.theta_fine, varName); // solution on control points
-			varName = "tip_running_";
-			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, tip, varName); // solution on control points
-			varName = "id_running_";
-			NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, id, varName); // solution on control points
+			if (NG.comRank == 0) {			
+				NG.PrintOutNeurons(neurons);
+			} else if (NG.comRank == 1) {			
+				vector<float> geoDist_all(cpts_fine.size(), 0);
+				for (size_t i = 0; i < distances.size(); i++) {
+					for (size_t j = 0; j < geodist[i].size(); j++) {
+						geoDist_all[j] = max(geoDist_all[j], geodist[i][j]);
+					}
+				}
+				varName = "geoDist_running_";
+				NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geoDist_all, varName); // solution on control points
+			} else if (NG.comRank == 2) {
+				varName = "localMax_running_";
+				NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, localMaximaMatrix, varName); // solution on control points
+			} else if (NG.comRank == 3) {
+				varName = "theta_running_"; // 0 since only theta is constant
+				NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, 0, path_out, NG.theta_fine, varName); // solution on control points
+			} else if (NG.comRank == 4) {
+				varName = "tip_running_";
+				NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, tip, varName); // solution on control points
+			} else if (NG.comRank == 5) {
+				varName = "id_running_";
+				NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, id, varName); // solution on control points
+			} else {}
+
+			// PetscPrintf(PETSC_COMM_WORLD, "-----------------------------------------------------------------------------\n");
 
 			toc(t_write);
 			tic();
 			t_total += t_write;
 
+			// NG.ierr = MPI_Barrier(PETSC_COMM_WORLD); CHKERRQ(NG.ierr);
 			PetscPrintf(PETSC_COMM_WORLD, "| Wrote Physical Domain! %fs | Average time %fs | Total time: %f |\n", 
 				t_write, t_total/NG.n, t_total); CHKERRQ(NG.ierr);
 			PetscPrintf(PETSC_COMM_WORLD, "-----------------------------------------------------------------------------\n");
@@ -4118,6 +4130,7 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			CleanUpSolvers(NG); // Destroy solvers
 			NG.ierr = MPI_Barrier(PETSC_COMM_WORLD); CHKERRQ(NG.ierr);
 			iter += 1;
+
 			return 2;
 		}
 		iter += 1;
