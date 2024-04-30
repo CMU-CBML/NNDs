@@ -271,6 +271,7 @@ public:
 	bool isValid(const int& x, const int& y, const int& rows, const int& cols);
 	vector<vector<vector<float>>> CalculateQuasiEuclideanDistanceFromPoint(const vector<vector<int>>& neurons, vector<array<float, 2>>& seed, const int& originX, const int& originY);
 	vector<vector<vector<float>>> CalculateGeodesicDistanceFromPoint(const vector<vector<int>>& neurons, vector<array<float, 2>>& seed, const int& originX, const int& originY);
+	vector<vector<vector<float>>> ExploreGridAndCalculateDistances(vector<vector<int>>& grid, const vector<array<float, 2>>& seed, const int& originX, const int& originY);
 
 	vector<vector<pair<int, int>>> TraceNeurites(vector<vector<float>>& geodist);
 	void SaveNGvars(vector<vector<float>>& NGvars, int NX, int NY, string fn);

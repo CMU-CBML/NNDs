@@ -2557,7 +2557,7 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 				for (int k = -4; k <= 4; ++k) {
 					int index = i + j * offsetY + k;
 					float roundedId = std::round(id[index]);
-					if (roundedId == std::round(id[i])) {
+					if (roundedId == std::round(id[i]) || roundedId < 0) {
 						phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
 					}
 				}
@@ -3212,6 +3212,60 @@ vector<vector<vector<float>>> NeuronGrowth::CalculateGeodesicDistanceFromPoint(c
 	return distances;
 }
 
+// A combined function to explore the grid for connections between clusters (neurons) and calculate
+// Quasi-Euclidean distances from seed points within the same cluster.
+vector<vector<vector<float>>> NeuronGrowth::ExploreGridAndCalculateDistances(vector<vector<int>>& grid, const vector<array<float, 2>>& seed, const int& originX, const int& originY) 
+{
+	// Direction vectors for moving in the grid (up, down, left, right)
+	const vector<pair<int, int>> directions = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+	int rows = grid.size(), cols = grid[0].size();
+	vector<vector<vector<float>>> distances(seed.size(), vector<vector<float>>(rows, vector<float>(cols, -1.0f)));
+	vector<vector<bool>> visited(rows, vector<bool>(cols, false));
+
+	for (size_t seedIndex = 0; seedIndex < seed.size(); seedIndex++) {
+		int startX = seed[seedIndex][0] - originX;
+		int startY = seed[seedIndex][1] - originY;
+
+		if (!isValid(startX, startY, rows, cols)) continue;
+
+		queue<pair<int, int>> q;
+		q.push({startX, startY});
+		visited[startX][startY] = true;
+		distances[seedIndex][startX][startY] = 0.0f;
+
+		while (!q.empty()) {
+			auto [x, y] = q.front();
+			q.pop();
+
+			for (auto& dir : directions) {
+				int nx = x + dir.first;
+				int ny = y + dir.second;
+
+				if (isValid(nx, ny, rows, cols)) {
+					if (!visited[nx][ny] && grid[nx][ny] == grid[startX][startY]) {
+						visited[nx][ny] = true;
+
+						// Calculate Quasi-Euclidean distance
+						float dx = abs(nx - startX);
+						float dy = abs(ny - startY);
+						float distance = distances[seedIndex][x][y] + sqrt(dx * dx + dy * dy);
+
+						if (distances[seedIndex][nx][ny] == -1.0f || distance < distances[seedIndex][nx][ny])
+							distances[seedIndex][nx][ny] = distance;
+
+						q.push({nx, ny});
+					} else if (grid[nx][ny] > 0 && grid[nx][ny] != grid[startX][startY]) {
+						grid[nx][ny] = -1; // Mark the connection point
+						grid[x][y] = -1;   // Also mark the current cell as a connection point
+					}
+				}
+			}
+		}
+	}
+
+	return distances;
+}
+
 // Function to trace neurites
 vector<vector<pair<int, int>>> NeuronGrowth::TraceNeurites(vector<vector<float>>& geodist) 
 {
@@ -3725,44 +3779,40 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		tic();
 		/*==============================================================================*/
 		// Neuron identification and tip detection
-		// if (NG.n % 1 == 0 || NG.n % 100 == 1 || NG.n == 0) {
-			phi_fine = NG.InterpolateValues_closest(NG.phi, kdTree, cpts_fine);
+		phi_fine = NG.InterpolateValues_closest(NG.phi, kdTree, cpts_fine);
 
-			NG.IdentifyNeurons(phi_fine, neurons, NG.prev_id, seed, NX*2, NY*2, originX, originY);
-			// Apply the transformation directly to NG.prev_id
-			for (size_t i = 0; i < NG.prev_id.size(); i++) {
-				std::transform(NG.prev_id[i].begin(), NG.prev_id[i].end(), neurons[i].begin(), NG.prev_id[i].begin(),
-					[](int prevVal, int neuronVal) {
-						return prevVal == 0 ? neuronVal : std::min(prevVal, neuronVal);
-					});
-			}
-			NG.DetectConnections(neurons);
-			id = ConvertTo1DFloatVector(neurons);
-			NG.DetectTipsMulti(phi_fine, id, NG.numNeuron, tip, NX*2, NY*2);
+		NG.IdentifyNeurons(phi_fine, neurons, NG.prev_id, seed, NX*2, NY*2, originX, originY);
+		// Apply the transformation directly to NG.prev_id
+		for (size_t i = 0; i < NG.prev_id.size(); i++) {
+			std::transform(NG.prev_id[i].begin(), NG.prev_id[i].end(), neurons[i].begin(), NG.prev_id[i].begin(),
+				[](int prevVal, int neuronVal) {
+					return prevVal == 0 ? neuronVal : std::min(prevVal, neuronVal);
+				});
+		}
+		NG.DetectConnections(neurons);
+		distances = NG.ExploreGridAndCalculateDistances(neurons, seed, originX, originY);
+		id = ConvertTo1DFloatVector(neurons);
+		NG.DetectTipsMulti(phi_fine, id, NG.numNeuron, tip, NX*2, NY*2);
 
-			vector<int> centroidIndices;
-			vector<float> tmp;
-			localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine, centroidIndices);
-			distances = NG.CalculateQuasiEuclideanDistanceFromPoint(neurons, seed, originX, originY);
-
-			for (size_t i = 0; i < distances.size(); i++) {
-				geodist[i] = ConvertTo1DFloatVector(distances[i]);
-				std::vector<float> maxGeodist = NG.ComputeMaxFilter(geodist[i], NX_fine, NY_fine, 5);
-				float maxVal = -std::numeric_limits<float>::max();
-				int maxInd = 0;
-				for (size_t j = 0; j < centroidIndices.size(); ++j) {
-					if (maxGeodist[centroidIndices[j]] >= maxVal) {
-						maxVal = maxGeodist[centroidIndices[j]];
-						maxInd = centroidIndices[j];
-					}
-				}
-
-				if (maxInd != 0) {
-					localMaximaMatrix[maxInd] = -5;
+		vector<int> centroidIndices;
+		localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine, centroidIndices);
+		for (size_t i = 0; i < distances.size(); i++) {
+			geodist[i] = ConvertTo1DFloatVector(distances[i]);
+			std::vector<float> maxGeodist = NG.ComputeMaxFilter(geodist[i], NX_fine, NY_fine, 5);
+			float maxVal = -std::numeric_limits<float>::max();
+			int maxInd = 0;
+			for (size_t j = 0; j < centroidIndices.size(); ++j) {
+				if (maxGeodist[centroidIndices[j]] > maxVal) {
+					maxVal = maxGeodist[centroidIndices[j]];
+					maxInd = centroidIndices[j];
 				}
 			}
-			NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, kdTree_fine, cpts);
-		// }
+
+			if (maxInd != 0) {
+				localMaximaMatrix[maxInd] = -5;
+			}
+		}
+		NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, kdTree_fine, cpts);
 
 		toc(t_tip);
 		tic();

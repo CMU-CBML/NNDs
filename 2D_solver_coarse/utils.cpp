@@ -335,12 +335,12 @@ void InitializeSoma(const int& numNeuron, vector<array<float, 2>> &seed, int &NX
 		// NX = 80;
 		// NY = 30;
 		// seed = {{30, 30}, {130, 30}};
-		// NX = 60;
-		// NY = 30;
-		// seed = {{30, 30}, {90, 30}};
-		NX = 50;
+		NX = 60;
 		NY = 30;
-		seed = {{30, 30}, {70, 30}};
+		seed = {{30, 30}, {90, 30}};
+		// NX = 50;
+		// NY = 30;
+		// seed = {{30, 30}, {65, 30}};
 		break;
         case 3:
 		NX = 80;
@@ -380,32 +380,49 @@ void InitializeSoma(const int& numNeuron, vector<array<float, 2>> &seed, int &NX
 	}
 }
 
-vector<float> ConvertTo1DFloatVector(const vector<vector<int>> input) 
-{
+vector<float> ConvertTo1DFloatVector(const vector<vector<int>>& input) {
 	vector<float> output;
 
+	// Calculate total size needed
+	size_t totalSize = 0;
 	for (const auto& row : input) {
-		for (size_t value : row) {
-			output.push_back(static_cast<float>(value)); // Cast int value to float and add to the 1D vector
+		totalSize += row.size();
+	}
+
+	// Reserve memory to prevent multiple reallocations
+	output.reserve(totalSize);
+
+	// Convert all integers to floats and add to the output vector
+	for (const auto& row : input) {
+		for (int value : row) {
+			output.push_back(static_cast<float>(value));
 		}
 	}
 
 	return output;
 }
 
-vector<float> ConvertTo1DFloatVector(const vector<vector<float>> input) 
-{
+vector<float> ConvertTo1DFloatVector(const vector<vector<float>>& input) {
 	vector<float> output;
 
+	// Calculate total size needed
+	size_t totalSize = 0;
 	for (const auto& row : input) {
-		for (float value : row) {
-			output.push_back(static_cast<float>(value)); // Cast int value to float and add to the 1D vector
+		totalSize += row.size();
+	}
+
+	// Reserve memory to prevent multiple reallocations
+	output.reserve(totalSize);
+
+	// Convert all integers to floats and add to the output vector
+	for (const auto& row : input) {
+		for (int value : row) {
+			output.push_back(static_cast<float>(value));
 		}
 	}
 
 	return output;
 }
-
 
 // Function to search for a particular x and y in the vector of Vertex2D
 bool SearchPair(const vector<Vertex2D> prev_cpts, float targetX, float targetY, int &ind) {

@@ -35,8 +35,10 @@ void THS2D(const std::string& path_in, const std::vector<int>& rfid, const std::
 
 void InitializeSoma(const int& numNeuron, vector<array<float, 2>> &seed, int &NX, int &NY);
 
-vector<float> ConvertTo1DFloatVector(const vector<vector<int>> input);
-vector<float> ConvertTo1DFloatVector(const vector<vector<float>> input);
+// vector<float> ConvertTo1DFloatVector(const vector<vector<int>>& input);
+// vector<float> ConvertTo1DFloatVector(const vector<vector<float>>& input);
+vector<float> ConvertTo1DFloatVector(const vector<vector<int>>& input);
+vector<float> ConvertTo1DFloatVector(const vector<vector<float>>& input);
 
 bool SearchPair(const vector<Vertex2D> prev_cpts, float targetX, float targetY, int &ind);
 vector<float> InterpolateVars(vector<vector<int>> input, vector<Vertex2D> cpts_initial, vector<Vertex2D> cpts, int type);
