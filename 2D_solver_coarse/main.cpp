@@ -26,7 +26,23 @@ int main(int argc, char **argv)
 
 	int NX, NY, originX(0), originY(0);
 	vector<array<float, 2>> seed; 
-	InitializeSoma(numNeuron, seed, NX, NY);
+	// InitializeSoma(numNeuron, seed, NX, NY); // predefined soma placements
+	if (rank == 0) {
+		InitializeRandomSoma(numNeuron, seed, NX, NY); // randomized soma placements
+	}
+	ierr = MPI_Barrier(PETSC_COMM_WORLD); CHKERRQ(ierr);
+	// Broadcast NX, NY, and seed from the root process to all other processes
+	MPI_Bcast(&NX, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+	MPI_Bcast(&NY, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+	int size = seed.size();
+	// First broadcast the size of the vector
+	MPI_Bcast(&size, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+	// Resize the vector on non-root processes
+	if (rank != 0) {
+		seed.resize(size);
+	}
+	// Broadcast the actual data
+	MPI_Bcast(seed.data(), size * 2, MPI_FLOAT, 0, PETSC_COMM_WORLD);
 
 	/// Set simulation parameters and mesh
 	string fn_mesh_initial(path_in + "controlmesh_initial.vtk");

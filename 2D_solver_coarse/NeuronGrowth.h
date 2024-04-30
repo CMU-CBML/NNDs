@@ -89,8 +89,7 @@ public:
 	int judge_phi, judge_syn, judge_tub;				// assembly state	
 	vector<float> phi, tub, syn, theta, theta_fine;				// variable to be solved 
 	vector<float> phi_prev, phi_0, tub_0, tips;			// assisting varibles
-	// Mphi
-	vector<vector<int>> prev_id;
+	vector<int> prev_id;
 	float sum_grad_phi0_local, sum_grad_phi0_global, dP0dx, dP0dy;	
 	vector<float> elePhi0, eleTheta;
 
@@ -244,10 +243,8 @@ public:
 	float CellBoundary(const float& phi, const float& threshold); // threshould based boundary determination
 	bool isInBox(const Vertex2D& point, const Vertex2D& center, float dx, float dy);
 	vector<float> calculatePhiSum(const vector<Vertex2D>& cpts, float dx, float dy, vector<float> id);
-	void DetectTipsMulti(const vector<float>& phi_fine, const vector<float>& id, const int& numNeuron, vector<float>& phiSum, const int& NX, const int& NY);
+	void DetectTipsMulti(const vector<float>& phi_fine, const vector<int>& id, const int& numNeuron, vector<float>& phiSum, const int& rows, const int& cols);
 	
-	vector<float> DetectTipsMulti_test(const std::vector<float>& phi_fine, int NX, int NY, float gradientThreshold);
-
 	float bfs(const vector<float>& matrix, const int& rows, const int& cols, const int& row, const int& col,
 		vector<bool>& visited, vector<pair<int, int>>& cluster);
 	vector<vector<pair<int, int>>> FindClusters(const vector<float>& matrix, const int& rows, const int& cols);
@@ -260,22 +257,21 @@ public:
 	std::vector<float> ComputeMaxFilter(const std::vector<float>& geodist, int numRows, int numCols, int windowRadius);
 
 	// Neuron detection
-	vector<vector<int>> ConvertTo2DIntVector_PushBoundary(const vector<float>& input, const int& NX, const int& NY);
+	vector<int> ConvertTo1DIntVector_PushBoundary(const vector<float>& input, const int& NX, const int& NY);
 	vector<vector<int>> ConvertTo2DIntVector(const vector<float>& input, int NX, int NY);
 	vector<vector<float>> ConvertTo2DFloatVector(const vector<float>& input, int NX, int NY);
 
-	void FloodFill(vector<vector<int>>& image, int x, int y, int newColor, int originalColor, const vector<vector<int>>& prev_id); // label neuron with a value
-	void IdentifyNeurons(vector<float>& phi_in, vector<vector<int>>& neurons, const vector<vector<int>>& prev_id,
-		vector<array<float, 2>> seed, const int& NX, const int& NY, const int& originX, const int& originY);
-	void DetectConnections(vector<vector<int>>& grid);
+	void FloodFill(vector<int>& image, int x, int y, int newColor, int originalColor, const vector<int>& prev_id, int width);
+	void IdentifyNeurons(vector<float>& phi_in, vector<int>& neurons, const vector<int>& prev_id, vector<array<float, 2>> seed, const int& NX, const int& NY, const int& originX, const int& originY);
+	void DetectConnections(vector<int>& grid, int rows, int cols);
 	bool isValid(const int& x, const int& y, const int& rows, const int& cols);
 	vector<vector<vector<float>>> CalculateQuasiEuclideanDistanceFromPoint(const vector<vector<int>>& neurons, vector<array<float, 2>>& seed, const int& originX, const int& originY);
 	vector<vector<vector<float>>> CalculateGeodesicDistanceFromPoint(const vector<vector<int>>& neurons, vector<array<float, 2>>& seed, const int& originX, const int& originY);
-	vector<vector<vector<float>>> ExploreGridAndCalculateDistances(vector<vector<int>>& grid, const vector<array<float, 2>>& seed, const int& originX, const int& originY);
+	vector<vector<float>> ExploreGridAndCalculateDistances(vector<int>& grid, const vector<array<float, 2>>& seed, const int& originX, const int& originY, const int& rows, const int& cols);
 
 	vector<vector<pair<int, int>>> TraceNeurites(vector<vector<float>>& geodist);
 	void SaveNGvars(vector<vector<float>>& NGvars, int NX, int NY, string fn);
-	void PrintOutNeurons(const vector<vector<int>>& neurons);
+	void PrintOutNeurons(const vector<int>& neurons, int NX_fine, int NY_fine);
 	bool ReadPointData(const std::string& filename, std::vector<float>& dataVector1, std::vector<float>& dataVector2, std::vector<float>& dataVector3, std::vector<float>& dataVector4, std::vector<float>& dataVector5);
 	bool ParsePointData(std::ifstream& file, std::vector<float>& dataVector1, std::vector<float>& dataVector2, std::vector<float>& dataVector3, std::vector<float>& dataVector4, std::vector<float>& dataVector5);
 

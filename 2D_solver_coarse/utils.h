@@ -25,27 +25,28 @@ void write_hex_toVTK(const char* qs, vector<vector<float>>& vertices, vector<vec
 void PrintVec2TXT(const vector<float>& v, string fn, bool visualization); // print out to commandline for debugging
 
 // generating bezier mesh
-void bzmesh2D(const std::string& path_in);
+void bzmesh2D(const string& path_in);
 void bzmesh3D();
 
 // partitioning mesh using mpmetis
-void mpmetis(int n_process, const std::string& path_in);
+void mpmetis(int n_process, const string& path_in);
 
-void THS2D(const std::string& path_in, const std::vector<int>& rfid, const std::vector<int>& rftype);
+void THS2D(const string& path_in, const vector<int>& rfid, const vector<int>& rftype);
 
 void InitializeSoma(const int& numNeuron, vector<array<float, 2>> &seed, int &NX, int &NY);
+void InitializeRandomSoma(const int& numNeuron, vector<array<float, 2>>& seed, int& NX, int& NY);
 
-// vector<float> ConvertTo1DFloatVector(const vector<vector<int>>& input);
-// vector<float> ConvertTo1DFloatVector(const vector<vector<float>>& input);
 vector<float> ConvertTo1DFloatVector(const vector<vector<int>>& input);
 vector<float> ConvertTo1DFloatVector(const vector<vector<float>>& input);
+vector<float> ConvertTo1DFloatVector(const vector<int>& input);
+vector<int> ConvertTo1DIntVector(const vector<float>& input);
 
 bool SearchPair(const vector<Vertex2D> prev_cpts, float targetX, float targetY, int &ind);
 vector<float> InterpolateVars(vector<vector<int>> input, vector<Vertex2D> cpts_initial, vector<Vertex2D> cpts, int type);
 vector<float> InterpolateVars(vector<float> input, vector<Vertex2D> cpts_initial, vector<Vertex2D> cpts, int type);
 float round5(float input);
 vector<float> InterpolateVars_coarse(vector<float> input, vector<Vertex2D> cpts_initial, const vector<Vertex2D>& cpts, int type);
-std::vector<float> interpolateValues_closest(const std::vector<float>& phi, const std::vector<Vertex2D>& cpt, const std::vector<Vertex2D>& cpt_out);
+vector<float> interpolateValues_closest(const vector<float>& phi, const vector<Vertex2D>& cpt, const vector<Vertex2D>& cpt_out);
 
 float distance_d(const Vertex2D& a, const Vertex2D& b);
 

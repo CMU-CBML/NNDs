@@ -211,8 +211,8 @@ void NeuronGrowth::InitializeProblemNG(const int n_bz, vector<Vertex2D>& cpts, v
 		phi_0 = phi; // initial phi
 		tub_0 = tub; // initial tub
 
-		vector<float> tmp((2*NX+1) * (2*NY+1), 0);
-		prev_id = ConvertTo2DIntVector(tmp, 2*NX, 2*NY);
+		vector<int> tmp((2*NX+1) * (2*NY+1), 0);
+		prev_id = tmp;
 
 	} else { // Collect from NGvars - continue simulation
 		phi.clear(); 		phi.resize(cpts.size());
@@ -233,7 +233,7 @@ void NeuronGrowth::InitializeProblemNG(const int n_bz, vector<Vertex2D>& cpts, v
 
 		phi_0 = InterpolateVars_coarseKDtree(NGvars[4], prev_cpts, kdTree_prev, cpts, 1, 0);
 		tub_0 = InterpolateVars_coarseKDtree(NGvars[5], prev_cpts, kdTree_prev, cpts, 1, 0);
-		prev_id = ConvertTo2DIntVector(InterpolateValues_closest(NGvars[6], prev_cpts_fine, cpts_fine), NX*2, NY*2);
+		prev_id = ConvertTo1DIntVector(InterpolateValues_closest(NGvars[6], prev_cpts_fine, cpts_fine));
 	}
 
 	this->cpts = cpts; // for passing into formFunction
@@ -2450,7 +2450,7 @@ vector<float> NeuronGrowth::calculatePhiSum(const vector<Vertex2D>& cpts, float 
 	return tp;
 }
 
-void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std::vector<float>& id, const int& numNeuron, std::vector<float>& phiSum, const int& NX, const int& NY) 
+void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std::vector<int>& id, const int& numNeuron, std::vector<float>& phiSum, const int& rows, const int& cols) 
 {
 	// const int length = (NX + 1) * (NY + 1);
 	// phiSum.assign(length, 0); // Clear and resize with zero initialization
@@ -2494,7 +2494,7 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 	// // 				if (j * j + k * k <= radius * radius) { // Check if the point (j, k) is inside the circle
 	// // 					int index = i + j * offsetY + k;
 	// // 					if (index >= 0 && index < length) { // Ensure index is within bounds
-	// // 						float roundedId = std::round(id[index]);
+	// // 						int roundedId = std::round(id[index]);
 	// // 						if (roundedId == std::round(id[i])) {
 	// // 							phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
 	// // 						}
@@ -2534,12 +2534,12 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 	// 	return val < normalizedThreshold ? 0.0f : val;
 	// });
 
-	const int length = (NX + 1) * (NY + 1);
+	const int length = rows * cols;
 	phiSum.assign(length, 0); // Clear and resize with zero initialization
 
 	const float threshold = 0.25; // Threshold for where to detect neurites
 	const float intensityThreshold = 0.1; // Threshold for whether to use the value for detection
-	const int offsetY = NY + 1; // Offset to avoid index issue
+	const int offsetY = cols; // Offset to avoid index issue
 	const float phiThreshold = 0; // Threshold for scaling
 
 	// Lambda to replace CellBoundary and reduce condition checks - mostly for optimization
@@ -2551,12 +2551,12 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 	std::map<int, float> maxValues;
 
 	// Iterate with precomputed values and reduced condition checks
-	for (int i = (5 * NY + 5); i < (length - 4 * NY - 4); ++i) {
+	for (int i = (5 * cols); i < (length - 4 * cols); ++i) {
 		if (cellBoundary(phi_fine[i], threshold) > 0 && std::round(id[i]) != 9) {
 			for (int j = -4; j <= 4; ++j) {
 				for (int k = -4; k <= 4; ++k) {
 					int index = i + j * offsetY + k;
-					float roundedId = std::round(id[index]);
+					int roundedId = std::round(id[index]);
 					if (roundedId == std::round(id[i]) || roundedId < 0) {
 						phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
 					}
@@ -2582,48 +2582,6 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 			phiSum[i] = (phiSum[i] < normalizedThreshold) ? 0.0f : phiSum[i] / maxValues[idKey];
 		}
 	}
-}
-
-vector<float> NeuronGrowth::DetectTipsMulti_test(const std::vector<float>& phi_fine, int NX, int NY, float gradientThreshold) {
-	const int width = NY + 1;
-	std::vector<float> gradientMagnitude(phi_fine.size(), 0);
-	std::vector<float> tipsLocations(phi_fine.size(), 0);
-
-	// Sobel kernels for detecting gradients in the X and Y directions
-	std::vector<int> sobelX = {-1, 0, 1, -2, 0, 2, -1, 0, 1};
-	std::vector<int> sobelY = {-1, -2, -1, 0, 0, 0, 1, 2, 1};
-
-	// Apply the Sobel operator to compute the gradient magnitude
-	for (int x = 1; x < NX; ++x) {  // Note: Adjust bounds to avoid boundary issues
-		for (int y = 1; y < NY; ++y) {
-			float gx = 0, gy = 0;
-			for (int i = -1; i <= 1; ++i) {
-				for (int j = -1; j <= 1; ++j) {
-					int index = (x + i) * width + (y + j);
-					gx += phi_fine[index] * sobelX[(i+1)*3 + (j+1)];
-					gy += phi_fine[index] * sobelY[(i+1)*3 + (j+1)];
-				}
-			}
-			int idx = x * width + y;
-			gradientMagnitude[idx] = std::sqrt(gx * gx + gy * gy);
-		}
-	}
-
-	// Threshold the gradient magnitude to detect tips
-	for (size_t i = 0; i < gradientMagnitude.size(); ++i) {
-		tipsLocations[i] = gradientMagnitude[i] > gradientThreshold ? 1.0f : 0.0f;
-	}
-
-	// // Output the results (For demonstration purposes, you might want to handle this differently)
-	// for (int x = 0; x <= NX; ++x) {
-	// 	for (int y = 0; y <= NY; ++y) {
-	// 	int idx = x * width + y;
-	// 	std::cout << tipsLocations[idx] << " ";
-	// 	}
-	// 	std::cout << std::endl;
-	// }
-
-	return tipsLocations;
 }
 
 // Function to perform Breadth-First Search (BFS) for clustering
@@ -2901,30 +2859,6 @@ vector<float> NeuronGrowth::FindCentroidsOfLocalMaximaClusters(const vector<floa
 	return centroids;
 }
 
-// std::vector<std::vector<float>> NeuronGrowth::ComputeMaxFilter(const std::vector<std::vector<float>>& geodist, int NY) {
-// 	int rows = geodist.size();
-// 	int cols = geodist[0].size();
-// 	std::vector<std::vector<float>> maxMatrix(rows, std::vector<float>(cols, std::numeric_limits<float>::lowest()));
-
-// 	for (int i = 0; i < rows; ++i) {
-// 		for (int j = 0; j < cols; ++j) {
-// 			// Calculate the bounds of the 5x5 window
-// 			int startRow = std::max(0, i - 2);
-// 			int endRow = std::min(rows - 1, i + 2);
-// 			int startCol = std::max(0, j - 2);
-// 			int endCol = std::min(cols - 1, j + 2);
-
-// 			// Compute the maximum within the window
-// 			for (int r = startRow; r <= endRow; ++r) {
-// 				for (int c = startCol; c <= endCol; ++c) {
-// 					maxMatrix[i][j] = std::max(maxMatrix[i][j], geodist[r][c]);
-// 				}
-// 			}
-// 		}
-// 	}
-// 	return maxMatrix;
-// }
-
 std::vector<float> NeuronGrowth::ComputeMaxFilter(const std::vector<float>& geodist, int numRows, int numCols, int windowRadius) {
 	std::vector<float> maxGeodist(geodist.size(), std::numeric_limits<float>::lowest());
 
@@ -2947,26 +2881,38 @@ std::vector<float> NeuronGrowth::ComputeMaxFilter(const std::vector<float>& geod
 	return maxGeodist;
 }
 
-vector<vector<int>> NeuronGrowth::ConvertTo2DIntVector_PushBoundary(const vector<float>& input, const int& NX, const int& NY) 
-{
-	vector<vector<int>> output;
-	output.reserve(NX + 1); // Reserve space for rows
+// vector<vector<int>> NeuronGrowth::ConvertTo2DIntVector_PushBoundary(const vector<float>& input, const int& NX, const int& NY) 
+// {
+// 	vector<vector<int>> output;
+// 	output.reserve(NX + 1); // Reserve space for rows
+
+// 	int k = 0;
+// 	for (int i = 0; i < NX + 1; i++) {
+// 		vector<int> row;
+// 		row.reserve(NY + 1); // Reserve space for columns
+
+// 		for (int j = 0; j < NY + 1; j++, k++) { // Increment k in the loop header
+// 			// Assuming CellBoundary returns 1 if condition is met, 0 otherwise
+// 			row.push_back(CellBoundary(std::abs(input[k]), 0.25) * 9);
+// 		}
+// 		output.push_back(std::move(row)); // Use std::move to avoid copying the row
+// 	}
+
+// 	return output;
+// }
+vector<int> NeuronGrowth::ConvertTo1DIntVector_PushBoundary(const vector<float>& input, const int& NX, const int& NY) {
+	vector<int> output((NX + 1) * (NY + 1));  // Create a 1D vector with enough space for all elements
 
 	int k = 0;
 	for (int i = 0; i < NX + 1; i++) {
-		vector<int> row;
-		row.reserve(NY + 1); // Reserve space for columns
-
-		for (int j = 0; j < NY + 1; j++, k++) { // Increment k in the loop header
-			// Assuming CellBoundary returns 1 if condition is met, 0 otherwise
-			row.push_back(CellBoundary(std::abs(input[k]), 0.25) * 9);
-			// row.push_back(CellBoundary(std::abs(input[k]), 0.5) * 9);
+		for (int j = 0; j < NY + 1; j++, k++) {
+			output[i * (NY + 1) + j] = CellBoundary(std::abs(input[k]), 0.25) * 9;
 		}
-		output.push_back(std::move(row)); // Use std::move to avoid copying the row
 	}
 
 	return output;
 }
+
 
 std::vector<std::vector<int>> NeuronGrowth::ConvertTo2DIntVector(const std::vector<float>& input, int NX, int NY) 
 {
@@ -3004,81 +2950,161 @@ std::vector<std::vector<float>> NeuronGrowth::ConvertTo2DFloatVector(const std::
 	return output;
 }
 
-// Function to perform flood fill
-void NeuronGrowth::FloodFill(vector<vector<int>>& image, int x, int y, int newColor, int originalColor, const vector<vector<int>>& prev_id) 
-{
-	// Define the directions: up, down, left, right
+// // Function to perform flood fill
+// void NeuronGrowth::FloodFill(vector<vector<int>>& image, int x, int y, int newColor, int originalColor, const vector<vector<int>>& prev_id) 
+// {
+// 	// Define the directions: up, down, left, right
+// 	int dx[] = {0, 0, -1, 1};
+// 	int dy[] = {-1, 1, 0, 0};
+
+// 	if (x < 0 || x >= image.size() || y < 0 || y >= image[0].size() || image[x][y] != originalColor || image[x][y] == newColor) {
+// 		return;
+// 	}
+
+// 	image[x][y] = newColor;
+
+// 	// Apply flood fill in all four directions
+// 	for (int i = 0; i < 4; ++i) {
+// 		if (prev_id[x + dx[i]][y + dy[i]] == (newColor) || prev_id[x + dx[i]][y + dy[i]] == 0 || prev_id[x + dx[i]][y + dy[i]] == 9) {
+// 			FloodFill(image, x + dx[i], y + dy[i], newColor, originalColor, prev_id);
+// 		}
+// 	}
+// }
+void NeuronGrowth::FloodFill(vector<int>& image, int x, int y, int newColor, int originalColor, const vector<int>& prev_id, int width) {
 	int dx[] = {0, 0, -1, 1};
 	int dy[] = {-1, 1, 0, 0};
+	int index = x * width + y;
 
-	if (x < 0 || x >= image.size() || y < 0 || y >= image[0].size() || image[x][y] != originalColor || image[x][y] == newColor) {
+	if (x < 0 || x >= image.size() / width || y < 0 || y >= width || image[index] != originalColor || image[index] == newColor) {
 		return;
 	}
 
-	image[x][y] = newColor;
+	image[index] = newColor;
 
-	// Apply flood fill in all four directions
 	for (int i = 0; i < 4; ++i) {
-		if (prev_id[x + dx[i]][y + dy[i]] == (newColor) || prev_id[x + dx[i]][y + dy[i]] == 0 || prev_id[x + dx[i]][y + dy[i]] == 9) {
-			FloodFill(image, x + dx[i], y + dy[i], newColor, originalColor, prev_id);
+		int nx = x + dx[i];
+		int ny = y + dy[i];
+		int nIndex = nx * width + ny;
+		if (nx >= 0 && ny >= 0 && nx < image.size() / width && ny < width &&
+			(prev_id[nIndex] == newColor || prev_id[nIndex] == 0 || prev_id[nIndex] == 9)) {
+			FloodFill(image, nx, ny, newColor, originalColor, prev_id, width);
 		}
 	}
 }
 
-// Function to perform flood fill
-void NeuronGrowth::IdentifyNeurons(vector<float>& phi_in, vector<vector<int>>& neurons, const vector<vector<int>>& prev_id, vector<array<float, 2>> seed, const int& NX, const int& NY, const int& originX, const int& originY) 
-{
-	neurons = ConvertTo2DIntVector_PushBoundary(phi_in, NX, NY);
+
+// // Function to perform flood fill
+// void NeuronGrowth::IdentifyNeurons(vector<float>& phi_in, vector<vector<int>>& neurons, const vector<vector<int>>& prev_id, vector<array<float, 2>> seed, const int& NX, const int& NY, const int& originX, const int& originY) 
+// {
+// 	neurons = ConvertTo2DIntVector_PushBoundary(phi_in, NX, NY);
+// 	for (size_t i = 0; i < seed.size(); i++) {
+// 		int startX = seed[i][0] - originX;
+// 		int startY = seed[i][1] - originY;
+// 		int newColor = i+1;
+// 		int originalColor = neurons[startX][startY];
+// 		FloodFill(neurons, startX, startY, newColor, originalColor, prev_id);
+// 	}
+// }
+
+void NeuronGrowth::IdentifyNeurons(vector<float>& phi_in, vector<int>& neurons, const vector<int>& prev_id, vector<array<float, 2>> seed, const int& NX, const int& NY, const int& originX, const int& originY) {
+	neurons = ConvertTo1DIntVector_PushBoundary(phi_in, NX, NY);
+	int width = NY + 1; // Define the width for correct indexing in the 1D vector
+
 	for (size_t i = 0; i < seed.size(); i++) {
 		int startX = seed[i][0] - originX;
 		int startY = seed[i][1] - originY;
-		int newColor = i+1;
-		int originalColor = neurons[startX][startY];
-		FloodFill(neurons, startX, startY, newColor, originalColor, prev_id);
+		int newColor = i + 1;
+		int originalColor = neurons[startX * width + startY];
+		FloodFill(neurons, startX, startY, newColor, originalColor, prev_id, width);
 	}
 }
+
 
 // Helper function to check if a cell is within the grid and not already processed as a connection
 bool isValid_test(int x, int y, int rows, int cols, const vector<vector<int>>& grid) {
     return x >= 0 && x < rows && y >= 0 && y < cols && grid[x][y] != -1;
 }
 
-// Function to modify the grid where clusters are connected
-void NeuronGrowth::DetectConnections(vector<vector<int>>& grid) {
+// // Function to modify the grid where clusters are connected
+// void NeuronGrowth::DetectConnections(vector<vector<int>>& grid) {
 
+// 	const vector<pair<int, int>> directions = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+
+// 	int rows = grid.size(), cols = grid[0].size();
+// 	vector<vector<bool>> visited(rows, vector<bool>(cols, false));
+
+// 	for (int i = 0; i < rows; ++i) {
+// 		for (int j = 0; j < cols; ++j) {
+// 			if (grid[i][j] > 0 && !visited[i][j]) {
+// 				int clusterId = grid[i][j];
+// 				queue<pair<int, int>> q;
+// 				q.push({i, j});
+// 				visited[i][j] = true;
+
+// 				while (!q.empty()) {
+// 					auto [x, y] = q.front();
+// 					q.pop();
+
+// 					// Explore the four possible directions
+// 					for (auto& dir : directions) {
+// 						int nx = x + dir.first;
+// 						int ny = y + dir.second;
+
+// 						if (isValid_test(nx, ny, rows, cols, grid)) {
+// 							if (grid[nx][ny] == clusterId) {
+// 								if (!visited[nx][ny]) {
+// 									visited[nx][ny] = true;
+// 									q.push({nx, ny});
+// 								}
+// 							} else if (grid[nx][ny] > 0 && grid[nx][ny] != clusterId) {
+// 								// Mark the current and adjacent cells as connection points
+// 								grid[nx][ny] = -1;
+// 								grid[x][y] = -1;
+// 								visited[nx][ny] = true;  // Prevent reprocessing the marked connection
+// 							}
+// 						}
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+// }
+
+void NeuronGrowth::DetectConnections(vector<int>& grid, int rows, int cols) {
 	const vector<pair<int, int>> directions = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
-
-	int rows = grid.size(), cols = grid[0].size();
-	vector<vector<bool>> visited(rows, vector<bool>(cols, false));
+	vector<bool> visited(rows * cols, false);
 
 	for (int i = 0; i < rows; ++i) {
 		for (int j = 0; j < cols; ++j) {
-			if (grid[i][j] > 0 && !visited[i][j]) {
-				int clusterId = grid[i][j];
+			int index = i * cols + j; // Calculate index for flat vector
+			if (grid[index] > 0 && !visited[index]) {
+				int clusterId = grid[index];
 				queue<pair<int, int>> q;
 				q.push({i, j});
-				visited[i][j] = true;
+				visited[index] = true;
 
 				while (!q.empty()) {
 					auto [x, y] = q.front();
 					q.pop();
+					int currentIndex = x * cols + y;
 
 					// Explore the four possible directions
 					for (auto& dir : directions) {
 						int nx = x + dir.first;
 						int ny = y + dir.second;
+						int nextIndex = nx * cols + ny;
 
-						if (isValid_test(nx, ny, rows, cols, grid)) {
-							if (grid[nx][ny] == clusterId) {
-								if (!visited[nx][ny]) {
-									visited[nx][ny] = true;
+						if (nx >= 0 && ny >= 0 && nx < rows && ny < cols) { // isValid simplified
+							if (grid[nextIndex] == clusterId) {
+								if (!visited[nextIndex]) {
+									visited[nextIndex] = true;
 									q.push({nx, ny});
 								}
-							} else if (grid[nx][ny] > 0 && grid[nx][ny] != clusterId) {
+							} else if (grid[nextIndex] > 0 && grid[nextIndex] != clusterId) {
 								// Mark the current and adjacent cells as connection points
-								grid[nx][ny] = -1;
-								grid[x][y] = -1;
-								visited[nx][ny] = true;  // Prevent reprocessing the marked connection
+								grid[nextIndex] = -1;
+								grid[currentIndex] = -1;
+								visited[nextIndex] = true;  // Prevent reprocessing the marked connection
 							}
 						}
 					}
@@ -3212,14 +3238,10 @@ vector<vector<vector<float>>> NeuronGrowth::CalculateGeodesicDistanceFromPoint(c
 	return distances;
 }
 
-// A combined function to explore the grid for connections between clusters (neurons) and calculate
-// Quasi-Euclidean distances from seed points within the same cluster.
-vector<vector<vector<float>>> NeuronGrowth::ExploreGridAndCalculateDistances(vector<vector<int>>& grid, const vector<array<float, 2>>& seed, const int& originX, const int& originY) 
-{
+vector<vector<float>> NeuronGrowth::ExploreGridAndCalculateDistances(vector<int>& grid, const vector<array<float, 2>>& seed, const int& originX, const int& originY, const int& rows, const int& cols) {
 	// Direction vectors for moving in the grid (up, down, left, right)
 	const vector<pair<int, int>> directions = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
-	int rows = grid.size(), cols = grid[0].size();
-	vector<vector<vector<float>>> distances(seed.size(), vector<vector<float>>(rows, vector<float>(cols, -1.0f)));
+	vector<vector<float>> distances(seed.size(), vector<float>(rows * cols, -1.0f)); // Each 2D matrix is now a single vector<float>
 	vector<vector<bool>> visited(rows, vector<bool>(cols, false));
 
 	for (size_t seedIndex = 0; seedIndex < seed.size(); seedIndex++) {
@@ -3231,7 +3253,7 @@ vector<vector<vector<float>>> NeuronGrowth::ExploreGridAndCalculateDistances(vec
 		queue<pair<int, int>> q;
 		q.push({startX, startY});
 		visited[startX][startY] = true;
-		distances[seedIndex][startX][startY] = 0.0f;
+		distances[seedIndex][startX * cols + startY] = 0.0f; // Access using flat index
 
 		while (!q.empty()) {
 			auto [x, y] = q.front();
@@ -3242,21 +3264,24 @@ vector<vector<vector<float>>> NeuronGrowth::ExploreGridAndCalculateDistances(vec
 				int ny = y + dir.second;
 
 				if (isValid(nx, ny, rows, cols)) {
-					if (!visited[nx][ny] && grid[nx][ny] == grid[startX][startY]) {
+					int currIndex = x * cols + y;
+					int nextIndex = nx * cols + ny;
+
+					if (!visited[nx][ny] && grid[nextIndex] == grid[currIndex]) {
 						visited[nx][ny] = true;
 
 						// Calculate Quasi-Euclidean distance
 						float dx = abs(nx - startX);
 						float dy = abs(ny - startY);
-						float distance = distances[seedIndex][x][y] + sqrt(dx * dx + dy * dy);
+						float distance = distances[seedIndex][currIndex] + sqrt(dx * dx + dy * dy);
 
-						if (distances[seedIndex][nx][ny] == -1.0f || distance < distances[seedIndex][nx][ny])
-							distances[seedIndex][nx][ny] = distance;
+						if (distances[seedIndex][nextIndex] == -1.0f || distance < distances[seedIndex][nextIndex])
+							distances[seedIndex][nextIndex] = distance;
 
 						q.push({nx, ny});
-					} else if (grid[nx][ny] > 0 && grid[nx][ny] != grid[startX][startY]) {
-						grid[nx][ny] = -1; // Mark the connection point
-						grid[x][y] = -1;   // Also mark the current cell as a connection point
+					} else if (grid[nextIndex] > 0 && grid[nextIndex] != grid[currIndex]) {
+					grid[nextIndex] = -1; // Mark the connection point
+					grid[currIndex] = -1; // Also mark the current cell as a connection point
 					}
 				}
 			}
@@ -3265,6 +3290,61 @@ vector<vector<vector<float>>> NeuronGrowth::ExploreGridAndCalculateDistances(vec
 
 	return distances;
 }
+
+
+// // A combined function to explore the grid for connections between clusters (neurons) and calculate
+// // Quasi-Euclidean distances from seed points within the same cluster.
+// vector<vector<vector<float>>> NeuronGrowth::ExploreGridAndCalculateDistances(vector<vector<int>>& grid, const vector<array<float, 2>>& seed, const int& originX, const int& originY) 
+// {
+// 	// Direction vectors for moving in the grid (up, down, left, right)
+// 	const vector<pair<int, int>> directions = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+// 	int rows = grid.size(), cols = grid[0].size();
+// 	vector<vector<vector<float>>> distances(seed.size(), vector<vector<float>>(rows, vector<float>(cols, -1.0f)));
+// 	vector<vector<bool>> visited(rows, vector<bool>(cols, false));
+
+// 	for (size_t seedIndex = 0; seedIndex < seed.size(); seedIndex++) {
+// 		int startX = seed[seedIndex][0] - originX;
+// 		int startY = seed[seedIndex][1] - originY;
+
+// 		if (!isValid(startX, startY, rows, cols)) continue;
+
+// 		queue<pair<int, int>> q;
+// 		q.push({startX, startY});
+// 		visited[startX][startY] = true;
+// 		distances[seedIndex][startX][startY] = 0.0f;
+
+// 		while (!q.empty()) {
+// 			auto [x, y] = q.front();
+// 			q.pop();
+
+// 			for (auto& dir : directions) {
+// 				int nx = x + dir.first;
+// 				int ny = y + dir.second;
+
+// 				if (isValid(nx, ny, rows, cols)) {
+// 					if (!visited[nx][ny] && grid[nx][ny] == grid[startX][startY]) {
+// 						visited[nx][ny] = true;
+
+// 						// Calculate Quasi-Euclidean distance
+// 						float dx = abs(nx - startX);
+// 						float dy = abs(ny - startY);
+// 						float distance = distances[seedIndex][x][y] + sqrt(dx * dx + dy * dy);
+
+// 						if (distances[seedIndex][nx][ny] == -1.0f || distance < distances[seedIndex][nx][ny])
+// 							distances[seedIndex][nx][ny] = distance;
+
+// 						q.push({nx, ny});
+// 					} else if (grid[nx][ny] > 0 && grid[nx][ny] != grid[startX][startY]) {
+// 						grid[nx][ny] = -1; // Mark the connection point
+// 						grid[x][y] = -1;   // Also mark the current cell as a connection point
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+
+// 	return distances;
+// }
 
 // Function to trace neurites
 vector<vector<pair<int, int>>> NeuronGrowth::TraceNeurites(vector<vector<float>>& geodist) 
@@ -3310,34 +3390,93 @@ void NeuronGrowth::SaveNGvars(vector<vector<float>>& NGvars, int NX, int NY, str
 	PrintVec2TXT(NGvars[5], fn + "/tub_0_" + to_string(n) + ".txt", visualization);
 }
 
-void NeuronGrowth::PrintOutNeurons(const vector<vector<int>>& neurons) 
-{	
-	// int dwnRatio = (int)neurons[0].size()/(int)78 + 1; // assuming line length is 78 characters
-	int dwnRatio = 1; // assuming line length is 78 characters
+// void NeuronGrowth::PrintOutNeurons(const vector<vector<int>>& neurons) 
+// {	
+// 	// int dwnRatio = (int)neurons[0].size()/(int)78 + 1; // assuming line length is 78 characters
+// 	int dwnRatio = 1; // assuming line length is 78 characters
 
-	for (size_t i = 0; i < 78; i++) {
-		ierr = PetscPrintf(PETSC_COMM_WORLD, "-");
-	}
-	ierr = PetscPrintf(PETSC_COMM_WORLD, "\n");
+// 	for (size_t i = 0; i < 78; i++) {
+// 		ierr = PetscPrintf(PETSC_COMM_WORLD, "-");
+// 	}
+// 	ierr = PetscPrintf(PETSC_COMM_WORLD, "\n");
 
-	for (size_t i = 0; i < neurons.size(); i+=2*dwnRatio) {
-		ierr = PetscPrintf(PETSC_COMM_WORLD, "| ");
-		for (size_t j = 0; j < neurons[i].size(); j+=dwnRatio) {
-			if (round(neurons[i][j]) == 0) {
-				ierr = PetscPrintf(PETSC_COMM_WORLD, " ");
-			} else {
-				// ierr = PetscPrintf(PETSC_COMM_WORLD, "#");
-				ierr = PetscPrintf(PETSC_COMM_WORLD, "%d", neurons[i][j]);
-			}
-		}
-		ierr = PetscPrintf(PETSC_COMM_WORLD, "|\n");
-	}
-	for (size_t i = 0; i < 78; i++) {
-		ierr = PetscPrintf(PETSC_COMM_WORLD, "-");
-	}
-	ierr = PetscPrintf(PETSC_COMM_WORLD, "\n");
+// 	for (size_t i = 0; i < neurons.size(); i+=2*dwnRatio) {
+// 		ierr = PetscPrintf(PETSC_COMM_WORLD, "| ");
+// 		for (size_t j = 0; j < neurons[i].size(); j+=dwnRatio) {
+// 			if (round(neurons[i][j]) == 0) {
+// 				ierr = PetscPrintf(PETSC_COMM_WORLD, " ");
+// 			} else {
+// 				// ierr = PetscPrintf(PETSC_COMM_WORLD, "#");
+// 				ierr = PetscPrintf(PETSC_COMM_WORLD, "%d", neurons[i][j]);
+// 			}
+// 		}
+// 		ierr = PetscPrintf(PETSC_COMM_WORLD, "|\n");
+// 	}
+// 	for (size_t i = 0; i < 78; i++) {
+// 		ierr = PetscPrintf(PETSC_COMM_WORLD, "-");
+// 	}
+// 	ierr = PetscPrintf(PETSC_COMM_WORLD, "\n");
+// }
+
+void NeuronGrowth::PrintOutNeurons(const vector<int>& neurons, int NX_fine, int NY_fine) 
+{   
+    int dwnRatio = 2; // Assuming line length is 78 characters, this could be adjusted for different sizes
+
+    for (size_t i = 0; i < 78; i++) {
+        ierr = PetscPrintf(PETSC_COMM_WORLD, "-");
+    }
+    ierr = PetscPrintf(PETSC_COMM_WORLD, "\n");
+
+    // Adjust for the actual size of neurons in a flat structure
+    for (size_t i = 0; i < NX_fine; i += 2 * dwnRatio) {
+        ierr = PetscPrintf(PETSC_COMM_WORLD, "| ");
+        for (size_t j = 0; j < NY_fine; j += dwnRatio) {
+            // Calculate the flat index from 2D indices
+            int index = i * NY_fine + j;
+            if (index < neurons.size()) {
+                if (neurons[index] == 0) {
+                    ierr = PetscPrintf(PETSC_COMM_WORLD, " ");
+                } else {
+                    ierr = PetscPrintf(PETSC_COMM_WORLD, "%d", neurons[index]);
+                }
+            }
+        }
+        ierr = PetscPrintf(PETSC_COMM_WORLD, "|\n");
+    }
+    
+    for (size_t i = 0; i < 78; i++) {
+        ierr = PetscPrintf(PETSC_COMM_WORLD, "-");
+    }
+    ierr = PetscPrintf(PETSC_COMM_WORLD, "\n");
 }
 
+// #include <sstream>
+
+// void NeuronGrowth::PrintOutNeurons(const vector<int>& neurons, int NX_fine, int NY_fine) 
+// {   
+// 	std::ostringstream buffer;
+
+// 	// Create a horizontal line
+// 	std::string horizontal_line(78, '-');
+// 	buffer << horizontal_line << "\n";
+
+// 	// Print out the neurons grid
+// 	for (int i = 0; i < NX_fine; i++) {
+// 		buffer << "| ";
+// 		for (int j = 0; j < NY_fine; j++) {
+// 			int index = i * NY_fine + j;
+// 			if (index < neurons.size()) {
+// 				buffer << (neurons[index] == 0 ? ' ' : std::to_string(neurons[index]));
+// 			}
+// 		}
+// 		buffer << " |\n";
+// 	}
+
+// 	buffer << horizontal_line << "\n";
+
+// 	// Now print all at once
+// 	ierr = PetscPrintf(PETSC_COMM_WORLD, "%s", buffer.str().c_str());
+// }
 
 bool NeuronGrowth::ReadPointData(const std::string& filename, std::vector<float>& dataVector1, std::vector<float>& dataVector2, std::vector<float>& dataVector3, std::vector<float>& dataVector4, std::vector<float>& dataVector5) {
 	std::ifstream file(filename);
@@ -3762,14 +3901,16 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 	/*==============================================================================*/
 	// Pre-allocate variables for tip detections (will be used every iter)
 	int NX_fine(2 * NX + 1), NY_fine(2 * NY + 1);
-	// Allocate neurons matrix
-	std::vector<std::vector<int>> neurons(NX_fine, std::vector<int>(NY_fine, 0));
-	// Allocate distances 3D matrix
-	std::vector<std::vector<std::vector<float>>> distances(NG.numNeuron, std::vector<std::vector<float>>(NX_fine, std::vector<float>(NY_fine, 0)));
+	int totalSize = NX_fine * NY_fine;  // Total number of elements in the flattened 2D grid
+	// Allocate neurons matrix as a single flat vector
+	std::vector<int> neurons(totalSize, 0);
+	// Allocate distances 3D matrix: vector of 2D matrices, each represented by a flat vector<float>
+	std::vector<std::vector<float>> distances(NG.numNeuron, std::vector<float>(totalSize, 0.0f));
 	// Allocate vectors for phi_fine, id, tip, and localMaximaMatrix
 	std::vector<float> phi_fine(cpts_fine.size(), 0), id(cpts_fine.size(), 0), tip(cpts_fine.size(), 0), localMaximaMatrix(cpts_fine.size(), 0);
 	// Allocate geodist and axonTip matrices
-	std::vector<std::vector<float>> geodist(NG.numNeuron, std::vector<float>(distances[0].size(), 0));
+	std::vector<std::vector<float>> geodist(NG.numNeuron, std::vector<float>(totalSize, 0));
+
 	PetscPrintf(PETSC_COMM_WORLD, "Pre-allocated vectors!-------------------------------------------------------\n");
 
 	/*==============================================================================*/
@@ -3777,6 +3918,7 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 	while (iter <= NG.end_iter) {
 		NG.n = iter;
 		tic();
+
 		/*==============================================================================*/
 		// Neuron identification and tip detection
 		phi_fine = NG.InterpolateValues_closest(NG.phi, kdTree, cpts_fine);
@@ -3784,20 +3926,19 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		NG.IdentifyNeurons(phi_fine, neurons, NG.prev_id, seed, NX*2, NY*2, originX, originY);
 		// Apply the transformation directly to NG.prev_id
 		for (size_t i = 0; i < NG.prev_id.size(); i++) {
-			std::transform(NG.prev_id[i].begin(), NG.prev_id[i].end(), neurons[i].begin(), NG.prev_id[i].begin(),
-				[](int prevVal, int neuronVal) {
-					return prevVal == 0 ? neuronVal : std::min(prevVal, neuronVal);
-				});
+			int prevVal = NG.prev_id[i];
+			int neuronVal = neurons[i];
+			NG.prev_id[i] = (prevVal == 0 ? neuronVal : std::min(prevVal, neuronVal));
 		}
-		NG.DetectConnections(neurons);
-		distances = NG.ExploreGridAndCalculateDistances(neurons, seed, originX, originY);
-		id = ConvertTo1DFloatVector(neurons);
-		NG.DetectTipsMulti(phi_fine, id, NG.numNeuron, tip, NX*2, NY*2);
+		NG.DetectConnections(neurons, NX_fine, NY_fine);
+
+		distances = NG.ExploreGridAndCalculateDistances(neurons, seed, originX, originY, NX_fine, NY_fine);
+		NG.DetectTipsMulti(phi_fine, neurons, NG.numNeuron, tip, NX_fine, NY_fine);
 
 		vector<int> centroidIndices;
 		localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine, centroidIndices);
 		for (size_t i = 0; i < distances.size(); i++) {
-			geodist[i] = ConvertTo1DFloatVector(distances[i]);
+			geodist[i] = distances[i];
 			std::vector<float> maxGeodist = NG.ComputeMaxFilter(geodist[i], NX_fine, NY_fine, 5);
 			float maxVal = -std::numeric_limits<float>::max();
 			int maxInd = 0;
@@ -3810,8 +3951,10 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 
 			if (maxInd != 0) {
 				localMaximaMatrix[maxInd] = -5;
+			
 			}
 		}
+
 		NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, kdTree_fine, cpts);
 
 		toc(t_tip);
@@ -4077,6 +4220,7 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		// Obtain initial local refinement information, the very first 5 iterations are purely used 
 		// for getting diffused interface for applying local refinements (phi initialization is binary) 
 		if ((NG.n == 5) && (localRefine == false)) {
+			NG.PrintOutNeurons(neurons, 2*NX+1, 2*NY+1);
 			NGvars.clear(); NGvars.resize(7);
 			NGvars[0] = NG.phi;
 			NGvars[1] = NG.syn;
@@ -4095,12 +4239,10 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		
 		/*==============================================================================*/
 		// Command line update
-		if (NG.n % 1 == 0) {
-			PetscPrintf(PETSC_COMM_WORLD, "Step:%d/%d | Phi:[%d] %.3fs | Syn:%d[%d] Tub:%d[%d] %.3fs | Tip:%.3fs | DOFs:%d |\n",\
-			NG.n, NG.end_iter, NR_itr, t_phi, reason_syn, its_syn, reason_tub, its_tub, t_synTub, t_tip, NG.phi.size()); CHKERRQ(NG.ierr);
-			// PetscPrintf(PETSC_COMM_WORLD, "Step:%d/%d | Phi:%d[%d] %.3fs | Syn:%d[%d] Tub:%d[%d] %.3fs | Tip:%.3fs | DOFs:%d |\n",\
-			// NG.n, NG.end_iter, reason_phi, its_phi, t_phi, reason_syn, its_syn, reason_tub, its_tub, t_synTub, t_tip, NG.phi.size()); CHKERRQ(NG.ierr);
-		}
+		PetscPrintf(PETSC_COMM_WORLD, "Step:%d/%d | Phi:[%d] %.3fs | Syn:%d[%d] Tub:%d[%d] %.3fs | Tip:%.3fs | DOFs:%d |\n",\
+		NG.n, NG.end_iter, NR_itr, t_phi, reason_syn, its_syn, reason_tub, its_tub, t_synTub, t_tip, NG.phi.size()); CHKERRQ(NG.ierr);
+		// PetscPrintf(PETSC_COMM_WORLD, "Step:%d/%d | Phi:%d[%d] %.3fs | Syn:%d[%d] Tub:%d[%d] %.3fs | Tip:%.3fs | DOFs:%d |\n",\
+		// NG.n, NG.end_iter, reason_phi, its_phi, t_phi, reason_syn, its_syn, reason_tub, its_tub, t_synTub, t_tip, NG.phi.size()); CHKERRQ(NG.ierr);
 
 		/*==============================================================================*/
 		// Writing results to files
@@ -4110,31 +4252,29 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			// Make sure to have more than 6 threads
 			string varName;	
 			if (NG.comRank == 0) {			
-				NG.PrintOutNeurons(neurons);
-			} else if (NG.comRank == 1) {			
-				vector<float> geoDist_all(cpts_fine.size(), 0);
-				for (size_t i = 0; i < distances.size(); i++) {
-					for (size_t j = 0; j < geodist[i].size(); j++) {
-						geoDist_all[j] = max(geoDist_all[j], geodist[i][j]);
-					}
-				}
-				varName = "geoDist_running_";
-				NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geoDist_all, varName); // solution on control points
-			} else if (NG.comRank == 2) {
-				varName = "localMax_running_";
-				NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, localMaximaMatrix, varName); // solution on control points
+				NG.PrintOutNeurons(neurons, 2*NX+1, 2*NY+1);
+			// } else if (NG.comRank == 1) {			
+			// 	vector<float> geoDist_all(cpts_fine.size(), 0);
+			// 	for (size_t i = 0; i < distances.size(); i++) {
+			// 		for (size_t j = 0; j < geodist[i].size(); j++) {
+			// 			geoDist_all[j] = max(geoDist_all[j], geodist[i][j]);
+			// 		}
+			// 	}
+			// 	varName = "geoDist_running_";
+			// 	NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geoDist_all, varName); // solution on control points
+			// } else if (NG.comRank == 2) {
+			// 	varName = "localMax_running_";
+			// 	NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, localMaximaMatrix, varName); // solution on control points
 			} else if (NG.comRank == 3) {
 				varName = "theta_running_"; // 0 since only theta is constant
 				NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, 0, path_out, NG.theta_fine, varName); // solution on control points
-			} else if (NG.comRank == 4) {
-				varName = "tip_running_";
-				NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, tip, varName); // solution on control points
-			} else if (NG.comRank == 5) {
-				varName = "id_running_";
-				NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, id, varName); // solution on control points
+			// } else if (NG.comRank == 4) {
+			// 	varName = "tip_running_";
+			// 	NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, tip, varName); // solution on control points
+			// } else if (NG.comRank == 5) {
+			// 	varName = "id_running_";
+			// 	NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, id, varName); // solution on control points
 			} else {}
-
-			// PetscPrintf(PETSC_COMM_WORLD, "-----------------------------------------------------------------------------\n");
 
 			toc(t_write);
 			tic();

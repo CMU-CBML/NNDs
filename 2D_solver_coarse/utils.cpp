@@ -4,13 +4,15 @@
 #include "BasicDataStructure.h"
 #include <cmath>
 
+#include <random>	// for random generator
+
 #include <queue>
 
 // Creating 2D mesh (incrementing from lo to hi)
 void gen2Dmesh(int Nx, int Ny, vector<vector<float>>& vertices, vector<vector<int>>& elements)
 {
-	std::cout << "******************************************************************************" << std::endl;
-	std::cout << "Generating 2D mesh (Nx by Ny): " << Nx << " x " << Ny << std::endl;
+	cout << "******************************************************************************" << endl;
+	cout << "Generating 2D mesh (Nx by Ny): " << Nx << " x " << Ny << endl;
 	vertices.clear(); elements.clear();
 	vector<float> tmp_vtx;
 	vector<int> tmp_ele;
@@ -46,10 +48,10 @@ void gen2Dmesh(int Nx, int Ny, vector<vector<float>>& vertices, vector<vector<in
 
 void gen2Dmesh(int originX, int originY, int Nx, int Ny, vector<vector<float>>& vertices, vector<vector<int>>& elements, float ratio)
 {
-	std::cout << "******************************************************************************" << std::endl;
-	std::cout << "Generating 2D structured initial mesh" << std::endl;
-	std::cout << "-----------------------------------------------------------------------------" << std::endl;
-	std::cout << "Nx by Ny: " << Nx << " x " << Ny << " | origin: " << originX << "," << originY << std::endl;
+	cout << "******************************************************************************" << endl;
+	cout << "Generating 2D structured initial mesh" << endl;
+	cout << "-----------------------------------------------------------------------------" << endl;
+	cout << "Nx by Ny: " << Nx << " x " << Ny << " | origin: " << originX << "," << originY << endl;
 	vertices.clear(); elements.clear();
 	vector<float> tmp_vtx;
 	vector<int> tmp_ele;
@@ -85,10 +87,10 @@ void gen2Dmesh(int originX, int originY, int Nx, int Ny, vector<vector<float>>& 
 
 void gen2Dmesh_new(int originX, int originY, int Nx, int Ny, vector<vector<float>>& vertices, vector<vector<int>>& elements, float ratio)
 {
-	std::cout << "******************************************************************************" << std::endl;
-	std::cout << "Generating 2D structured initial mesh" << std::endl;
-	std::cout << "-----------------------------------------------------------------------------" << std::endl;
-	std::cout << "Nx by Ny: " << Nx << " x " << Ny << " | origin: " << originX << "," << originY << std::endl;
+	cout << "******************************************************************************" << endl;
+	cout << "Generating 2D structured initial mesh" << endl;
+	cout << "-----------------------------------------------------------------------------" << endl;
+	cout << "Nx by Ny: " << Nx << " x " << Ny << " | origin: " << originX << "," << originY << endl;
 	vertices.clear(); elements.clear();
 	vector<float> tmp_vtx;
 	vector<int> tmp_ele;
@@ -182,7 +184,7 @@ void gen3Dmesh(int Nx, int Ny, int Nz, vector<vector<float>>& vertices, vector<v
 	}
 
 	int tl_pt;
-	// std::cout << "Testing tl_pt" << std::endl;
+	// cout << "Testing tl_pt" << endl;
 	for(int i = 0; i < Nx-1; i++)
 	{
 		for(int j = 0; j < Ny-1; j++)
@@ -190,7 +192,7 @@ void gen3Dmesh(int Nx, int Ny, int Nz, vector<vector<float>>& vertices, vector<v
 			for(int k = 0; k < Nz-1; k++)
 			{
 				tl_pt = i*(Nx)+j*(Ny)+k;
-				// std::cout<< tl_pt << std::endl;
+				// cout<< tl_pt << endl;
 				tmp_ele.clear();
 				tmp_ele.push_back(tl_pt);
 				tmp_ele.push_back(tl_pt+1);
@@ -207,18 +209,18 @@ void gen3Dmesh(int Nx, int Ny, int Nz, vector<vector<float>>& vertices, vector<v
 
 }
 
-void PrintVec2TXT(const std::vector<float>& v, std::string fn, bool visualization)
+void PrintVec2TXT(const vector<float>& v, string fn, bool visualization)
 {
-	std::ofstream fout;
+	ofstream fout;
 
 	fout.open(fn);
 
-	fout << std::setprecision(2) << std::fixed;
+	fout << setprecision(2) << fixed;
 
 	int v_size = v.size();
 	if (visualization == 0) {
 		for (size_t i = 0; i < v.size(); i++) {
-			fout << v[i] << std::endl;
+			fout << v[i] << endl;
 		}
 	} else {
 		int sq_sz = (int)sqrt(v_size);
@@ -232,7 +234,7 @@ void PrintVec2TXT(const std::vector<float>& v, std::string fn, bool visualizatio
 				}
 				ind += 1;
 			}
-		fout << std::endl;
+		fout << endl;
 		}
 	}
 	fout.close();
@@ -273,55 +275,54 @@ void write_hex_toVTK(const char* qs, vector<vector<float>>& vertices, vector<vec
 }
 
 // generating 2D bezier mesh using spline2D_src
-void bzmesh2D(const std::string& path_in){
-	std::cout << "******************************************************************************" << std::endl;
-	std::string spline_cmd = "../spline2D_src/spline -i " + path_in;
+void bzmesh2D(const string& path_in){
+	cout << "******************************************************************************" << endl;
+	string spline_cmd = "../spline2D_src/spline -i " + path_in;
 	if (system(spline_cmd.c_str()) != 0) {
-		std::cerr << "Command failed to execute." << std::endl;
+		cerr << "Command failed to execute." << endl;
 	}
 }
 
 // generating 3D bezier mesh using spline_src
 void bzmesh3D(){
-	std::cout << "******************************************************************************" << std::endl;
-	std::string spline_cmd = "../NeuronTransportIGA/spline_src/spline ../io/3DNG/";
+	cout << "******************************************************************************" << endl;
+	string spline_cmd = "../NeuronTransportIGA/spline_src/spline ../io/3DNG/";
 	if (system(spline_cmd.c_str()) != 0) {
-		std::cerr << "Command failed to execute." << std::endl;
+		cerr << "Command failed to execute." << endl;
 	}
 }
 
 // partitioning mesh using mpmetis
-void mpmetis(int n_process, const std::string& path_in){
-	std::string mpmetis_cmd = "mpmetis " + path_in + "bzmeshinfo.txt " + std::to_string(n_process);
+void mpmetis(int n_process, const string& path_in){
+	string mpmetis_cmd = "mpmetis " + path_in + "bzmeshinfo.txt " + to_string(n_process);
 	if (system(mpmetis_cmd.c_str()) != 0) {
-		std::cerr << "Command failed to execute." << std::endl;
+		cerr << "Command failed to execute." << endl;
 	}
 }
 
 // // partitioning mesh using mpmetis
-void THS2D(const std::string& path_in, const std::vector<int>& rfid, const std::vector<int>& rftype) {
-	std::cout << "******************************************************************************" << std::endl;
-	std::cout << "Local refinement based on Xiaodong's THS3D code ... " << std::endl;
-	std::cout << "  - see: Truncated T-splines: Fundamentals and methods (2017)" << std::endl << std::endl;
-	// std::cout << "-----------------------------------------------------------------------------" << std::endl;
-	// std::cout << "Calling command | input mesh directory | refine ID | refine element type" << std::endl << std::endl;
+void THS2D(const string& path_in, const vector<int>& rfid, const vector<int>& rftype) {
+	cout << "******************************************************************************" << endl;
+	cout << "Local refinement based on Xiaodong's THS3D code ... " << endl;
+	cout << "  - see: Truncated T-splines: Fundamentals and methods (2017)" << endl << endl;
+	// cout << "-----------------------------------------------------------------------------" << endl;
+	// cout << "Calling command | input mesh directory | refine ID | refine element type" << endl << endl;
 
-	std::string ths2d_cmd_tmp("../THS2D/TTSP2D " + path_in + " ");
+	string ths2d_cmd_tmp("../THS2D/TTSP2D " + path_in + " ");
 	for (size_t i = 0; i < rfid.size(); ++i) {
-		ths2d_cmd_tmp += std::to_string(rfid[i]) + " ";
+		ths2d_cmd_tmp += to_string(rfid[i]) + " ";
 	}
 	for (size_t i = 0; i < rftype.size(); ++i) {
-		ths2d_cmd_tmp += std::to_string(rftype[i]) + " ";
+		ths2d_cmd_tmp += to_string(rftype[i]) + " ";
 	}
 	// (Optional) output local refine element ID and type
-	// std::cout << ths2d_cmd_tmp << std::endl;
+	// cout << ths2d_cmd_tmp << endl;
 
 	if (system(ths2d_cmd_tmp.c_str()) != 0) {
-		std::cerr << "Command failed to execute." << std::endl;
+		cerr << "Command failed to execute." << endl;
 	}
 }
 
-//
 void InitializeSoma(const int& numNeuron, vector<array<float, 2>> &seed, int &NX, int &NY){
 	seed.resize(numNeuron);
 	// 2D neuron soma initialization
@@ -332,52 +333,100 @@ void InitializeSoma(const int& numNeuron, vector<array<float, 2>> &seed, int &NX
 		seed = {{24, 24}};
 		break;
         case 2:
-		// NX = 80;
-		// NY = 30;
-		// seed = {{30, 30}, {130, 30}};
-		NX = 60;
+		NX = 100;
 		NY = 30;
-		seed = {{30, 30}, {90, 30}};
-		// NX = 50;
-		// NY = 30;
-		// seed = {{30, 30}, {65, 30}};
+		seed = {{30, 30}, {170, 30}};
 		break;
         case 3:
-		NX = 80;
-		NY = 80;
-		seed = {{30, 30}, {130, 30}, {80, 130}};
+		// NX = 100;
+		// NY = 100;
+		// seed = {{30, 30}, {170, 30}, {100, 170}};
+		NX = 100;
+		NY = 100;
+		seed = {{42, 56}, {151, 147}, {34, 158}};
 		break;
 	case 4:
-		NX = 80;
-		NY = 80;
-		seed = {{30, 30}, {130, 30}, {30, 130}, {130, 130}};
+		NX = 100;
+		NY = 100;
+		seed = {{30, 30}, {170, 30}, {30, 170}, {170, 170}};
 		break;
-	// case 5:
-        //     NX = 60;
-        //     NY = 60;
-        //     seed = {{19, 21}, {65, 22}, {20, 20}, {65, 65}};
-        //     break;
-
-	// case 1:
-	// 	NX = 24;
-	// 	NY = 24;
-	// 	seed[0][0] = 24;    seed[0][1] = 24;
-	// 	break;
-	// case 2:
-	// 	NX = 45;
-	// 	NY = 25;
-	// 	seed[0][0] = 19;    seed[0][1] = 21;
-	// 	seed[1][0] = 65;   seed[1][1] = 22;
-	// 	break;
-	// case 3:
-	// 	NX = 45;
-	// 	NY = 45;
-	// 	seed[0][0] = 19;   	seed[0][1] = 21;
-	// 	seed[1][0] = 65;	seed[1][1] = 22;
-	// 	seed[2][0] = 42.5;   	seed[2][1] = 65;
-	// 	break;
-	
+	case 5:
+		NX = 100;
+		NY = 100;
+		seed = {{30, 30}, {170, 30}, {30, 170}, {170, 170}, {100, 100}};
+		break;
+	case 6:
+		NX = 120;
+		NY = 120;
+		seed = {{30, 60}, {120, 30}, {210, 60}, {210, 180}, {120, 210}, {30, 180}};
+		break;
+	case 7:
+		NX = 120;
+		NY = 120;
+		seed = {{30, 60}, {120, 30}, {210, 60}, {210, 180}, {120, 210}, {30, 180}, {120, 120}};
+		break;
 	}
+}
+
+void InitializeRandomSoma(const int& numNeuron, vector<array<float, 2>>& seed, int& NX, int& NY) {
+	seed.clear(); // Clear existing seeds if any
+	default_random_engine generator(random_device{}());
+
+	// Set domain sizes based on the number of neurons
+	switch (numNeuron) {
+	case 1:
+		seed = {{30, 30}}; // no need for random placement
+		NX = 30;	NY = 30;	break;
+        case 2:
+		seed = {{30, 30}, {170, 30}}; // no need for random placement
+		NX = 100;	NY = 30;	break;
+        case 3:
+		NX = 100;	NY = 100;	break;
+	case 4:
+		NX = 100;	NY = 100;	break;
+	case 5:
+		NX = 100;	NY = 100;	break;
+	case 6:
+		NX = 120;	NY = 120;	break;
+	case 7:
+		NX = 120;	NY = 120;	break;
+	}
+
+	// *** Note that random generator does not work well with MPI (different across threads)
+	if (numNeuron > 2) {
+		// Create distributions near the boundaries within safe margins
+		uniform_real_distribution<float> dist_x_low(30, 59); // close to the left boundary
+		uniform_real_distribution<float> dist_x_high(2 * NX - 59, 2 * NX - 30); // close to the right boundary
+		uniform_real_distribution<float> dist_y_low(30, 59); // close to the bottom boundary
+		uniform_real_distribution<float> dist_y_high(2 * NY - 59, 2 * NY - 30); // close to the top boundary
+
+		for (int i = 0; i < numNeuron; ++i) {
+			bool valid;
+			array<float, 2> newSeed;
+			do {
+				valid = true;
+				// Randomly decide to place the seed near either the lower or upper boundary for both x and y
+				float x = round((generator() % 2) ? dist_x_low(generator) : dist_x_high(generator));
+				float y = round((generator() % 2) ? dist_y_low(generator) : dist_y_high(generator));
+				newSeed = {x, y};
+				// Check distance from all existing seeds
+				for (auto& s : seed) {
+					float dx = s[0] - newSeed[0];
+					float dy = s[1] - newSeed[1];
+					if (dx * dx + dy * dy < 900) { // 30*30 = 900 distance squared
+						valid = false;
+						break;
+					}
+				}
+			} while (!valid);
+				seed.push_back(newSeed);
+		}
+	}
+
+	// cout << NX << " " << NY << endl;
+	// for (int i = 0; i < seed.size(); i++) {
+	// 	cout << i << " " << seed[i][0] << "," << seed[i][1] << endl;
+	// }
 }
 
 vector<float> ConvertTo1DFloatVector(const vector<vector<int>>& input) {
@@ -419,6 +468,32 @@ vector<float> ConvertTo1DFloatVector(const vector<vector<float>>& input) {
 		for (int value : row) {
 			output.push_back(static_cast<float>(value));
 		}
+	}
+
+	return output;
+}
+
+// Function to convert a vector of floats to a vector of integers
+vector<float> ConvertTo1DFloatVector(const vector<int>& input) {
+	vector<float> output;
+	output.reserve(input.size());  // Pre-allocate memory for efficiency
+
+	// Convert each float to an int by rounding
+	for (float value : input) {
+		output.push_back(static_cast<float>(round(value)));
+	}
+
+	return output;
+}
+
+// Function to convert a vector of floats to a vector of integers
+vector<int> ConvertTo1DIntVector(const vector<float>& input) {
+	vector<int> output;
+	output.reserve(input.size());  // Pre-allocate memory for efficiency
+
+	// Convert each float to an int by rounding
+	for (float value : input) {
+		output.push_back(static_cast<int>(round(value)));
 	}
 
 	return output;
@@ -610,14 +685,14 @@ vector<float> InterpolateVars(vector<float> input, vector<Vertex2D> cpts_initial
 
 float round5(float value) {
 	// Extract the fractional part and the whole part of the value
-	float wholePart = std::floor(value);
+	float wholePart = floor(value);
 	float fractionalPart = value - wholePart;
 
 	// Check if the fractional part is exactly 0.5
 	if (fractionalPart == 0.5 || fractionalPart == -0.5) {
 		return wholePart; // Round down to 0 for 0.5
 	} else {
-		return std::round(value); // Use standard rounding for other cases
+		return round(value); // Use standard rounding for other cases
 	}
 }
 
@@ -690,7 +765,7 @@ vector<float> InterpolateVars_coarse(vector<float> input, vector<Vertex2D> cpts_
 }
 
 float distance_d(const Vertex2D& a, const Vertex2D& b) {
-	// return std::sqrt((a.coor[0] - b.coor[0]) * (a.coor[0] - b.coor[0]) + (a.coor[1] - b.coor[1]) * (a.coor[1] - b.coor[1]));
+	// return sqrt((a.coor[0] - b.coor[0]) * (a.coor[0] - b.coor[0]) + (a.coor[1] - b.coor[1]) * (a.coor[1] - b.coor[1]));
 	return abs(a.coor[0] - b.coor[0]) + abs(a.coor[1] - b.coor[1]);
 }
 
@@ -705,7 +780,7 @@ void ObtainRefineID_coarse(vector<float> phi, vector<Vertex2D> cpts, int NX, int
 	for (size_t i = offset; i < cpts.size() - offset; i++) {
 		float x = cpts[i].coor[0];
 		float y = cpts[i].coor[1];
-		// std::cout << x << " ";
+		// cout << x << " ";
 		rfid.push_back(ind - round(x/2) + originX + offset); // push back element id (calculated based on vertex id, ind)
 		// float averagePhi = (phi[i-(NY+1)+1] + phi[i-(NY+1)] + phi[i-(NY+1)-1] + phi[i-1] + phi[i] + phi[i+1] + phi[i+(NY+1)+1] + phi[i+(NY+1)] + phi[i+(NY+1)-1])/9;
 		float averagePhi = (phi[i-2*(NY+1)+2] + phi[i-2*(NY+1)+1] + phi[i-2*(NY+1)] + phi[i-2*(NY+1)-1] + phi[i-2*(NY+1)-2] 
@@ -784,16 +859,16 @@ void ObtainRefineID_coarse(vector<float> phi, vector<Vertex2D> cpts, int NX, int
 
 	for (size_t i = 0; i < rftype.size();) {
 		if (rftype[i] == 5) {
-			std::swap(rfid[i], rfid.back());
+			swap(rfid[i], rfid.back());
 			rfid.pop_back();
-			std::swap(rftype[i], rftype.back());
+			swap(rftype[i], rftype.back());
 			rftype.pop_back();
 		} else {
 			i++;
 		}
 	}
 
-	std::cout << std::endl;
+	cout << endl;
 }
 
 void ReadMesh(string fn, vector<Vertex2D>& pts, vector<Element2D>& mesh)//need vtk file with point label
