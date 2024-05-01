@@ -34,6 +34,7 @@ void mpmetis(int n_process, const string& path_in);
 void THS2D(const string& path_in, const vector<int>& rfid, const vector<int>& rftype);
 
 void InitializeSoma(const int& numNeuron, vector<array<float, 2>> &seed, int &NX, int &NY);
+void InitializeSoma_customizedCases(int& numNeuron, vector<array<float, 2>> &seed, int &NX, int &NY);
 void InitializeRandomSoma(const int& numNeuron, vector<array<float, 2>>& seed, int& NX, int& NY);
 
 vector<float> ConvertTo1DFloatVector(const vector<vector<int>>& input);

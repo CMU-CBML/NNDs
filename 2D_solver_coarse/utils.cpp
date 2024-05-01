@@ -328,9 +328,9 @@ void InitializeSoma(const int& numNeuron, vector<array<float, 2>> &seed, int &NX
 	// 2D neuron soma initialization
 	switch (numNeuron) {
 	case 1:
-		NX = 24;
-		NY = 24;
-		seed = {{24, 24}};
+		NX = 30;
+		NY = 30;
+		seed = {{30, 30}};
 		break;
         case 2:
 		NX = 100;
@@ -365,95 +365,38 @@ void InitializeSoma(const int& numNeuron, vector<array<float, 2>> &seed, int &NX
 	}
 }
 
-// void InitializeRandomSoma(const int& numNeuron, vector<array<float, 2>>& seed, int& NX, int& NY) {
-// 	seed.clear(); // Clear existing seeds if any
-// 	default_random_engine generator(random_device{}());
-
-// 	// Set domain sizes based on the number of neurons
-// 	switch (numNeuron) {
-// 	case 1:
-// 		seed = {{30, 30}}; // no need for random placement
-// 		NX = 30;	NY = 30;	break;
-//         case 2:
-// 		seed = {{30, 30}, {170, 30}}; // no need for random placement
-// 		NX = 100;	NY = 30;	break;
-//         case 3:
-// 		NX = 100;	NY = 100;	break;
-// 	case 4:
-// 		NX = 100;	NY = 100;	break;
-// 	case 5:
-// 		NX = 120;	NY = 100;	break;
-// 	case 6:
-// 		NX = 140;	NY = 140;	break;
-// 	case 7:
-// 		NX = 140;	NY = 140;	break;
-// 	}
-
-// 	// *** Note that random generator does not work well with MPI (different across threads)
-// 	if (numNeuron > 2) {
-// 	// 	uniform_real_distribution<float> dist_x(30, 2 * NX - 30); // uniformly distribute along x within safe margins
-// 	// 	uniform_real_distribution<float> dist_y(30, 2 * NY - 30); // uniformly distribute along y within safe margins
-
-// 	// 	for (int i = 0; i < numNeuron; ++i) {
-// 	// 		bool valid;
-// 	// 		array<float, 2> newSeed;
-// 	// 		do {
-// 	// 			valid = true;
-// 	// 			// Generate x and y uniformly within the entire safe area
-// 	// 			float x = dist_x(generator);
-// 	// 			float y = dist_y(generator);
-// 	// 			newSeed = {x, y};
-// 	// 			// Check distance from all existing seeds
-// 	// 			for (auto& s : seed) {
-// 	// 				float dx = s[0] - newSeed[0];
-// 	// 				float dy = s[1] - newSeed[1];
-// 	// 				if (dx * dx + dy * dy < 50*50) { // ensure soma spacing
-// 	// 					valid = false;
-// 	// 				break;
-// 	// 				}
-// 	// 			}
-// 	// 		} while (!valid);
-// 	// 		seed.push_back(newSeed);
-// 	// 	}
-
-// 		int max_attempts = 1000, attempts; // Limit the number of attempts to prevent infinite loops
-// 		// Create distributions near the boundaries within safe margins
-// 		uniform_real_distribution<float> dist_x_low(30, 59); // close to the left boundary
-// 		uniform_real_distribution<float> dist_x_high(2 * NX - 59, 2 * NX - 30); // close to the right boundary
-// 		uniform_real_distribution<float> dist_y_low(30, 59); // close to the bottom boundary
-// 		uniform_real_distribution<float> dist_y_high(2 * NY - 59, 2 * NY - 30); // close to the top boundary
-
-// 		for (int i = 0; i < numNeuron; ++i) {
-// 			bool valid;
-// 			array<float, 2> newSeed;
-// 			do {
-// 				if (++attempts > max_attempts) {
-// 					// Create distributions near the boundaries within safe margins
-// 					uniform_real_distribution<float> dist_x_low(30, 59); // close to the left boundary
-// 					uniform_real_distribution<float> dist_x_high(2 * NX - 59, 2 * NX - 30); // close to the right boundary
-// 					uniform_real_distribution<float> dist_y_low(30, 59); // close to the bottom boundary
-// 					uniform_real_distribution<float> dist_y_high(2 * NY - 59, 2 * NY - 30); // close to the top boundary
-// 					attempts = 0; // Reset attempts after domain adjustment
-// 				}
-// 				valid = true;
-// 				// Randomly decide to place the seed near either the lower or upper boundary for both x and y
-// 				float x = round((generator() % 2) ? dist_x_low(generator) : dist_x_high(generator));
-// 				float y = round((generator() % 2) ? dist_y_low(generator) : dist_y_high(generator));
-// 				newSeed = {x, y};
-// 				// Check distance from all existing seeds
-// 				for (auto& s : seed) {
-// 					float dx = s[0] - newSeed[0];
-// 					float dy = s[1] - newSeed[1];
-// 					if (dx * dx + dy * dy < 30*30) { // soma minimum spacing
-// 						valid = false;
-// 						break;
-// 					}
-// 				}
-// 			} while (!valid);
-// 				seed.push_back(newSeed);
-// 		}
-// 	}
-// }
+void InitializeSoma_customizedCases(int& numNeuron, vector<array<float, 2>> &seed, int &NX, int &NY){
+	seed.resize(numNeuron);
+	// 2D neuron soma initialization
+	switch (numNeuron) {
+	case 1:
+		NX = 30;
+		NY = 30;
+		seed = {{30, 30}};
+		break;
+        case 2: // 2 neursons
+		NX = 50;
+		NY = 40;
+		seed = {{32, 55}, {72, 30}};
+		break;
+        case 3: // 3 neurons - 1
+		NX = 60;
+		NY = 95;
+		seed = {{98, 50}, {29, 166}, {80, 160}};
+		break;
+	case 4: // 3 neurons - 2 (just using numNeuron case easy case selection here)
+		NX = 70;
+		NY = 129;
+		seed = {{55, 44}, {107, 130}, {34, 228}};
+		numNeuron = 3;
+		break;
+	case 5: // 5 neurons
+		NX = 110;
+		NY = 200;
+		seed = {{192, 32}, {35, 137}, {57, 239}, {190, 208}, {183, 376}};
+		break;
+	}
+}
 
 void InitializeRandomSoma(const int& numNeuron, vector<array<float, 2>>& seed, int& NX, int& NY) {
 	seed.clear(); // Clear existing seeds if any
@@ -524,7 +467,6 @@ void InitializeRandomSoma(const int& numNeuron, vector<array<float, 2>>& seed, i
 		max_seed_y = max(max_seed_y, seed[i][1]/2);
 	}
 	NX = static_cast<int>(max_seed_x + 20);
-	// std::cout << "xxxxxxxx" << max_seed_y << " " << NY << std::endl;
 	NY = static_cast<int>(max_seed_y + 20);
 }
 

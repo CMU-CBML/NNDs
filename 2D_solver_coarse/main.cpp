@@ -28,7 +28,8 @@ int main(int argc, char **argv)
 	vector<array<float, 2>> seed; 
 	// InitializeSoma(numNeuron, seed, NX, NY); // predefined soma placements
 	if (rank == 0) {
-		InitializeRandomSoma(numNeuron, seed, NX, NY); // randomized soma placements
+		// InitializeRandomSoma(numNeuron, seed, NX, NY); // randomized soma placements
+		InitializeSoma_customizedCases(numNeuron, seed, NX, NY); // randomized soma placements
 	}
 	ierr = MPI_Barrier(PETSC_COMM_WORLD); CHKERRQ(ierr);
 	// Broadcast NX, NY, and seed from the root process to all other processes
