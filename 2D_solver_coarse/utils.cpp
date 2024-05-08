@@ -337,31 +337,31 @@ void InitializeSoma(const int& numNeuron, vector<array<float, 2>> &seed, int &NX
 		NY = 30;
 		seed = {{30, 30}, {170, 30}};
 		break;
-        case 3:
-		NX = 100;
-		NY = 100;
-		seed = {{42, 56}, {151, 147}, {34, 158}};
-		break;
-	case 4:
-		NX = 100;
-		NY = 100;
-		seed = {{30, 30}, {170, 30}, {30, 170}, {170, 170}};
-		break;
-	case 5:
-		NX = 100;
-		NY = 100;
-		seed = {{30, 30}, {170, 30}, {30, 170}, {170, 170}, {100, 100}};
-		break;
-	case 6:
-		NX = 120;
-		NY = 120;
-		seed = {{30, 60}, {120, 30}, {210, 60}, {210, 180}, {120, 210}, {30, 180}};
-		break;
-	case 7:
-		NX = 120;
-		NY = 120;
-		seed = {{30, 60}, {120, 30}, {210, 60}, {210, 180}, {120, 210}, {30, 180}, {120, 120}};
-		break;
+        // case 3:
+	// 	NX = 100;
+	// 	NY = 100;
+	// 	seed = {{42, 56}, {151, 147}, {34, 158}};
+	// 	break;
+	// case 4:
+	// 	NX = 100;
+	// 	NY = 100;
+	// 	seed = {{30, 30}, {170, 30}, {30, 170}, {170, 170}};
+	// 	break;
+	// case 5:
+	// 	NX = 100;
+	// 	NY = 100;
+	// 	seed = {{30, 30}, {170, 30}, {30, 170}, {170, 170}, {100, 100}};
+	// 	break;
+	// case 6:
+	// 	NX = 120;
+	// 	NY = 120;
+	// 	seed = {{30, 60}, {120, 30}, {210, 60}, {210, 180}, {120, 210}, {30, 180}};
+	// 	break;
+	// case 7:
+	// 	NX = 120;
+	// 	NY = 120;
+	// 	seed = {{30, 60}, {120, 30}, {210, 60}, {210, 180}, {120, 210}, {30, 180}, {120, 120}};
+	// 	break;
 	}
 }
 
@@ -369,16 +369,16 @@ void InitializeSoma_customizedCases(int& numNeuron, vector<array<float, 2>> &see
 	seed.resize(numNeuron);
 	// 2D neuron soma initialization
 	switch (numNeuron) {
-	case 1:
-		NX = 30;
-		NY = 30;
-		seed = {{30, 30}};
-		break;
-        case 2: // 2 neursons
-		NX = 50;
-		NY = 40;
-		seed = {{32, 55}, {72, 30}};
-		break;
+	// case 1:
+	// 	NX = 30;
+	// 	NY = 30;
+	// 	seed = {{30, 30}};
+	// 	break;
+        // case 2: // 2 neursons
+	// 	NX = 50;
+	// 	NY = 50;
+	// 	seed = {{32, 55}, {72, 30}};
+	// 	break;
         case 3: // 3 neurons - 1
 		NX = 60;
 		NY = 95;
@@ -405,12 +405,12 @@ void InitializeRandomSoma(const int& numNeuron, vector<array<float, 2>>& seed, i
 
 	// Set domain sizes based on the number of neurons
 	switch (numNeuron) {
-	case 1:
-		seed = {{30, 30}}; // no need for random placement
-		NX = 30; NY = 30; break;
-	case 2:
-		seed = {{30, 30}, {170, 30}}; // no need for random placement
-		NX = 100; NY = 30; break;
+	// case 1:
+	// 	seed = {{30, 30}}; // no need for random placement
+	// 	NX = 30; NY = 30; break;
+	// case 2:
+	// 	seed = {{30, 30}, {170, 30}}; // no need for random placement
+	// 	NX = 100; NY = 30; break;
 	case 3:
 		NX = 100; NY = 100; break;
 	case 4:
@@ -421,53 +421,57 @@ void InitializeRandomSoma(const int& numNeuron, vector<array<float, 2>>& seed, i
 		NX = 120; NY = 120; break;
 	case 7:
 		NX = 120; NY = 120; break;
+	default:
+		throw runtime_error("Unsupported number of neurons");
 	}
 
-	float min_seed_x(1e9), min_seed_y(1e9);
-	if (numNeuron > 2) {
-		int max_attempts = 1000; // Limit the number of attempts to prevent infinite loops
+	uniform_real_distribution<float> dist_x(30, 2 * NX - 30);
+	uniform_real_distribution<float> dist_y(30, 2 * NY - 30);
+	int max_attempts = 1000;
 
-		uniform_real_distribution<float> dist_x(30, 2 * NX - 30);
-		uniform_real_distribution<float> dist_y(30, 2 * NY - 30);
-
-		for (int i = 0; i < numNeuron; ++i) {
-			int attempts = 0;
-			bool valid;
-			array<float, 2> newSeed;
-			do {
-				attempts++;
-				if (attempts > max_attempts) {
-					throw runtime_error("Unable to place all neurons without overlapping after maximum attempts.");
+	for (int i = 0; i < numNeuron; ++i) {
+		int attempts = 0;
+		bool valid;
+		array<float, 2> newSeed;
+		do {
+			if (attempts++ > max_attempts) {
+				throw runtime_error("Unable to place all neurons without overlapping after maximum attempts.");
+			}
+			newSeed = {dist_x(generator), dist_y(generator)};
+			valid = true;
+			for (auto& s : seed) {
+				float dx = s[0] - newSeed[0];
+				float dy = s[1] - newSeed[1];
+				if (dx * dx + dy * dy < 50*50) {
+					valid = false;
+					break;
 				}
-				valid = true;
-				float x = dist_x(generator);
-				float y = dist_y(generator);
-				newSeed = {x, y};
-				// Check distance from all existing seeds
-				for (auto& s : seed) {
-					float dx = s[0] - newSeed[0];
-					float dy = s[1] - newSeed[1];
-					if (dx * dx + dy * dy < 40*40) { // Adjusted minimum spacing, e.g., 30 units
-						valid = false;
-						break;
-					}
-				}
-			} while (!valid);
-			seed.push_back(newSeed);
-			min_seed_x = min(min_seed_x, newSeed[0]);
-			min_seed_y = min(min_seed_y, newSeed[1]);
-		}
+			}
+		} while (!valid);
+		seed.push_back(newSeed);
 	}
 
-	float max_seed_x(0), max_seed_y(0);
-	for (int i = 0; i < seed.size(); i++) {
-		seed[i][0] -= (min_seed_x/2 - 10);
-		seed[i][1] -= (min_seed_y/2 - 10);
-		max_seed_x = max(max_seed_x, seed[i][0]/2);
-		max_seed_y = max(max_seed_y, seed[i][1]/2);
+	// Adjust seed positions to minimize empty space
+	float min_x = numeric_limits<float>::max(), min_y = numeric_limits<float>::max();
+	float max_x = 0, max_y = 0;
+	for (auto& s : seed) {
+		min_x = min(min_x, s[0]);
+		min_y = min(min_y, s[1]);
+		max_x = max(max_x, s[0]);
+		max_y = max(max_y, s[1]);
 	}
-	NX = static_cast<int>(max_seed_x + 20);
-	NY = static_cast<int>(max_seed_y + 20);
+
+	// Reposition seeds to start at least 30 units from the left and bottom
+	float shift_x = min_x - 30;
+	float shift_y = min_y - 30;
+	for (auto& s : seed) {
+		s[0] -= shift_x;
+		s[1] -= shift_y;
+	}
+
+	// Recalculate NX and NY based on the maximum coordinates
+	NX = static_cast<int>((max_x - shift_x + 30)/2); // Add margin and convert back
+	NY = static_cast<int>((max_y - shift_y + 30)/2); // Add margin and convert back
 }
 
 vector<float> ConvertTo1DFloatVector(const vector<vector<int>>& input) {

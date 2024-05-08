@@ -2578,7 +2578,7 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 		int idKey = static_cast<int>(std::round(id[i]));
 		if (maxValues.find(idKey) != maxValues.end() && maxValues[idKey] != 0) {
 			// float normalizedThreshold = 0.75 * maxValues[idKey];
-			float normalizedThreshold = 0.8 * maxValues[idKey];
+			float normalizedThreshold = 0.825 * maxValues[idKey];
 			phiSum[i] = (phiSum[i] < normalizedThreshold) ? 0.0f : phiSum[i] / maxValues[idKey];
 		}
 	}
@@ -3420,7 +3420,7 @@ void NeuronGrowth::SaveNGvars(vector<vector<float>>& NGvars, int NX, int NY, str
 
 void NeuronGrowth::PrintOutNeurons(const vector<int>& neurons, int NX_fine, int NY_fine) 
 {   
-    int dwnRatio = 2; // Assuming line length is 78 characters, this could be adjusted for different sizes
+    int dwnRatio = 1; // Assuming line length is 78 characters, this could be adjusted for different sizes
 
     for (size_t i = 0; i < 78; i++) {
         ierr = PetscPrintf(PETSC_COMM_WORLD, "-");
