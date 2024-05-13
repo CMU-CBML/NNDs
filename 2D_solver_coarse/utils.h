@@ -49,7 +49,7 @@ float round5(float input);
 vector<float> InterpolateVars_coarse(vector<float> input, vector<Vertex2D> cpts_initial, const vector<Vertex2D>& cpts, int type);
 vector<float> interpolateValues_closest(const vector<float>& phi, const vector<Vertex2D>& cpt, const vector<Vertex2D>& cpt_out);
 
-float distance_d(const Vertex2D& a, const Vertex2D& b);
+float distanceTo(const Vertex2D& a, const Vertex2D& b);
 
 void ObtainRefineID_coarse(vector<float> phi, vector<Vertex2D> cpts, int NX, int NY, int originX, int originY, vector<int> &rfid, vector<int> &rftype);
 

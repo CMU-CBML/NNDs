@@ -16,7 +16,7 @@
 
 #include "../nanoflann/1.5.5/include/nanoflann.hpp"
 
-#include <map>		// for std::map in tip detection
+#include <map>		// for map in tip detection
 
 using namespace std;
 typedef unsigned int uint;
@@ -73,16 +73,16 @@ void NeuronGrowth::AssignProcessor(vector<vector<int>> &ele_proc)
 }
 
 void NeuronGrowth::SetVariables(string fn_par) {
-	std::ifstream inputFile(fn_par);
+	ifstream inputFile(fn_par);
 	if (!inputFile.is_open()) {
 		PetscPrintf(PETSC_COMM_WORLD, "Error: Unable to open file %s\n", fn_par.c_str());
 		return;
 	}
 
-	std::string line;
-	while (std::getline(inputFile, line)) {
-		std::istringstream iss(line);
-		std::string variableName;
+	string line;
+	while (getline(inputFile, line)) {
+		istringstream iss(line);
+		string variableName;
 		char equalsSign;
 		if (!(iss >> variableName >> equalsSign)) {
 			PetscPrintf(PETSC_COMM_WORLD, "Error: Reading variable failed!\n");
@@ -2184,7 +2184,7 @@ vector<float> NeuronGrowth::InterpolateValues_closest(
 
 		// Find the closest point in cpt for each point in cpt_out
 		for (size_t j = 0; j < cpt.size(); ++j) {
-			float distance = distance_d(cpt_out[i], cpt[j]);
+			float distance = distanceTo(cpt_out[i], cpt[j]);
 			if (distance < minDistance) {
 				minDistance = distance;
 				closestIndex = j;
@@ -2450,7 +2450,7 @@ vector<float> NeuronGrowth::calculatePhiSum(const vector<Vertex2D>& cpts, float 
 	return tp;
 }
 
-void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std::vector<int>& id, const int& numNeuron, std::vector<float>& phiSum, const int& rows, const int& cols) 
+void NeuronGrowth::DetectTipsMulti(const vector<float>& phi_fine, const vector<int>& id, const int& numNeuron, vector<float>& phiSum, const int& rows, const int& cols) 
 {
 	// const int length = (NX + 1) * (NY + 1);
 	// phiSum.assign(length, 0); // Clear and resize with zero initialization
@@ -2469,33 +2469,33 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 
 	// // Iterate with precomputed values and reduced condition checks
 	// for (int i = (5 * NY + 5); i < (length - 4 * NY - 4); ++i) {
-	// 	if (cellBoundary(phi_fine[i], threshold) > 0 && std::round(id[i]) != 9) {
+	// 	if (cellBoundary(phi_fine[i], threshold) > 0 && round(id[i]) != 9) {
 	// 		for (int j = -4; j <= 4; ++j) {
 	// 			for (int k = -4; k <= 4; ++k) {
 	// 				int index = i + j * offsetY + k;
-	// 				float roundedId = std::round(id[index]);
-	// 				// if (roundedId == std::round(id[i]) || roundedId == 0 || roundedId == 9) {
-	// 				if (roundedId == std::round(id[i])) {
+	// 				float roundedId = round(id[index]);
+	// 				// if (roundedId == round(id[i]) || roundedId == 0 || roundedId == 9) {
+	// 				if (roundedId == round(id[i])) {
 	// 					phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
 	// 				}
 	// 			}
 	// 		}
 	// 		phiSum[i] = phiSum[i] > 0 ? cellBoundary(phi_fine[i], phiThreshold) / phiSum[i] : 0;
-	// 		if (std::isnan(phiSum[i])) phiSum[i] = 0; // Handle NaN explicitly, though it should not occur now
+	// 		if (isnan(phiSum[i])) phiSum[i] = 0; // Handle NaN explicitly, though it should not occur now
 	// 	}
 	// }
 
 	// // // Iterate with precomputed values and reduced condition checks
 	// // for (int i = (5 * NY + 5); i < (length - 4 * NY - 4); ++i) {
-	// // 	if (cellBoundary(phi_fine[i], threshold) > 0 && std::round(id[i]) != 9) {
+	// // 	if (cellBoundary(phi_fine[i], threshold) > 0 && round(id[i]) != 9) {
 	// // 		const int radius = 4; // Define the radius of the circle
 	// // 		for (int j = -radius; j <= radius; ++j) {
 	// // 			for (int k = -radius; k <= radius; ++k) {
 	// // 				if (j * j + k * k <= radius * radius) { // Check if the point (j, k) is inside the circle
 	// // 					int index = i + j * offsetY + k;
 	// // 					if (index >= 0 && index < length) { // Ensure index is within bounds
-	// // 						int roundedId = std::round(id[index]);
-	// // 						if (roundedId == std::round(id[i])) {
+	// // 						int roundedId = round(id[index]);
+	// // 						if (roundedId == round(id[i])) {
 	// // 							phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
 	// // 						}
 	// // 					}
@@ -2503,16 +2503,16 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 	// // 			}
 	// // 		}
 	// // 		phiSum[i] = phiSum[i] > 0 ? cellBoundary(phi_fine[i], phiThreshold) / phiSum[i] : 0;
-	// // 		if (std::isnan(phiSum[i])) phiSum[i] = 0; // Handle NaN explicitly, though it should not occur now
+	// // 		if (isnan(phiSum[i])) phiSum[i] = 0; // Handle NaN explicitly, though it should not occur now
 	// // 	}
 	// // }
 
 	// // Normalize phiSum by the standard deviation value
 	// float stdVal = RmOutlier(phiSum);
-	// std::transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [stdVal](float val) { return val / stdVal; });
+	// transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [stdVal](float val) { return val / stdVal; });
 
 	// // Find the maximum value in phiSum for potential use
-	// float maxVal = *std::max_element(phiSum.begin(), phiSum.end());
+	// float maxVal = *max_element(phiSum.begin(), phiSum.end());
 
 	// // Filter based on a normalized threshold
 	// // const float normalizedThreshold = 1.4;
@@ -2522,7 +2522,7 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 	// // const float normalizedThreshold = 1.0;
 	// const float normalizedThreshold = 0.8*maxVal;
 	// // const float normalizedThreshold = 0.75*maxVal;
-	// // std::cout << normalizedThreshold << std::endl;
+	// // cout << normalizedThreshold << endl;
 
 	// // float normalizedThreshold;
 	// // if (n<10000) {
@@ -2530,7 +2530,7 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 	// // } else {
 	// // 	normalizedThreshold = 0.6*maxVal;
 	// // }
-	// std::transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [normalizedThreshold](float val) {
+	// transform(phiSum.begin(), phiSum.end(), phiSum.begin(), [normalizedThreshold](float val) {
 	// 	return val < normalizedThreshold ? 0.0f : val;
 	// });
 
@@ -2548,25 +2548,25 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 	};
 
 	// Using a map to store max values for each ID
-	std::map<int, float> maxValues;
+	map<int, float> maxValues;
 
 	// Iterate with precomputed values and reduced condition checks
 	for (int i = (5 * cols); i < (length - 4 * cols); ++i) {
-		if (cellBoundary(phi_fine[i], threshold) > 0 && std::round(id[i]) != 9) {
+		if (cellBoundary(phi_fine[i], threshold) > 0 && round(id[i]) != 9) {
 			for (int j = -4; j <= 4; ++j) {
 				for (int k = -4; k <= 4; ++k) {
 					int index = i + j * offsetY + k;
-					int roundedId = std::round(id[index]);
-					if (roundedId == std::round(id[i]) || roundedId < 0) {
+					int roundedId = round(id[index]);
+					if (roundedId == round(id[i]) || roundedId < 0) {
 						phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
 					}
 				}
 			}
 			phiSum[i] = phiSum[i] > 0 ? cellBoundary(phi_fine[i], phiThreshold) / phiSum[i] : 0;
-			if (std::isnan(phiSum[i])) phiSum[i] = 0; // Handle NaN explicitly, though it should not occur now
+			if (isnan(phiSum[i])) phiSum[i] = 0; // Handle NaN explicitly, though it should not occur now
 
 			// Update max value for each ID
-			int idKey = static_cast<int>(std::round(id[i]));
+			int idKey = static_cast<int>(round(id[i]));
 			if (maxValues.find(idKey) == maxValues.end() || maxValues[idKey] < phiSum[i]) {
 				maxValues[idKey] = phiSum[i];
 			}
@@ -2575,7 +2575,7 @@ void NeuronGrowth::DetectTipsMulti(const std::vector<float>& phi_fine, const std
 
 	// Normalize phiSum by the max value for each ID and apply thresholding
 	for (int i = 0; i < length; ++i) {
-		int idKey = static_cast<int>(std::round(id[i]));
+		int idKey = static_cast<int>(round(id[i]));
 		if (maxValues.find(idKey) != maxValues.end() && maxValues[idKey] != 0) {
 			// float normalizedThreshold = 0.75 * maxValues[idKey];
 			float normalizedThreshold = 0.825 * maxValues[idKey];
@@ -2859,21 +2859,21 @@ vector<float> NeuronGrowth::FindCentroidsOfLocalMaximaClusters(const vector<floa
 	return centroids;
 }
 
-std::vector<float> NeuronGrowth::ComputeMaxFilter(const std::vector<float>& geodist, int numRows, int numCols, int windowRadius) {
-	std::vector<float> maxGeodist(geodist.size(), std::numeric_limits<float>::lowest());
+vector<float> NeuronGrowth::ComputeMaxFilter(const vector<float>& geodist, int numRows, int numCols, int windowRadius) {
+	vector<float> maxGeodist(geodist.size(), numeric_limits<float>::lowest());
 
 	for (int row = 0; row < numRows; ++row) {
 		for (int col = 0; col < numCols; ++col) {
 			int startIndex = row * numCols + col;
-			int startRow = std::max(0, row - windowRadius);
-			int endRow = std::min(numRows - 1, row + windowRadius);
-			int startCol = std::max(0, col - windowRadius);
-			int endCol = std::min(numCols - 1, col + windowRadius);
+			int startRow = max(0, row - windowRadius);
+			int endRow = min(numRows - 1, row + windowRadius);
+			int startCol = max(0, col - windowRadius);
+			int endCol = min(numCols - 1, col + windowRadius);
 
 			for (int r = startRow; r <= endRow; ++r) {
 				for (int c = startCol; c <= endCol; ++c) {
 					int index = r * numCols + c;
-					maxGeodist[startIndex] = std::max(maxGeodist[startIndex], geodist[index]);
+					maxGeodist[startIndex] = max(maxGeodist[startIndex], geodist[index]);
 				}
 			}
 		}
@@ -2893,9 +2893,9 @@ std::vector<float> NeuronGrowth::ComputeMaxFilter(const std::vector<float>& geod
 
 // 		for (int j = 0; j < NY + 1; j++, k++) { // Increment k in the loop header
 // 			// Assuming CellBoundary returns 1 if condition is met, 0 otherwise
-// 			row.push_back(CellBoundary(std::abs(input[k]), 0.25) * 9);
+// 			row.push_back(CellBoundary(abs(input[k]), 0.25) * 9);
 // 		}
-// 		output.push_back(std::move(row)); // Use std::move to avoid copying the row
+// 		output.push_back(move(row)); // Use move to avoid copying the row
 // 	}
 
 // 	return output;
@@ -2906,7 +2906,7 @@ vector<int> NeuronGrowth::ConvertTo1DIntVector_PushBoundary(const vector<float>&
 	int k = 0;
 	for (int i = 0; i < NX + 1; i++) {
 		for (int j = 0; j < NY + 1; j++, k++) {
-			output[i * (NY + 1) + j] = CellBoundary(std::abs(input[k]), 0.25) * 9;
+			output[i * (NY + 1) + j] = CellBoundary(abs(input[k]), 0.25) * 9;
 		}
 	}
 
@@ -2914,14 +2914,14 @@ vector<int> NeuronGrowth::ConvertTo1DIntVector_PushBoundary(const vector<float>&
 }
 
 
-std::vector<std::vector<int>> NeuronGrowth::ConvertTo2DIntVector(const std::vector<float>& input, int NX, int NY) 
+vector<vector<int>> NeuronGrowth::ConvertTo2DIntVector(const vector<float>& input, int NX, int NY) 
 {
-	std::vector<std::vector<int>> output;
+	vector<vector<int>> output;
 	output.reserve(NX + 1); // Preallocate memory for rows
 
 	size_t k = 0; // Use size_t for consistency with standard library sizes
 	for (int i = 0; i < NX + 1; i++) {
-		std::vector<int> row;
+		vector<int> row;
 		row.reserve(NY + 1); // Preallocate memory for columns
 
 		for (int j = 0; j < NY + 1; j++, k++) {
@@ -2932,14 +2932,14 @@ std::vector<std::vector<int>> NeuronGrowth::ConvertTo2DIntVector(const std::vect
 	return output;
 }
 
-std::vector<std::vector<float>> NeuronGrowth::ConvertTo2DFloatVector(const std::vector<float>& input, int NX, int NY) 
+vector<vector<float>> NeuronGrowth::ConvertTo2DFloatVector(const vector<float>& input, int NX, int NY) 
 {
-	std::vector<std::vector<float>> output;
+	vector<vector<float>> output;
 	output.reserve(NX); // Preallocate memory for rows
 
 	size_t k = 0; // Use size_t for consistency with standard library sizes
 	for (int i = 0; i < NX; i++) {
-		std::vector<float> row;
+		vector<float> row;
 		row.reserve(NY); // Preallocate memory for columns
 
 		for (int j = 0; j < NY; j++, k++) {
@@ -3346,35 +3346,187 @@ vector<vector<float>> NeuronGrowth::ExploreGridAndCalculateDistances(vector<int>
 // 	return distances;
 // }
 
-// Function to trace neurites
-vector<vector<pair<int, int>>> NeuronGrowth::TraceNeurites(vector<vector<float>>& geodist) 
-{
-	// // Step 1: Set geodist values below 20 to 0
-	// for (auto& row : geodist) {
-	// 	for (auto& val : row) {
-	// 		if (val < 20) val = 0;
-	// 	}
-	// }
+void NeuronGrowth::MaskSoma(vector<float>& phi, int width, int height, vector<int> somaCenter, float somaRadius) {
+	for (int y = 0; y < height; ++y) {
+		for (int x = 0; x < width; ++x) {
+			if (sqrt(pow(x - somaCenter[0], 2) + pow(y - somaCenter[1], 2)) <= somaRadius) {
+				phi[y * width + x] = 0; // Mask out soma
+			}
+		}
+	}
+}
 
-	// // Assume a function to flatten 2D coordinates to 1D and vice versa
-	// auto to1D = [](int x, int y, int cols) { return x * cols + y; };
-	// auto to2D = [cols=2*NY+1](int idx) { return make_pair(idx / cols, idx % cols); };
+vector<vector<vector<int>>> NeuronGrowth::TraceNeurites(vector<float>& phi, const vector<float>& geodesicDistance, int width, int height, int generation) {
+	vector<vector<vector<int>>> traces;
+	vector<bool> visited(width * height, false);
 
-	vector<vector<pair<int, int>>> paths(numNeuron); // Each element holds a path for one neurite
+	while (true) {
+		float maxDist = -1;
+		int maxIdx = -1;
+		// Find maximum unvisited geodist and untraced point
+		for (int i = 0; i < geodesicDistance.size(); ++i) {
+			if (phi[i] == 1 && !visited[i] && geodesicDistance[i] > maxDist) {
+				maxDist = geodesicDistance[i];
+				maxIdx = i;
+			}
+		}
 
-	// for (int i = 0; i < NG.numNeuron; ++i) {
-	// 	vector<float> flatMatrix; // converting geodist[i] to a 1D vector if needed
-	// 	auto maximaIndices = FindLocalMaximaInClusters(flatMatrix, 2*NX+1, 2*NY+1);
+		if (maxIdx == -1) break; // No more neurites to trace
 
-	// 	// For each maximum, find a path to the local minimum (simplified version)
-	// 	for (auto idx : maximaIndices) {
-	// 		auto [x, y] = to2D(idx);
-	// 		// Simplified pathfinding: just add the maximum for now
-	// 		paths[i].push_back({x, y});
-	// 	}
-	// }
+		vector<vector<int>> trace;
+		int idx = maxIdx;
+		while (idx != -1 && !visited[idx]) {
+			int x = idx % width;
+			int y = idx / width;
+			trace.push_back({x, y});
+			visited[idx] = true;
 
-	return paths;
+			// Find next point with lower geodist
+			int nextIdx = -1;
+			float minDist = geodesicDistance[idx];
+			for (int dy = -1; dy <= 1; ++dy) {
+				for (int dx = -1; dx <= 1; ++dx) {
+					int nx = x + dx;
+					int ny = y + dy;
+					int nIdx = ny * width + nx;
+					if (isValid(nx, ny, width, height) && phi[nIdx] == 1 && geodesicDistance[nIdx] < minDist && !visited[nIdx]) {
+						minDist = geodesicDistance[nIdx];
+						nextIdx = nIdx;
+					}
+				}
+			}
+			idx = nextIdx;
+		}
+		traces.push_back(trace);
+	}
+
+	// Remove traced neurites from phi to not retrace them
+	for (const auto& trace : traces) {
+		for (const auto& p : trace) {
+			phi[p[1] * width + p[0]] = 0;
+		}
+	}
+
+	cout << "Generation " << generation << ": Traced " << traces.size() << " neurites." << endl;
+	return traces;
+}
+
+// void NeuronGrowth::AdjustNearestTip(vector<float>& localMaximaMatrix, int width, int height, const vector<vector<int>>& cues, double adjustmentFactor) {
+// 	vector<float> tempMatrix(localMaximaMatrix.size(), 0); // Start with current tip states
+
+// 	// std::cout << cues.size() << std::endl;
+// 	for (const auto& cue : cues) {
+// 		double minDist = numeric_limits<double>::max();
+// 		int nearestTipIndex = -1;
+
+// 		// Traverse through the matrix to find the nearest tip to the current cue
+// 		for (int y = 0; y < height; ++y) {
+// 			for (int x = 0; x < width; ++x) {
+// 				int idx = y * width + x;
+// 				if (localMaximaMatrix[idx] > 0) { // Check if this is a tip
+// 					double dist = pow(x - cue[0], 2) + pow(y - cue[1], 2);
+// 					if (dist < minDist) {
+// 						minDist = dist;
+// 						nearestTipIndex = idx;
+// 					}
+// 				}
+// 			}
+// 		}
+
+// 		// Adjust the found tip towards the cue (if any)
+// 		if (nearestTipIndex != -1) {
+// 			int tipX = nearestTipIndex % width;
+// 			int tipY = nearestTipIndex / width;
+// 			// Calculate new positions, adjusted towards the cue
+// 			int newX = max(0, min(width - 1, tipX + static_cast<int>(adjustmentFactor * (cue[0] - tipX))));
+// 			int newY = max(0, min(height - 1, tipY + static_cast<int>(adjustmentFactor * (cue[1] - tipY))));
+// 			// int newX = tipX + static_cast<int>(adjustmentFactor * (cue[0] - tipX));
+// 			// int newY = tipY + static_cast<int>(adjustmentFactor * (cue[1] - tipY));
+// 			int newIdx = newY * width + newX;
+// 			// tempMatrix[nearestTipIndex] = 0; // Remove the old position
+// 			tempMatrix[newIdx] = 5; // Mark the new position as a tip
+// 		}
+// 	}
+
+// 	localMaximaMatrix = tempMatrix; // Update the localMaximaMatrix with the adjusted tip positions
+// }
+void NeuronGrowth::AdjustNearestTip(vector<float>& localMaximaMatrix, int width, int height, const vector<vector<int>>& cues) {
+
+	vector<float> tempMatrix(localMaximaMatrix.size(), 0); // Start with current tip states
+
+	for (const auto& cue : cues) {
+		double minDist = numeric_limits<double>::max();
+		int nearestTipIndex = -1;
+
+		// Traverse through the matrix to find the nearest tip to the current cue
+		for (int y = 0; y < height; ++y) {
+			for (int x = 0; x < width; ++x) {
+				int idx = y * width + x;
+				if (localMaximaMatrix[idx] > 0) { // Check if this is a tip
+					double dist = pow(x - cue[0], 2) + pow(y - cue[1], 2);
+					if (dist < minDist) {
+						minDist = dist;
+						nearestTipIndex = idx;
+					}
+				}
+			}
+		}
+
+		// Adjust the found tip towards the cue (if any)
+		if (nearestTipIndex != -1) {
+			int tipX = nearestTipIndex % width;
+			int tipY = nearestTipIndex / width;
+			
+			// Calculate direction vector
+			double dist = sqrt(pow(tipX - cue[0], 2) + pow(tipY - cue[1], 2));
+			int moveX = dist > 0 ? static_cast<int>((cue[0] - tipX) / dist * 1) : 0; // Move approximately 2 pixels
+			int moveY = dist > 0 ? static_cast<int>((cue[1] - tipY) / dist * 1) : 0;
+
+			// Calculate new positions, adjusted towards the cue
+			int newX = max(0, min(width - 1, tipX + moveX));
+			int newY = max(0, min(height - 1, tipY + moveY));
+
+			int newIdx = newY * width + newX;
+			tempMatrix[newIdx] = 5; // Mark the new position as a tip
+
+			// Optional debugging output
+			// cout << "Tip moved from (" << tipX << ", " << tipY << ") to (" << newX << ", " << newY << ")" << endl;
+		}
+	}
+
+	localMaximaMatrix = tempMatrix; // Update the localMaximaMatrix with the adjusted tip positions
+}
+
+void NeuronGrowth::PickNearestTip(vector<float>& localMaximaMatrix, int width, int height, const vector<vector<int>>& cues) {
+	vector<float> tempMatrix(localMaximaMatrix.size(), 0); // Initialize output matrix with zeros
+
+	// Iterate through each cue
+	for (const auto& cue : cues) {
+		double minDist = numeric_limits<double>::max();
+		int nearestTipIndex = -1;
+
+		// Traverse through the matrix to find the closest tip pixel to the current cue
+		for (int y = 0; y < height; ++y) {
+			for (int x = 0; x < width; ++x) {
+				int idx = y * width + x;
+				if (localMaximaMatrix[idx] > 0) { // Check if this is a tip pixel
+					double dist = pow(x - cue[0], 2) + pow(y - cue[1], 2);
+					if (dist < minDist) {
+						minDist = dist;
+						nearestTipIndex = idx;
+					}
+				}
+			}
+		}
+
+		// Set the nearest tip pixel to the cue in the output matrix
+		if (nearestTipIndex != -1) {
+			tempMatrix[nearestTipIndex] = localMaximaMatrix[nearestTipIndex]; // Copy the value of the tip to the temp matrix
+		}
+	}
+
+	// Update the localMaximaMatrix to contain only the nearest tips to the cues
+	localMaximaMatrix = tempMatrix;
 }
 
 // Function to calculate geodesic distance from a point
@@ -3454,10 +3606,10 @@ void NeuronGrowth::PrintOutNeurons(const vector<int>& neurons, int NX_fine, int 
 
 // void NeuronGrowth::PrintOutNeurons(const vector<int>& neurons, int NX_fine, int NY_fine) 
 // {   
-// 	std::ostringstream buffer;
+// 	ostringstream buffer;
 
 // 	// Create a horizontal line
-// 	std::string horizontal_line(78, '-');
+// 	string horizontal_line(78, '-');
 // 	buffer << horizontal_line << "\n";
 
 // 	// Print out the neurons grid
@@ -3466,7 +3618,7 @@ void NeuronGrowth::PrintOutNeurons(const vector<int>& neurons, int NX_fine, int 
 // 		for (int j = 0; j < NY_fine; j++) {
 // 			int index = i * NY_fine + j;
 // 			if (index < neurons.size()) {
-// 				buffer << (neurons[index] == 0 ? ' ' : std::to_string(neurons[index]));
+// 				buffer << (neurons[index] == 0 ? ' ' : to_string(neurons[index]));
 // 			}
 // 		}
 // 		buffer << " |\n";
@@ -3478,47 +3630,47 @@ void NeuronGrowth::PrintOutNeurons(const vector<int>& neurons, int NX_fine, int 
 // 	ierr = PetscPrintf(PETSC_COMM_WORLD, "%s", buffer.str().c_str());
 // }
 
-bool NeuronGrowth::ReadPointData(const std::string& filename, std::vector<float>& dataVector1, std::vector<float>& dataVector2, std::vector<float>& dataVector3, std::vector<float>& dataVector4, std::vector<float>& dataVector5) {
-	std::ifstream file(filename);
+bool NeuronGrowth::ReadPointData(const string& filename, vector<float>& dataVector1, vector<float>& dataVector2, vector<float>& dataVector3, vector<float>& dataVector4, vector<float>& dataVector5) {
+	ifstream file(filename);
 	if (!file.is_open()) {
-		std::cerr << "Failed to open file: " << filename << std::endl;
+		cerr << "Failed to open file: " << filename << endl;
 		return false;
 	}
 
-	std::string line;
-	while (std::getline(file, line)) {
+	string line;
+	while (getline(file, line)) {
 		// Look for the POINT_DATA section
-		if (line.find("POINT_DATA") != std::string::npos) {
+		if (line.find("POINT_DATA") != string::npos) {
 			return ParsePointData(file, dataVector1, dataVector2, dataVector3, dataVector4, dataVector5);
 		}
 	}
 
-	std::cerr << "POINT_DATA section not found." << std::endl;
+	cerr << "POINT_DATA section not found." << endl;
 	return false;
 }
 
-bool NeuronGrowth::ParsePointData(std::ifstream& file, std::vector<float>& dataVector1, std::vector<float>& dataVector2, std::vector<float>& dataVector3, std::vector<float>& dataVector4, std::vector<float>& dataVector5) {
-	std::string line;
+bool NeuronGrowth::ParsePointData(ifstream& file, vector<float>& dataVector1, vector<float>& dataVector2, vector<float>& dataVector3, vector<float>& dataVector4, vector<float>& dataVector5) {
+	string line;
 	int vectorCounter = 0;
 
-	while (std::getline(file, line) && vectorCounter < 5) {
-		std::stringstream ss(line);
-		std::string word;
+	while (getline(file, line) && vectorCounter < 5) {
+		stringstream ss(line);
+		string word;
 		ss >> word;
 
 		if (word == "SCALARS" || word == "VECTORS") {
-			std::string fieldName, fieldType;
+			string fieldName, fieldType;
 			ss >> fieldName >> fieldType;
 
 			// Skip the lookup table line if it's a scalar
 			if (word == "SCALARS") {
-				std::getline(file, line);  // This should read the LOOKUP_TABLE line
+				getline(file, line);  // This should read the LOOKUP_TABLE line
 			}
 
 			// Read and store the data
-			std::vector<float> tempData;
-			while (std::getline(file, line) && !line.empty()) {
-				std::istringstream iss(line);
+			vector<float> tempData;
+			while (getline(file, line) && !line.empty()) {
+				istringstream iss(line);
 				float value;
 				while (iss >> value) {
 					tempData.push_back(value);
@@ -3903,13 +4055,13 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 	int NX_fine(2 * NX + 1), NY_fine(2 * NY + 1);
 	int totalSize = NX_fine * NY_fine;  // Total number of elements in the flattened 2D grid
 	// Allocate neurons matrix as a single flat vector
-	std::vector<int> neurons(totalSize, 0);
+	vector<int> neurons(totalSize, 0);
 	// Allocate distances 3D matrix: vector of 2D matrices, each represented by a flat vector<float>
-	std::vector<std::vector<float>> distances(NG.numNeuron, std::vector<float>(totalSize, 0.0f));
+	vector<vector<float>> distances(NG.numNeuron, vector<float>(totalSize, 0.0f));
 	// Allocate vectors for phi_fine, id, tip, and localMaximaMatrix
-	std::vector<float> phi_fine(cpts_fine.size(), 0), id(cpts_fine.size(), 0), tip(cpts_fine.size(), 0), localMaximaMatrix(cpts_fine.size(), 0);
+	vector<float> phi_fine(cpts_fine.size(), 0), id(cpts_fine.size(), 0), tip(cpts_fine.size(), 0), localMaximaMatrix(cpts_fine.size(), 0);
 	// Allocate geodist and axonTip matrices
-	std::vector<std::vector<float>> geodist(NG.numNeuron, std::vector<float>(totalSize, 0));
+	vector<vector<float>> geodist(NG.numNeuron, vector<float>(totalSize, 0));
 
 	PetscPrintf(PETSC_COMM_WORLD, "Pre-allocated vectors!-------------------------------------------------------\n");
 
@@ -3928,32 +4080,40 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		for (size_t i = 0; i < NG.prev_id.size(); i++) {
 			int prevVal = NG.prev_id[i];
 			int neuronVal = neurons[i];
-			NG.prev_id[i] = (prevVal == 0 ? neuronVal : std::min(prevVal, neuronVal));
+			NG.prev_id[i] = (prevVal == 0 ? neuronVal : min(prevVal, neuronVal));
 		}
 		NG.DetectConnections(neurons, NX_fine, NY_fine);
 
 		distances = NG.ExploreGridAndCalculateDistances(neurons, seed, originX, originY, NX_fine, NY_fine);
 		NG.DetectTipsMulti(phi_fine, neurons, NG.numNeuron, tip, NX_fine, NY_fine);
 
-		vector<int> centroidIndices;
-		localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine, centroidIndices);
-		for (size_t i = 0; i < distances.size(); i++) {
-			geodist[i] = distances[i];
-			std::vector<float> maxGeodist = NG.ComputeMaxFilter(geodist[i], NX_fine, NY_fine, 5);
-			float maxVal = -std::numeric_limits<float>::max();
-			int maxInd = 0;
-			for (size_t j = 0; j < centroidIndices.size(); ++j) {
-				if (maxGeodist[centroidIndices[j]] > maxVal) {
-					maxVal = maxGeodist[centroidIndices[j]];
-					maxInd = centroidIndices[j];
-				}
-			}
+		// vector<int> centroidIndices;
+		// localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine, centroidIndices);
 
-			if (maxInd != 0) {
-				localMaximaMatrix[maxInd] = -5;
-			
-			}
+		if (NG.n > 1500) {
+			vector<vector<int>> externalCues = {{0, NY_fine}, {NX_fine, 0}, {NX_fine, NY_fine}};
+			NG.AdjustNearestTip(tip, NX_fine, NY_fine, externalCues);
+			// NG.PickNearestTip(tip, NX_fine, NY_fine, externalCues);
 		}
+
+		localMaximaMatrix = tip;
+		// for (size_t i = 0; i < distances.size(); i++) {
+		// 	geodist[i] = distances[i];
+		// 	vector<float> maxGeodist = NG.ComputeMaxFilter(geodist[i], NX_fine, NY_fine, 5);
+		// 	float maxVal = -numeric_limits<float>::max();
+		// 	int maxInd = 0;
+		// 	for (size_t j = 0; j < centroidIndices.size(); ++j) {
+		// 		if (maxGeodist[centroidIndices[j]] > maxVal) {
+		// 			maxVal = maxGeodist[centroidIndices[j]];
+		// 			maxInd = centroidIndices[j];
+		// 		}
+		// 	}
+
+		// 	if (maxInd != 0) {
+		// 		localMaximaMatrix[maxInd] = -5;
+			
+		// 	}
+		// }
 
 		NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, kdTree_fine, cpts);
 
@@ -4262,9 +4422,9 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			// 	}
 			// 	varName = "geoDist_running_";
 			// 	NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, geoDist_all, varName); // solution on control points
-			// } else if (NG.comRank == 2) {
-			// 	varName = "localMax_running_";
-			// 	NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, localMaximaMatrix, varName); // solution on control points
+			} else if (NG.comRank == 2) {
+				varName = "localMax_running_";
+				NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, localMaximaMatrix, varName); // solution on control points
 			} else if (NG.comRank == 3) {
 				varName = "theta_running_"; // 0 since only theta is constant
 				NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, 0, path_out, NG.theta_fine, varName); // solution on control points

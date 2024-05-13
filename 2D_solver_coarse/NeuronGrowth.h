@@ -244,7 +244,6 @@ public:
 	bool isInBox(const Vertex2D& point, const Vertex2D& center, float dx, float dy);
 	vector<float> calculatePhiSum(const vector<Vertex2D>& cpts, float dx, float dy, vector<float> id);
 	void DetectTipsMulti(const vector<float>& phi_fine, const vector<int>& id, const int& numNeuron, vector<float>& phiSum, const int& rows, const int& cols);
-	
 	float bfs(const vector<float>& matrix, const int& rows, const int& cols, const int& row, const int& col,
 		vector<bool>& visited, vector<pair<int, int>>& cluster);
 	vector<vector<pair<int, int>>> FindClusters(const vector<float>& matrix, const int& rows, const int& cols);
@@ -254,26 +253,32 @@ public:
 	bool IsLocalMaximum(const vector<float>& matrix, const int& rows, const int& cols, const int& x, const int& y);
 	vector<float> FindCentroidsOfLocalMaximaClusters(const vector<float>& matrix, const int& rows, const int& cols);
 	vector<float> FindCentroidsOfLocalMaximaClusters(const vector<float>& matrix, const int& rows, const int& cols, vector<int>& centroidIndices);
-	std::vector<float> ComputeMaxFilter(const std::vector<float>& geodist, int numRows, int numCols, int windowRadius);
+	vector<float> ComputeMaxFilter(const vector<float>& geodist, int numRows, int numCols, int windowRadius);
 
-	// Neuron detection
+	// Neuron detection and identification
 	vector<int> ConvertTo1DIntVector_PushBoundary(const vector<float>& input, const int& NX, const int& NY);
 	vector<vector<int>> ConvertTo2DIntVector(const vector<float>& input, int NX, int NY);
 	vector<vector<float>> ConvertTo2DFloatVector(const vector<float>& input, int NX, int NY);
-
 	void FloodFill(vector<int>& image, int x, int y, int newColor, int originalColor, const vector<int>& prev_id, int width);
 	void IdentifyNeurons(vector<float>& phi_in, vector<int>& neurons, const vector<int>& prev_id, vector<array<float, 2>> seed, const int& NX, const int& NY, const int& originX, const int& originY);
 	void DetectConnections(vector<int>& grid, int rows, int cols);
 	bool isValid(const int& x, const int& y, const int& rows, const int& cols);
+	
+	// Geometric distance
 	vector<vector<vector<float>>> CalculateQuasiEuclideanDistanceFromPoint(const vector<vector<int>>& neurons, vector<array<float, 2>>& seed, const int& originX, const int& originY);
 	vector<vector<vector<float>>> CalculateGeodesicDistanceFromPoint(const vector<vector<int>>& neurons, vector<array<float, 2>>& seed, const int& originX, const int& originY);
 	vector<vector<float>> ExploreGridAndCalculateDistances(vector<int>& grid, const vector<array<float, 2>>& seed, const int& originX, const int& originY, const int& rows, const int& cols);
+	
+	// Neurite tracing and external cure
+	void MaskSoma(vector<float>& phi, int width, int height, vector<int> somaCenter, float somaRadius);
+	vector<vector<vector<int>>> TraceNeurites(vector<float>& phi, const vector<float>& geodesicDistance, int width, int height, int generation);
+	void AdjustNearestTip(vector<float>& localMaximaMatrix, int width, int height, const vector<vector<int>>& cues);
+	void PickNearestTip(vector<float>& localMaximaMatrix, int width, int height, const vector<vector<int>>& cues);
 
-	vector<vector<pair<int, int>>> TraceNeurites(vector<vector<float>>& geodist);
 	void SaveNGvars(vector<vector<float>>& NGvars, int NX, int NY, string fn);
 	void PrintOutNeurons(const vector<int>& neurons, int NX_fine, int NY_fine);
-	bool ReadPointData(const std::string& filename, std::vector<float>& dataVector1, std::vector<float>& dataVector2, std::vector<float>& dataVector3, std::vector<float>& dataVector4, std::vector<float>& dataVector5);
-	bool ParsePointData(std::ifstream& file, std::vector<float>& dataVector1, std::vector<float>& dataVector2, std::vector<float>& dataVector3, std::vector<float>& dataVector4, std::vector<float>& dataVector5);
+	bool ReadPointData(const string& filename, vector<float>& dataVector1, vector<float>& dataVector2, vector<float>& dataVector3, vector<float>& dataVector4, vector<float>& dataVector5);
+	bool ParsePointData(ifstream& file, vector<float>& dataVector1, vector<float>& dataVector2, vector<float>& dataVector3, vector<float>& dataVector4, vector<float>& dataVector5);
 
 };
 

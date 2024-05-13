@@ -333,9 +333,12 @@ void InitializeSoma(const int& numNeuron, vector<array<float, 2>> &seed, int &NX
 		seed = {{30, 30}};
 		break;
         case 2:
-		NX = 100;
+		// NX = 100;
+		// NY = 30;
+		// seed = {{30, 30}, {170, 30}};
+		NX = 50;
 		NY = 30;
-		seed = {{30, 30}, {170, 30}};
+		seed = {{30, 30}, {70, 30}};
 		break;
         // case 3:
 	// 	NX = 100;
@@ -809,7 +812,7 @@ vector<float> InterpolateVars_coarse(vector<float> input, vector<Vertex2D> cpts_
 	return output;
 }
 
-float distance_d(const Vertex2D& a, const Vertex2D& b) {
+float distanceTo(const Vertex2D& a, const Vertex2D& b) {
 	// return sqrt((a.coor[0] - b.coor[0]) * (a.coor[0] - b.coor[0]) + (a.coor[1] - b.coor[1]) * (a.coor[1] - b.coor[1]));
 	return abs(a.coor[0] - b.coor[0]) + abs(a.coor[1] - b.coor[1]);
 }
