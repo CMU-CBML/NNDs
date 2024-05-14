@@ -15,7 +15,7 @@ EIGEN_DIR = ../eigen-3.4.0
 # Compiler = /ocean/projects/eng170006p/ussqww/petsc/arch-linux-c-opt/bin/mpicxx
 
 include ${PETSC_DIR}/lib/petsc/conf/variables
-CFLAGS= ${PETSC_CC_INCLUDES} ${CXX_FLAGS} ${CXXFLAGS} ${CPPFLAGS} ${PSOURCECXX} -ffast-math -O3 -march=native -std=c++11 -fopenmp -Wall -I ${EIGEN_DIR}
+CFLAGS= ${PETSC_CC_INCLUDES} ${CXX_FLAGS} ${CXXFLAGS} ${CPPFLAGS} ${PSOURCECXX} -ffast-math -O3 -march=native -std=c++17 -fopenmp -Wall -I ${EIGEN_DIR}
 
 all: 2DNG
 

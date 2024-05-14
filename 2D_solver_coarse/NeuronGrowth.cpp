@@ -62,6 +62,33 @@ NeuronGrowth::NeuronGrowth(){
 	sum_grad_phi0_local = 0;
 	sum_grad_phi0_global = 0;
 
+	var_save_invl 	= 100;
+	expandCK_invl	 = 100;
+	aniso 		= 6;
+	numNeuron 	= 1;
+	gc_sz 		= 2;
+	Diff 		= 4;
+	M_axon 		= 100;
+	M_neurite 	= 50;
+	M_phi 		= 60;
+	alpha 		= 0.9;
+	alphaT 		= 0.001;
+	betaT 		= 0.001;
+	c_opt 		= 1;
+	delta 		= 0.20;
+	dt 		= 0.0005;
+	epsilonb 	= 0.04;
+	g 		= 0.1;
+	gamma 		= 10;
+	k2 		= 0;
+	kappa 		= 2;
+	Dc 		= 6;
+	kp75 		= 0;
+	r 		= 5;
+	s_coeff 	= 0.007;
+	seed_radius 	= 15;
+	source_coeff 	= 15;
+
 	SetVariables("./simulation_parameters.txt");
 }
 
@@ -2577,8 +2604,9 @@ void NeuronGrowth::DetectTipsMulti(const vector<float>& phi_fine, const vector<i
 	for (int i = 0; i < length; ++i) {
 		int idKey = static_cast<int>(round(id[i]));
 		if (maxValues.find(idKey) != maxValues.end() && maxValues[idKey] != 0) {
-			// float normalizedThreshold = 0.75 * maxValues[idKey];
-			float normalizedThreshold = 0.825 * maxValues[idKey];
+			// float normalizedThreshold = 0.75 * maxValues[idKey]; // for external cue guiding
+			float normalizedThreshold = 0.6 * maxValues[idKey]; // for external cue guiding
+			// float normalizedThreshold = 0.825 * maxValues[idKey];
 			phiSum[i] = (phiSum[i] < normalizedThreshold) ? 0.0f : phiSum[i] / maxValues[idKey];
 		}
 	}
@@ -3479,7 +3507,7 @@ void NeuronGrowth::AdjustNearestTip(vector<float>& localMaximaMatrix, int width,
 			
 			// Calculate direction vector
 			double dist = sqrt(pow(tipX - cue[0], 2) + pow(tipY - cue[1], 2));
-			int moveX = dist > 0 ? static_cast<int>((cue[0] - tipX) / dist * 1) : 0; // Move approximately 2 pixels
+			int moveX = dist > 0 ? static_cast<int>((cue[0] - tipX) / dist * 1) : 0; // Move approximately n pixels
 			int moveY = dist > 0 ? static_cast<int>((cue[1] - tipY) / dist * 1) : 0;
 
 			// Calculate new positions, adjusted towards the cue
@@ -3497,20 +3525,32 @@ void NeuronGrowth::AdjustNearestTip(vector<float>& localMaximaMatrix, int width,
 	localMaximaMatrix = tempMatrix; // Update the localMaximaMatrix with the adjusted tip positions
 }
 
-void NeuronGrowth::PickNearestTip(vector<float>& localMaximaMatrix, int width, int height, const vector<vector<int>>& cues) {
-	vector<float> tempMatrix(localMaximaMatrix.size(), 0); // Initialize output matrix with zeros
+vector<float> NeuronGrowth::PickNearestTip(vector<float>& tip, int width, int height, const vector<vector<int>>& cues, const vector<int>& centroidsIndex) {
+	vector<float> tempMatrix(tip.size(), 0); // Initialize output matrix with zeros
 
-	// Iterate through each cue
 	for (const auto& cue : cues) {
-		double minDist = numeric_limits<double>::max();
+		// std::cout << cue[1] << " " << width << " " << cue[0] << std::endl;;
+		float minDist = numeric_limits<float>::max();
 		int nearestTipIndex = -1;
 
-		// Traverse through the matrix to find the closest tip pixel to the current cue
+		// // Iterate only over indices that are non-zero tips
+		// for (const int& idx : centroidsIndex) {
+		// 	int x = idx % height;
+		// 	int y = idx / height;
+
+		// 	// Calculate Manhattan distance to the cue
+		// 	float dist = abs(x - cue[0]) + abs(y - cue[1]);
+		// 	if (dist < minDist) {
+		// 		minDist = dist;
+		// 		nearestTipIndex = idx;
+		// 	}
+		// }
+
 		for (int y = 0; y < height; ++y) {
 			for (int x = 0; x < width; ++x) {
-				int idx = y * width + x;
-				if (localMaximaMatrix[idx] > 0) { // Check if this is a tip pixel
-					double dist = pow(x - cue[0], 2) + pow(y - cue[1], 2);
+				int idx = x * height + y;
+				if (tip[idx] != 0) { // Check if this is a tip pixel
+					float dist = abs(x - cue[0]) + abs(y - cue[1]); // Manhattan distance
 					if (dist < minDist) {
 						minDist = dist;
 						nearestTipIndex = idx;
@@ -3521,12 +3561,20 @@ void NeuronGrowth::PickNearestTip(vector<float>& localMaximaMatrix, int width, i
 
 		// Set the nearest tip pixel to the cue in the output matrix
 		if (nearestTipIndex != -1) {
-			tempMatrix[nearestTipIndex] = localMaximaMatrix[nearestTipIndex]; // Copy the value of the tip to the temp matrix
+			tempMatrix[nearestTipIndex] = -5;
 		}
+
+		// Find the index of the cue directly since its position is known
+		int cueId = cue[0] * height + cue[1];
+		// Also mark the cue position - for debugging
+		if (cueId >= 0 && cueId < tempMatrix.size()) {
+			tempMatrix[cueId] = 5;
+		} else {
+			std::cout << "cueId: " << cueId << " " << cue[0] << " " << cue[1] << std::endl;
+ 		}
 	}
 
-	// Update the localMaximaMatrix to contain only the nearest tips to the cues
-	localMaximaMatrix = tempMatrix;
+	return tempMatrix;
 }
 
 // Function to calculate geodesic distance from a point
@@ -4065,6 +4113,8 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 
 	PetscPrintf(PETSC_COMM_WORLD, "Pre-allocated vectors!-------------------------------------------------------\n");
 
+	vector<vector<vector<int>>> externalCues = {{{0+5, 0+5}, {NX_fine-5, NY_fine-5}}, {}};
+
 	/*==============================================================================*/
 	// Main time iterations
 	while (iter <= NG.end_iter) {
@@ -4087,32 +4137,31 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		distances = NG.ExploreGridAndCalculateDistances(neurons, seed, originX, originY, NX_fine, NY_fine);
 		NG.DetectTipsMulti(phi_fine, neurons, NG.numNeuron, tip, NX_fine, NY_fine);
 
-		// vector<int> centroidIndices;
+		vector<int> centroidIndices;
 		// localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine, centroidIndices);
 
-		if (NG.n > 1500) {
-			vector<vector<int>> externalCues = {{0, NY_fine}, {NX_fine, 0}, {NX_fine, NY_fine}};
-			NG.AdjustNearestTip(tip, NX_fine, NY_fine, externalCues);
-			// NG.PickNearestTip(tip, NX_fine, NY_fine, externalCues);
-		}
+		// NG.AdjustNearestTip(tip, NX_fine, NY_fine, externalCues[0]);
+		// localMaximaMatrix = tip;
 
-		localMaximaMatrix = tip;
+		// std::cout << localMaximaMatrix.size() << std::endl;
+		localMaximaMatrix = NG.PickNearestTip(tip, NX_fine, NY_fine, externalCues[0], centroidIndices);
+
 		// for (size_t i = 0; i < distances.size(); i++) {
-		// 	geodist[i] = distances[i];
-		// 	vector<float> maxGeodist = NG.ComputeMaxFilter(geodist[i], NX_fine, NY_fine, 5);
-		// 	float maxVal = -numeric_limits<float>::max();
-		// 	int maxInd = 0;
-		// 	for (size_t j = 0; j < centroidIndices.size(); ++j) {
-		// 		if (maxGeodist[centroidIndices[j]] > maxVal) {
-		// 			maxVal = maxGeodist[centroidIndices[j]];
-		// 			maxInd = centroidIndices[j];
-		// 		}
-		// 	}
+			// geodist[i] = distances[i];
+			// vector<float> maxGeodist = NG.ComputeMaxFilter(geodist[i], NX_fine, NY_fine, 5);
+			// float maxVal = -numeric_limits<float>::max();
+			// int maxInd = 0;
+			// for (size_t j = 0; j < centroidIndices.size(); ++j) {
+			// 	if (maxGeodist[centroidIndices[j]] > maxVal) {
+			// 		maxVal = maxGeodist[centroidIndices[j]];
+			// 		maxInd = centroidIndices[j];
+			// 	}
+			// }
 
-		// 	if (maxInd != 0) {
-		// 		localMaximaMatrix[maxInd] = -5;
+			// if (maxInd != 0) {
+			// 	localMaximaMatrix[maxInd] = -5;
 			
-		// 	}
+			// }
 		// }
 
 		NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, kdTree_fine, cpts);
@@ -4428,9 +4477,9 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			} else if (NG.comRank == 3) {
 				varName = "theta_running_"; // 0 since only theta is constant
 				NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, 0, path_out, NG.theta_fine, varName); // solution on control points
-			// } else if (NG.comRank == 4) {
-			// 	varName = "tip_running_";
-			// 	NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, tip, varName); // solution on control points
+			} else if (NG.comRank == 4) {
+				varName = "tip_running_";
+				NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, tip, varName); // solution on control points
 			// } else if (NG.comRank == 5) {
 			// 	varName = "id_running_";
 			// 	NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, id, varName); // solution on control points

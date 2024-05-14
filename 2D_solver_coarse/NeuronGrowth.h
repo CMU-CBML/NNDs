@@ -273,7 +273,8 @@ public:
 	void MaskSoma(vector<float>& phi, int width, int height, vector<int> somaCenter, float somaRadius);
 	vector<vector<vector<int>>> TraceNeurites(vector<float>& phi, const vector<float>& geodesicDistance, int width, int height, int generation);
 	void AdjustNearestTip(vector<float>& localMaximaMatrix, int width, int height, const vector<vector<int>>& cues);
-	void PickNearestTip(vector<float>& localMaximaMatrix, int width, int height, const vector<vector<int>>& cues);
+	// void PickNearestTip(vector<float>& localMaximaMatrix, int width, int height, const vector<vector<int>>& cues);
+	vector<float> PickNearestTip(vector<float>& tip, int width, int height, const vector<vector<int>>& cues, const vector<int>& centroidsIndex);
 
 	void SaveNGvars(vector<vector<float>>& NGvars, int NX, int NY, string fn);
 	void PrintOutNeurons(const vector<int>& neurons, int NX_fine, int NY_fine);
