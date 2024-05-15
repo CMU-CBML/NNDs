@@ -3561,14 +3561,14 @@ vector<float> NeuronGrowth::PickNearestTip(vector<float>& tip, int width, int he
 
 		// Set the nearest tip pixel to the cue in the output matrix
 		if (nearestTipIndex != -1) {
-			tempMatrix[nearestTipIndex] = -5;
+			tempMatrix[nearestTipIndex] = 5;
 		}
 
 		// Find the index of the cue directly since its position is known
 		int cueId = cue[0] * height + cue[1];
 		// Also mark the cue position - for debugging
 		if (cueId >= 0 && cueId < tempMatrix.size()) {
-			tempMatrix[cueId] = 5;
+			tempMatrix[cueId] = -5;
 		} else {
 			std::cout << "cueId: " << cueId << " " << cue[0] << " " << cue[1] << std::endl;
  		}
