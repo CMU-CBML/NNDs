@@ -4113,8 +4113,12 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 
 	PetscPrintf(PETSC_COMM_WORLD, "Pre-allocated vectors!-------------------------------------------------------\n");
 
-	vector<vector<vector<int>>> externalCues = {{{0+5, 0+5}, {NX_fine-5, NY_fine-5}}, {}};
-
+	vector<vector<vector<int>>> externalCues;
+	if (NG.n < 20000) {
+		externalCues = {{{0+5, 0+5}, {NX_fine-5, NY_fine-5}}, {}};
+	} else {
+		externalCues = {{{0+5, 0+5}, {NX_fine-5, NY_fine-5}, {NX_fine*2/3, NY_fine-5}}, {}};
+	}
 	/*==============================================================================*/
 	// Main time iterations
 	while (iter <= NG.end_iter) {
