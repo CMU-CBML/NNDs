@@ -329,7 +329,7 @@ void InitializeSoma(const int& numNeuron, vector<array<float, 2>> &seed, int &NX
 	switch (numNeuron) {
 	case 1:
 		NX = 30;
-		NY = 40;
+		NY = 30;
 		seed = {{30, 30}};
 		break;
         case 2:

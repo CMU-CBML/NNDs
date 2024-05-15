@@ -24,3 +24,4 @@ s_coeff = 0.007
 seed_radius = 15
 source_coeff = 15
 var_save_invl = 100
+compCase = C

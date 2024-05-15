@@ -89,7 +89,7 @@ NeuronGrowth::NeuronGrowth(){
 	seed_radius 	= 15;
 	source_coeff 	= 15;
 
-	SetVariables("./simulation_parameters.txt");
+	compCase = "No";
 }
 
 void NeuronGrowth::AssignProcessor(vector<vector<int>> &ele_proc)
@@ -107,6 +107,7 @@ void NeuronGrowth::SetVariables(string fn_par) {
 	}
 
 	string line;
+
 	while (getline(inputFile, line)) {
 		istringstream iss(line);
 		string variableName;
@@ -141,6 +142,8 @@ void NeuronGrowth::SetVariables(string fn_par) {
 		else if (variableName == "betaT") iss >> betaT;
 		else if (variableName == "Diff") iss >> Diff;
 		else if (variableName == "source_coeff") iss >> source_coeff;
+		else if (variableName == "compCase") iss >> compCase;
+
 	}
 	inputFile.close();
 	PetscPrintf(PETSC_COMM_WORLD, "Parameter Loaded!\n");
@@ -2605,8 +2608,12 @@ void NeuronGrowth::DetectTipsMulti(const vector<float>& phi_fine, const vector<i
 		int idKey = static_cast<int>(round(id[i]));
 		if (maxValues.find(idKey) != maxValues.end() && maxValues[idKey] != 0) {
 			// float normalizedThreshold = 0.75 * maxValues[idKey]; // for external cue guiding
-			float normalizedThreshold = 0.6 * maxValues[idKey]; // for external cue guiding
-			// float normalizedThreshold = 0.825 * maxValues[idKey];
+			float normalizedThreshold;
+			if (compCase != "No") {
+				normalizedThreshold = 0.6 * maxValues[idKey]; // for external cue guiding
+			} else {
+				normalizedThreshold = 0.825 * maxValues[idKey];
+			}
 			phiSum[i] = (phiSum[i] < normalizedThreshold) ? 0.0f : phiSum[i] / maxValues[idKey];
 		}
 	}
@@ -4037,6 +4044,7 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 	/*==============================================================================*/
 	// Declare and initialize Neuron Growth simulation
 	NeuronGrowth NG;
+	NG.SetVariables(path_in + "simulation_parameters.txt");
 
 	// Set the number of iterations, number of neurons, and the end iteration from provided variables
 	NG.n = iter;  // Assign iteration count
@@ -4113,12 +4121,58 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 
 	PetscPrintf(PETSC_COMM_WORLD, "Pre-allocated vectors!-------------------------------------------------------\n");
 
+	// For experimental comparison cases. "No" is not running compare cases.
 	vector<vector<vector<int>>> externalCues;
-	if (NG.n < 20000) {
-		externalCues = {{{0+5, 0+5}, {NX_fine-5, NY_fine-5}}, {}};
-	} else {
-		externalCues = {{{0+5, 0+5}, {NX_fine-5, NY_fine-5}, {NX_fine*2/3, NY_fine-5}}, {}};
-	}
+	if (NG.compCase == "A") {
+		if (NG.n < 30000) {
+			externalCues = {{{NX_fine/2-2, 0+5}, {NX_fine/2-2, NY_fine-5}}};
+		} else if (NG.n < 50000) {
+			externalCues = {{{NX_fine/2-2, 0+5}, {NX_fine-5, NY_fine-5}}};
+		} else {
+			externalCues = {{{NX_fine/2-2, 0+5}, {NX_fine*2/3, NY_fine-5}}};
+		}
+	} else if (NG.compCase == "B") {
+		if (NG.n < 30000) {
+			externalCues = {{{NX_fine*2/3, NY_fine-5}}};
+		} else if (NG.n < 60000) {
+			externalCues = {{{NX_fine-5, NY_fine-5}}};
+		} else {
+			externalCues = {{{NX_fine*2/3, NY_fine-5}}};
+		}
+	} else if (NG.compCase == "C") {
+		if (NG.n < 20000) {
+			externalCues = {{{NX_fine*2/3, 0+5}, {NX_fine*2/3, NY_fine-5}, {0+5, NY_fine*2/3}}};
+		} else {
+			externalCues = {{{NX_fine-5, 0+5}, {NX_fine-5, NY_fine-5}, {0+5, NY_fine-5}}};
+		}
+	} else if (NG.compCase == "D") {
+		if (NG.n < 30000) {
+			externalCues = {{{NX_fine/3, 0+5}, {NX_fine-5, 0+5}, {NX_fine/3, NY_fine-5}}};
+		} else if (NG.n < 60000) {
+			externalCues = {{{NX_fine/2-2, 0+5}, {NX_fine-5, 0+5}, {0+5, NY_fine-5}}};
+		} else {
+			externalCues = {{{0+5, 0+5}, {NX_fine-5, 0+5}, {NX_fine/3, NY_fine-5}}};
+		}
+	} else if (NG.compCase == "E") {
+		if (NG.n < 60000) {
+			externalCues = {{{0+5, NY_fine/3}, {NX_fine-5, NY_fine/3}}};
+		} else if (NG.n < 70000) {
+			externalCues = {{{0+5, NY_fine*2/3}, {NX_fine-5, 0+5}}};
+		} else {
+			externalCues = {{{0+5, NY_fine*2/3}, {NX_fine-5, NY_fine-5}}};
+		}
+	} else if (NG.compCase == "K") {
+
+	} else if (NG.compCase == "L") {
+
+	} else if (NG.compCase == "M") {
+
+	} else if (NG.compCase == "N") {
+
+	} else if (NG.compCase == "O") {
+
+	} else {}
+
 	/*==============================================================================*/
 	// Main time iterations
 	while (iter <= NG.end_iter) {
@@ -4142,31 +4196,31 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		NG.DetectTipsMulti(phi_fine, neurons, NG.numNeuron, tip, NX_fine, NY_fine);
 
 		vector<int> centroidIndices;
-		// localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine, centroidIndices);
+		if (NG.compCase != "No") {
+			// NG.AdjustNearestTip(tip, NX_fine, NY_fine, externalCues[0]);
+			// localMaximaMatrix = tip;
+			// std::cout << localMaximaMatrix.size() << std::endl;
+			localMaximaMatrix = NG.PickNearestTip(tip, NX_fine, NY_fine, externalCues[0], centroidIndices);
+		} else {
+			localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine, centroidIndices);
+			for (size_t i = 0; i < distances.size(); i++) {
+				geodist[i] = distances[i];
+				vector<float> maxGeodist = NG.ComputeMaxFilter(geodist[i], NX_fine, NY_fine, 5);
+				float maxVal = -numeric_limits<float>::max();
+				int maxInd = 0;
+				for (size_t j = 0; j < centroidIndices.size(); ++j) {
+					if (maxGeodist[centroidIndices[j]] > maxVal) {
+						maxVal = maxGeodist[centroidIndices[j]];
+						maxInd = centroidIndices[j];
+					}
+				}
 
-		// NG.AdjustNearestTip(tip, NX_fine, NY_fine, externalCues[0]);
-		// localMaximaMatrix = tip;
-
-		// std::cout << localMaximaMatrix.size() << std::endl;
-		localMaximaMatrix = NG.PickNearestTip(tip, NX_fine, NY_fine, externalCues[0], centroidIndices);
-
-		// for (size_t i = 0; i < distances.size(); i++) {
-			// geodist[i] = distances[i];
-			// vector<float> maxGeodist = NG.ComputeMaxFilter(geodist[i], NX_fine, NY_fine, 5);
-			// float maxVal = -numeric_limits<float>::max();
-			// int maxInd = 0;
-			// for (size_t j = 0; j < centroidIndices.size(); ++j) {
-			// 	if (maxGeodist[centroidIndices[j]] > maxVal) {
-			// 		maxVal = maxGeodist[centroidIndices[j]];
-			// 		maxInd = centroidIndices[j];
-			// 	}
-			// }
-
-			// if (maxInd != 0) {
-			// 	localMaximaMatrix[maxInd] = -5;
-			
-			// }
-		// }
+				if (maxInd != 0) {
+					localMaximaMatrix[maxInd] = -5;
+				
+				}
+			}
+		}
 
 		NG.tips = NG.InterpolateValues_closest(localMaximaMatrix, kdTree_fine, cpts);
 

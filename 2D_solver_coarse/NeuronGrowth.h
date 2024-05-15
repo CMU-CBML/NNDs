@@ -132,6 +132,8 @@ public:
 	float Diff;
 	float source_coeff;
 
+	string compCase;
+	
 	// Initializations
 	NeuronGrowth();
 	void AssignProcessor(vector<vector<int>> &ele_proc); // assign elements to different processors
