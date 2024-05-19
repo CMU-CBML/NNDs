@@ -333,12 +333,12 @@ void InitializeSoma(const int& numNeuron, vector<array<float, 2>> &seed, int &NX
 		seed = {{30, 30}};
 		break;
         case 2:
-		// NX = 100;
-		// NY = 30;
-		// seed = {{30, 30}, {170, 30}};
-		NX = 50;
+		NX = 100;
 		NY = 30;
-		seed = {{30, 30}, {70, 30}};
+		seed = {{30, 30}, {170, 30}};
+		// NX = 50;
+		// NY = 30;
+		// seed = {{30, 30}, {70, 30}};
 		break;
         // case 3:
 	// 	NX = 100;
@@ -368,20 +368,53 @@ void InitializeSoma(const int& numNeuron, vector<array<float, 2>> &seed, int &NX
 	}
 }
 
+// void InitializeSoma_customizedCases(int& numNeuron, vector<array<float, 2>> &seed, int &NX, int &NY){
+// 	seed.resize(numNeuron);
+// 	// 2D neuron soma initialization
+// 	switch (numNeuron) {
+// 	// case 1:
+// 	// 	NX = 30;
+// 	// 	NY = 30;
+// 	// 	seed = {{30, 30}};
+// 	// 	break;
+//         // case 2: // 2 neursons
+// 	// 	NX = 50;
+// 	// 	NY = 50;
+// 	// 	seed = {{32, 55}, {72, 30}};
+// 	// 	break;
+//         case 3: // 3 neurons - 1
+// 		NX = 60;
+// 		NY = 95;
+// 		seed = {{98, 50}, {29, 166}, {80, 160}};
+// 		break;
+// 	case 4: // 3 neurons - 2 (just using numNeuron case easy case selection here)
+// 		NX = 70;
+// 		NY = 129;
+// 		seed = {{55, 44}, {107, 130}, {34, 228}};
+// 		numNeuron = 3;
+// 		break;
+// 	case 5: // 5 neurons
+// 		NX = 110;
+// 		NY = 200;
+// 		seed = {{192, 32}, {35, 137}, {57, 239}, {190, 208}, {183, 376}};
+// 		break;
+// 	}
+// }
+
 void InitializeSoma_customizedCases(int& numNeuron, vector<array<float, 2>> &seed, int &NX, int &NY){
 	seed.resize(numNeuron);
 	// 2D neuron soma initialization
 	switch (numNeuron) {
-	// case 1:
-	// 	NX = 30;
-	// 	NY = 30;
-	// 	seed = {{30, 30}};
-	// 	break;
-        // case 2: // 2 neursons
-	// 	NX = 50;
-	// 	NY = 50;
-	// 	seed = {{32, 55}, {72, 30}};
-	// 	break;
+	case 1:
+		NX = 30;
+		NY = 30;
+		seed = {{30, 30}};
+		break;
+        case 2: // 2 neursons
+		NX = 50;
+		NY = 50;
+		seed = {{32, 55}, {72, 30}};
+		break;
         case 3: // 3 neurons - 1
 		NX = 60;
 		NY = 95;

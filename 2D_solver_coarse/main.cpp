@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 		// Broadcast the actual data
 		MPI_Bcast(seed.data(), size * 2, MPI_FLOAT, 0, PETSC_COMM_WORLD);
 	}
-
+	
 	/// Set simulation parameters and mesh
 	string fn_mesh_initial(path_in + "controlmesh_initial.vtk");
 	string fn_mesh(path_in + "controlmesh.vtk");

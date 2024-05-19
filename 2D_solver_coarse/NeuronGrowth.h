@@ -246,7 +246,7 @@ public:
 	bool isInBox(const Vertex2D& point, const Vertex2D& center, float dx, float dy);
 	vector<float> calculatePhiSum(const vector<Vertex2D>& cpts, float dx, float dy, vector<float> id);
 	void DetectTipsMulti(const vector<float>& phi_fine, const vector<int>& id, const int& numNeuron, vector<float>& phiSum, const int& rows, const int& cols);
-	float bfs(const vector<float>& matrix, const int& rows, const int& cols, const int& row, const int& col,
+	void DetectTipsMulti(const vector<float>& phi_fine, const vector<int>& id, const int& numNeuron, vector<float>& phiSum, const int& rows, const int& cols, vector<int>& nonZeroIndices);	float bfs(const vector<float>& matrix, const int& rows, const int& cols, const int& row, const int& col,
 		vector<bool>& visited, vector<pair<int, int>>& cluster);
 	vector<vector<pair<int, int>>> FindClusters(const vector<float>& matrix, const int& rows, const int& cols);
 	vector<float> FindLocalMaximaInClusters(const vector<float>& matrix, const int& rows, const int& cols);
@@ -277,6 +277,7 @@ public:
 	void AdjustNearestTip(vector<float>& localMaximaMatrix, int width, int height, const vector<vector<int>>& cues);
 	// void PickNearestTip(vector<float>& localMaximaMatrix, int width, int height, const vector<vector<int>>& cues);
 	vector<float> PickNearestTip(vector<float>& tip, int width, int height, const vector<vector<int>>& cues, const vector<int>& centroidsIndex);
+	vector<float> PickNearestTip(vector<float>& tip, const vector<int>& id, int width, int height, const vector<vector<vector<int>>>& Allcues, const vector<int>& centroidsIndex);
 
 	void SaveNGvars(vector<vector<float>>& NGvars, int NX, int NY, string fn);
 	void PrintOutNeurons(const vector<int>& neurons, int NX_fine, int NY_fine);

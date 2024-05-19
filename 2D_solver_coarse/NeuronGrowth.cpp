@@ -10,13 +10,11 @@
 #include <ctime>	// for tic toc
 #include <time.h>	// for srand
 #include <queue>	// for geodesic distance
-
 #include <cfloat>	// for FLT_MAX
 #include <limits>	// for numeric_limits
-
-#include "../nanoflann/1.5.5/include/nanoflann.hpp"
-
+#include "../nanoflann/1.5.5/include/nanoflann.hpp" // for KD tree
 #include <map>		// for map in tip detection
+#include <random>
 
 using namespace std;
 typedef unsigned int uint;
@@ -2608,13 +2606,68 @@ void NeuronGrowth::DetectTipsMulti(const vector<float>& phi_fine, const vector<i
 		int idKey = static_cast<int>(round(id[i]));
 		if (maxValues.find(idKey) != maxValues.end() && maxValues[idKey] != 0) {
 			// float normalizedThreshold = 0.75 * maxValues[idKey]; // for external cue guiding
-			float normalizedThreshold;
-			if (compCase != "No") {
-				normalizedThreshold = 0.6 * maxValues[idKey]; // for external cue guiding
-			} else {
-				normalizedThreshold = 0.825 * maxValues[idKey];
-			}
+			float normalizedThreshold = 0.825 * maxValues[idKey];
 			phiSum[i] = (phiSum[i] < normalizedThreshold) ? 0.0f : phiSum[i] / maxValues[idKey];
+		}
+	}
+}
+
+void NeuronGrowth::DetectTipsMulti(const vector<float>& phi_fine, const vector<int>& id, const int& numNeuron, vector<float>& phiSum, const int& rows, const int& cols, vector<int>& nonZeroIndices) {
+	const int length = rows * cols;
+	phiSum.assign(length, 0);  // Clear and resize with zero initialization
+	nonZeroIndices.clear();  // Clear the indices vector to ensure it's fresh for this call
+
+	const float threshold = 0.25; // Threshold for where to detect neurites
+	const float intensityThreshold = 0.1; // Threshold for whether to use the value for detection
+	const int offsetY = cols; // Offset to avoid index issues
+	const float phiThreshold = 0; // Threshold for scaling
+
+	// Lambda to replace CellBoundary and reduce condition checks - mostly for optimization
+	auto cellBoundary = [](float phi, float threshold) -> float {
+		return phi > threshold ? 1.0f : 0.0f;
+	};
+
+	// Using a map to store max values for each ID
+	map<int, float> maxValues;
+
+	// Iterate with precomputed values and reduced condition checks
+	for (int i = (5 * cols); i < (length - 4 * cols); ++i) {
+	if (cellBoundary(phi_fine[i], threshold) > 0 && round(id[i]) != 9) {
+		for (int j = -4; j <= 4; ++j) {
+			for (int k = -4; k <= 4; ++k) {
+				int index = i + j * offsetY + k;
+				if (index >= 0 && index < length && (round(id[index]) == round(id[i]) || round(id[index]) < 0)) {
+					phiSum[i] += cellBoundary(phi_fine[index], intensityThreshold);
+				}
+			}
+		}
+		phiSum[i] = phiSum[i] > 0 ? cellBoundary(phi_fine[i], phiThreshold) / phiSum[i] : 0;
+		if (isnan(phiSum[i])) phiSum[i] = 0;  // Handle NaN explicitly, though it should not occur now
+
+		// Update max value for each ID
+		int idKey = static_cast<int>(round(id[i]));
+		if (maxValues.find(idKey) == maxValues.end() || maxValues[idKey] < phiSum[i]) {
+			maxValues[idKey] = phiSum[i];
+		}
+
+		// Only store index if phiSum[i] is non-zero after processing
+		if (phiSum[i] != 0) {
+			nonZeroIndices.push_back(i);
+		}
+	}
+	}
+
+	// Normalize phiSum by the max value for each ID and apply thresholding
+	for (int i = 0; i < length; ++i) {
+		int idKey = static_cast<int>(round(id[i]));
+		if (maxValues.find(idKey) != maxValues.end() && maxValues[idKey] != 0) {
+			float normalizedThreshold = compCase != "No" ? 0.6 * maxValues[idKey] : 0.825 * maxValues[idKey];
+			phiSum[i] = (phiSum[i] < normalizedThreshold) ? 0.0f : phiSum[i] / maxValues[idKey];
+
+			// Update non-zero indices if phiSum[i] changes to zero
+			if (phiSum[i] == 0) {
+				nonZeroIndices.erase(remove(nonZeroIndices.begin(), nonZeroIndices.end(), i), nonZeroIndices.end());
+			}
 		}
 	}
 }
@@ -3545,11 +3598,13 @@ vector<float> NeuronGrowth::PickNearestTip(vector<float>& tip, int width, int he
 		// 	int x = idx % height;
 		// 	int y = idx / height;
 
-		// 	// Calculate Manhattan distance to the cue
-		// 	float dist = abs(x - cue[0]) + abs(y - cue[1]);
-		// 	if (dist < minDist) {
-		// 		minDist = dist;
-		// 		nearestTipIndex = idx;
+		// 	if (tip[idx] != 0) { // Check if this is a tip pixel
+		// 		// Calculate Manhattan distance to the cue
+		// 		float dist = abs(x - cue[0]) + abs(y - cue[1]);
+		// 		if (dist < minDist) {
+		// 			minDist = dist;
+		// 			nearestTipIndex = idx;
+		// 		}
 		// 	}
 		// }
 
@@ -3579,6 +3634,62 @@ vector<float> NeuronGrowth::PickNearestTip(vector<float>& tip, int width, int he
 		} else {
 			std::cout << "cueId: " << cueId << " " << cue[0] << " " << cue[1] << std::endl;
  		}
+	}
+
+	return tempMatrix;
+}
+
+vector<float> NeuronGrowth::PickNearestTip(vector<float>& tip, const vector<int>& id, int width, int height, const vector<vector<vector<int>>>& Allcues, const vector<int>& centroidsIndex) {
+	vector<float> tempMatrix(tip.size(), 0); // Initialize output matrix with zeros
+
+	for (int i = 0; i < Allcues.size(); i++) {
+	// std::cout << i << " " << Allcues.size() << std::endl;
+		auto cues = Allcues[i];
+		for (const auto& cue : cues) {
+			// std::cout << cue[1] << " " << width << " " << cue[0] << std::endl;;
+			float minDist = numeric_limits<float>::max();
+			int nearestTipIndex = -1;
+
+			// // Iterate only over indices that are non-zero tips
+			// for (const int& idx : centroidsIndex) {
+			// 	int x = idx % height;
+			// 	int y = idx / height;
+
+			// 	// Calculate Manhattan distance to the cue
+			// 	float dist = abs(x - cue[0]) + abs(y - cue[1]);
+			// 	if (dist < minDist) {
+			// 		minDist = dist;
+			// 		nearestTipIndex = idx;
+			// 	}
+			// }
+
+			for (int y = 0; y < height; ++y) {
+				for (int x = 0; x < width; ++x) {
+					int idx = x * height + y;
+					if (tip[idx] != 0 && id[idx] == i+1) { // Check if this is a tip pixel
+						float dist = abs(x - cue[0]) + abs(y - cue[1]); // Manhattan distance
+						if (dist < minDist) {
+							minDist = dist;
+							nearestTipIndex = idx;
+						}
+					}
+				}
+			}
+
+			// Set the nearest tip pixel to the cue in the output matrix
+			if (nearestTipIndex != -1) {
+				tempMatrix[nearestTipIndex] = 5;
+			}
+
+			// Find the index of the cue directly since its position is known
+			int cueId = cue[0] * height + cue[1];
+			// Also mark the cue position - for debugging
+			if (cueId >= 0 && cueId < tempMatrix.size()) {
+				tempMatrix[cueId] = -5;
+			} else {
+				std::cout << "cueId: " << cueId << " " << cue[0] << " " << cue[1] << std::endl;
+			}
+		}
 	}
 
 	return tempMatrix;
@@ -4047,14 +4158,14 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 	NG.SetVariables(path_in + "simulation_parameters.txt");
 
 	// Set the number of iterations, number of neurons, and the end iteration from provided variables
-	NG.n = iter;  // Assign iteration count
-	NG.numNeuron = seed.size();  // Set the number of neurons based on the size of 'seed'
-	NG.end_iter = end_iter_in;  // Set the ending iteration
+	NG.n = iter; 			// Assign iteration count
+	NG.numNeuron = seed.size();  	// Set the number of neurons based on the size of 'seed'
+	NG.end_iter = end_iter_in;  	// Set the ending iteration
 
 	// Initialize vertex clouds for the current, fine, and previous configurations
-	Vertex2DCloud cloud(cpts);        // Cloud for current points
-	Vertex2DCloud cloud_fine(cpts_fine);  // Cloud for finer resolution points
-	Vertex2DCloud cloud_prev(prev_cpts);  // Cloud for previous points
+	Vertex2DCloud cloud(cpts);        		// Cloud for current points
+	Vertex2DCloud cloud_fine(cpts_fine); 		// Cloud for finer resolution points
+	Vertex2DCloud cloud_prev(prev_cpts);  		// Cloud for previous points
 	Vertex2DCloud cloud_prev_fine(prev_cpts_fine);  // Cloud for previous finer resolution points
 	// Initialize KD-Trees for the current, fine, and previous vertex clouds
 	KDTree kdTree(2 /* dim */, cloud, nanoflann::KDTreeSingleIndexAdaptorParams(10 /* max leaf */));
@@ -4121,58 +4232,6 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 
 	PetscPrintf(PETSC_COMM_WORLD, "Pre-allocated vectors!-------------------------------------------------------\n");
 
-	// For experimental comparison cases. "No" is not running compare cases.
-	vector<vector<vector<int>>> externalCues;
-	if (NG.compCase == "A") {
-		if (NG.n < 30000) {
-			externalCues = {{{NX_fine/2-2, 0+5}, {NX_fine/2-2, NY_fine-5}}};
-		} else if (NG.n < 50000) {
-			externalCues = {{{NX_fine/2-2, 0+5}, {NX_fine-5, NY_fine-5}}};
-		} else {
-			externalCues = {{{NX_fine/2-2, 0+5}, {NX_fine*2/3, NY_fine-5}}};
-		}
-	} else if (NG.compCase == "B") {
-		if (NG.n < 30000) {
-			externalCues = {{{NX_fine*2/3, NY_fine-5}}};
-		} else if (NG.n < 60000) {
-			externalCues = {{{NX_fine-5, NY_fine-5}}};
-		} else {
-			externalCues = {{{NX_fine*2/3, NY_fine-5}}};
-		}
-	} else if (NG.compCase == "C") {
-		if (NG.n < 20000) {
-			externalCues = {{{NX_fine*2/3, 0+5}, {NX_fine*2/3, NY_fine-5}, {0+5, NY_fine*2/3}}};
-		} else {
-			externalCues = {{{NX_fine-5, 0+5}, {NX_fine-5, NY_fine-5}, {0+5, NY_fine-5}}};
-		}
-	} else if (NG.compCase == "D") {
-		if (NG.n < 30000) {
-			externalCues = {{{NX_fine/3, 0+5}, {NX_fine-5, 0+5}, {NX_fine/3, NY_fine-5}}};
-		} else if (NG.n < 60000) {
-			externalCues = {{{NX_fine/2-2, 0+5}, {NX_fine-5, 0+5}, {0+5, NY_fine-5}}};
-		} else {
-			externalCues = {{{0+5, 0+5}, {NX_fine-5, 0+5}, {NX_fine/3, NY_fine-5}}};
-		}
-	} else if (NG.compCase == "E") {
-		if (NG.n < 60000) {
-			externalCues = {{{0+5, NY_fine/3}, {NX_fine-5, NY_fine/3}}};
-		} else if (NG.n < 70000) {
-			externalCues = {{{0+5, NY_fine*2/3}, {NX_fine-5, 0+5}}};
-		} else {
-			externalCues = {{{0+5, NY_fine*2/3}, {NX_fine-5, NY_fine-5}}};
-		}
-	} else if (NG.compCase == "K") {
-
-	} else if (NG.compCase == "L") {
-
-	} else if (NG.compCase == "M") {
-
-	} else if (NG.compCase == "N") {
-
-	} else if (NG.compCase == "O") {
-
-	} else {}
-
 	/*==============================================================================*/
 	// Main time iterations
 	while (iter <= NG.end_iter) {
@@ -4192,33 +4251,26 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		}
 		NG.DetectConnections(neurons, NX_fine, NY_fine);
 
-		distances = NG.ExploreGridAndCalculateDistances(neurons, seed, originX, originY, NX_fine, NY_fine);
-		NG.DetectTipsMulti(phi_fine, neurons, NG.numNeuron, tip, NX_fine, NY_fine);
-
 		vector<int> centroidIndices;
-		if (NG.compCase != "No") {
-			// NG.AdjustNearestTip(tip, NX_fine, NY_fine, externalCues[0]);
-			// localMaximaMatrix = tip;
-			// std::cout << localMaximaMatrix.size() << std::endl;
-			localMaximaMatrix = NG.PickNearestTip(tip, NX_fine, NY_fine, externalCues[0], centroidIndices);
-		} else {
-			localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine, centroidIndices);
-			for (size_t i = 0; i < distances.size(); i++) {
-				geodist[i] = distances[i];
-				vector<float> maxGeodist = NG.ComputeMaxFilter(geodist[i], NX_fine, NY_fine, 5);
-				float maxVal = -numeric_limits<float>::max();
-				int maxInd = 0;
-				for (size_t j = 0; j < centroidIndices.size(); ++j) {
-					if (maxGeodist[centroidIndices[j]] > maxVal) {
-						maxVal = maxGeodist[centroidIndices[j]];
-						maxInd = centroidIndices[j];
-					}
-				}
 
-				if (maxInd != 0) {
-					localMaximaMatrix[maxInd] = -5;
-				
+		distances = NG.ExploreGridAndCalculateDistances(neurons, seed, originX, originY, NX_fine, NY_fine);
+		NG.DetectTipsMulti(phi_fine, neurons, NG.numNeuron, tip, NX_fine, NY_fine); // potential further opt can be done here
+		localMaximaMatrix = NG.FindCentroidsOfLocalMaximaClusters(tip, NX_fine, NY_fine, centroidIndices);
+		for (size_t i = 0; i < distances.size(); i++) {
+			geodist[i] = distances[i];
+			vector<float> maxGeodist = NG.ComputeMaxFilter(geodist[i], NX_fine, NY_fine, 5);
+			float maxVal = -numeric_limits<float>::max();
+			int maxInd = 0;
+			for (size_t j = 0; j < centroidIndices.size(); ++j) {
+				if (maxGeodist[centroidIndices[j]] > maxVal) {
+					maxVal = maxGeodist[centroidIndices[j]];
+					maxInd = centroidIndices[j];
 				}
+			}
+
+			if (maxInd != 0) {
+				localMaximaMatrix[maxInd] = -5;
+			
 			}
 		}
 
@@ -4487,7 +4539,7 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		// Obtain initial local refinement information, the very first 5 iterations are purely used 
 		// for getting diffused interface for applying local refinements (phi initialization is binary) 
 		if ((NG.n == 5) && (localRefine == false)) {
-			NG.PrintOutNeurons(neurons, 2*NX+1, 2*NY+1);
+			NG.PrintOutNeurons(neurons, NX_fine, NY_fine);
 			NGvars.clear(); NGvars.resize(7);
 			NGvars[0] = NG.phi;
 			NGvars[1] = NG.syn;
