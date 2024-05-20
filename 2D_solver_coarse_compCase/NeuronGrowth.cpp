@@ -3586,6 +3586,14 @@ vector<float> NeuronGrowth::PickNearestTip(vector<float>& tip, int width, int he
 	vector<float> tempMatrix(tip.size(), 0); // Initialize output matrix with zeros
 
 	for (const auto& cue : cues) {
+		if (cue.empty()) {
+			// cout << "Empty cue encountered, skipping." << endl;
+			continue;
+		}
+
+		int cue_x = cue[0] + rand() % 7 - 3;
+		int cue_y = cue[1] + rand() % 7 - 3;
+		
 		// std::cout << cue[1] << " " << width << " " << cue[0] << std::endl;;
 		float minDist = numeric_limits<float>::max();
 		int nearestTipIndex = -1;
@@ -3609,7 +3617,7 @@ vector<float> NeuronGrowth::PickNearestTip(vector<float>& tip, int width, int he
 			for (int x = 0; x < width; ++x) {
 				int idx = x * height + y;
 				if (tip[idx] != 0) { // Check if this is a tip pixel
-					float dist = abs(x - cue[0]) + abs(y - cue[1]); // Manhattan distance
+					float dist = abs(x - cue_x) + abs(y - cue_y); // Manhattan distance
 					if (dist < minDist) {
 						minDist = dist;
 						nearestTipIndex = idx;
@@ -3629,7 +3637,7 @@ vector<float> NeuronGrowth::PickNearestTip(vector<float>& tip, int width, int he
 		if (cueId >= 0 && cueId < tempMatrix.size()) {
 			tempMatrix[cueId] = -5;
 		} else {
-			std::cout << "cueId: " << cueId << " " << cue[0] << " " << cue[1] << std::endl;
+			std::cout << "cueId: " << cueId << " " << cue_x << " " << cue_y << std::endl;
  		}
 	}
 
@@ -3643,6 +3651,12 @@ vector<float> NeuronGrowth::PickNearestTip(vector<float>& tip, const vector<int>
 	// std::cout << i << " " << Allcues.size() << std::endl;
 		auto cues = Allcues[i];
 		for (const auto& cue : cues) {
+			if (cue.empty()) {
+				// cout << "Empty cue encountered, skipping." << endl;
+				continue;
+			}
+			int cue_x = cue[0] + rand() % 7 - 3;
+			int cue_y = cue[1] + rand() % 7 - 3;
 			// std::cout << cue[1] << " " << width << " " << cue[0] << std::endl;;
 			float minDist = numeric_limits<float>::max();
 			int nearestTipIndex = -1;
@@ -3664,7 +3678,7 @@ vector<float> NeuronGrowth::PickNearestTip(vector<float>& tip, const vector<int>
 				for (int x = 0; x < width; ++x) {
 					int idx = x * height + y;
 					if (tip[idx] != 0 && id[idx] == i+1) { // Check if this is a tip pixel
-						float dist = abs(x - cue[0]) + abs(y - cue[1]); // Manhattan distance
+						float dist = abs(x - cue_x) + abs(y - cue_y); // Manhattan distance
 						if (dist < minDist) {
 							minDist = dist;
 							nearestTipIndex = idx;
@@ -3679,12 +3693,12 @@ vector<float> NeuronGrowth::PickNearestTip(vector<float>& tip, const vector<int>
 			}
 
 			// Find the index of the cue directly since its position is known
-			int cueId = cue[0] * height + cue[1];
+			int cueId = cue_x * height + cue_y;
 			// Also mark the cue position - for debugging
 			if (cueId >= 0 && cueId < tempMatrix.size()) {
 				tempMatrix[cueId] = -5;
 			} else {
-				std::cout << "cueId: " << cueId << " " << cue[0] << " " << cue[1] << std::endl;
+				std::cout << "cueId: " << cueId << " " << cue_x << " " << cue[1] << std::endl;
 			}
 		}
 	}
@@ -4237,12 +4251,12 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 	// For experimental comparison cases. "No" is not running compare cases.
 	vector<vector<vector<int>>> externalCues;
 	if (caseType == "A") {
-		if (NG.n < 40000) {
+		if (NG.n < 35000) {
 			externalCues = {{{NX_fine/2, 0+5}, {NX_fine/2, NY_fine-5}}};
-		} else if (NG.n < 70000) {
-			externalCues = {{{NX_fine/2, 0+5}, {NX_fine-5, NY_fine-5}}};
+		} else if (NG.n < 60000) {
+			externalCues = {{{}, {NX_fine-5, NY_fine-5}}};
 		} else {
-			externalCues = {{{NX_fine/2, 0+5}, {NX_fine*2/3, NY_fine-5}}};
+			externalCues = {{{}, {NX_fine*2/3, NY_fine-5}}};
 		}
 	} else if (caseType == "B") {
 		if (NG.n < 50000) {
@@ -4810,7 +4824,8 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			// Make sure to have more than 6 threads
 			string varName;	
 			if (NG.comRank == 0) {			
-				NG.PrintOutNeurons(neurons, localMaximaMatrix, 2*NX+1, 2*NY+1);
+				NG.PrintOutNeurons(neurons, 2*NX+1, 2*NY+1);
+				// NG.PrintOutNeurons(neurons, localMaximaMatrix, 2*NX+1, 2*NY+1);
 			// } else if (NG.comRank == 1) {			
 			// 	vector<float> geoDist_all(cpts_fine.size(), 0);
 			// 	for (size_t i = 0; i < distances.size(); i++) {
