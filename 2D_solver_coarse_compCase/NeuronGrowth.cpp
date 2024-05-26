@@ -4269,10 +4269,10 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			externalCues = {{{NX_fine-5, NY_fine-5}}};
 		}
 	} else if (caseType == "C") {
-		if (NG.n < 20000) {
-			externalCues = {{{NX_fine*2/3, 0+5}, {NX_fine*2/3, NY_fine-5}, {0+5, NY_fine*2/3}}};
+		if (NG.n < 40000) {
+			externalCues = {{{NX_fine*2/3, 0+5}, {NX_fine-5, NY_fine*4/5}, {0+5, NY_fine*2/3}}};
 		} else {
-			externalCues = {{{NX_fine-5, 0+5}, {NX_fine-5, NY_fine-5}, {0+5, NY_fine-5}}};
+			externalCues = {{{NX_fine*3/4, 0+5}, {NX_fine-5, NY_fine-5}, {0+5, NY_fine}}};
 		}
 	} else if (caseType == "D") {
 		if (NG.n < 50000) {
@@ -4280,28 +4280,42 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 		} else if (NG.n < 90000) {
 			externalCues = {{{NX_fine/2, 0+5}, {0+5, NY_fine-5}}};
 		} else {
-			externalCues = {{{NX_fine/3, 0+5}, {NX_fine*2/5, NY_fine-5}}};
+			externalCues = {{{NX_fine/2, 0+5}, {NX_fine*2/5, NY_fine-5}}};
 		}
 	} else if (caseType == "E") {
-		if (NG.n < 60000) {
-			externalCues = {{{0+5, 0+5}, {NX_fine/2, NY_fine/3}}};
-		} else if (NG.n < 70000) {
-			externalCues = {{{0+5, NY_fine*2/3}, {NX_fine-5, 0+5}}};
+		if (NG.n < 70000) {
+			externalCues = {{{0+5, NY_fine/3}, {NX_fine-5, NY_fine*2/3}}};
+		} else if (NG.n < 90000) {
+			externalCues = {{{0+5, NY_fine/3}, {NX_fine-5, 0+5}}};
 		} else {
 			externalCues = {{{0+5, NY_fine}, {NX_fine-5, NY_fine-5}}};
 		}
+	// } else if (caseType == "E") {
+	// 	if (NG.n < 60000) {
+	// 		externalCues = {{{0+5, NY_fine/3}, {NX_fine-5, NY_fine*2/3}}};
+	// 	} else if (NG.n < 70000) {
+	// 		externalCues = {{{0+5, NY_fine*2/3}, {NX_fine-5, 0+5}}};
+	// 	} else {
+	// 		externalCues = {{{0+5, NY_fine}, {NX_fine-5, NY_fine-5}}};
+	// 	}
 	} else if (caseType == "K") {
 		if (NG.n < 20000) {
 			externalCues = {{{NX_fine/3, NY_fine-5}},
+					{{NX_fine-5, NY_fine/3}}};	
+		} else if (NG.n < 40000) {
+			externalCues = {{{0+5, NY_fine-5}},
 					{{NX_fine-5, NY_fine/3}}};
 		} else if (NG.n < 80000) {
-			externalCues = {{{0+5, NY_fine*2/3}},
+			externalCues = {{{0+5, NY_fine*3/4}},
 					{{NX_fine-5, NY_fine/3}}};
 		} else if (NG.n < 90000) {
 			externalCues = {{{0+5, NY_fine*2/3}},
 					{{NX_fine-5, 0+5}, {NX_fine-5, NY_fine/2}}};
+		} else if (NG.n < 110000) {
+			externalCues = {{{0+5, NY_fine/2}},
+					{{NX_fine*3/4, 0+5}, {NX_fine-5, NY_fine/2}}};
 		} else {
-			externalCues = {{{0+5, 0+5}},
+			externalCues = {{{0+5, NY_fine*2/3}},
 					{{NX_fine*3/4, 0+5}, {NX_fine-5, NY_fine/2}}};
 		}
 	} else if (caseType == "L") {
