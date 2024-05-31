@@ -422,7 +422,7 @@ void InitializeSoma_customizedCases(const string& caseType, vector<array<float, 
 	} else if (caseType == "O") {
 		NX = 120;
 		NY = 80;
-		seed = {{30, 130}, {180, 30}, {190, 85}};
+		seed = {{30, 130}, {130, 30}, {140, 85}};
 	}
 	std::cout << "Running comparison case: " << caseType << std::endl;
 }
