@@ -3628,7 +3628,7 @@ vector<float> NeuronGrowth::PickNearestTip(vector<float>& tip, int width, int he
 
 		// Set the nearest tip pixel to the cue in the output matrix
 		if (nearestTipIndex != -1) {
-			tempMatrix[nearestTipIndex] = -5;
+			tempMatrix[nearestTipIndex] = 5;
 		}
 
 		// Find the index of the cue directly since its position is known
@@ -3882,6 +3882,236 @@ bool NeuronGrowth::ParsePointData(ifstream& file, vector<float>& dataVector1, ve
 	}
 
 	return true;
+}
+
+void NeuronGrowth::SetupExternalCue(const string& caseType, vector<vector<vector<int>>>& externalCues, const int& NX_fine, const int& NY_fine) {
+
+	if (caseType == "A") {
+		if (n < 35000) {
+			externalCues = {{{NX_fine/2, 0+5}, {NX_fine/2, NY_fine-5}}};
+		} else if (n < 60000) {
+			externalCues = {{{}, {NX_fine-5, NY_fine-5}}};
+		} else {
+			externalCues = {{{}, {NX_fine*2/3, NY_fine-5}}};
+		}
+	} else if (caseType == "B") {
+		if (n < 50000) {
+			externalCues = {{{NX_fine*2/3, NY_fine-5}}};
+		} else if (n < 90000) {
+			externalCues = {{{NX_fine-5, NY_fine-5}}};
+		} else if (n < 120000) {
+			externalCues = {{{NX_fine*2/3, NY_fine-5}}};
+		} else {
+			externalCues = {{{NX_fine-5, NY_fine-5}}};
+		}
+	} else if (caseType == "C") {
+		if (n < 40000) {
+			externalCues = {{{NX_fine*2/3, 0+5}, {NX_fine-5, NY_fine*4/5}, {0+5, NY_fine*2/3}}};
+		} else {
+			externalCues = {{{NX_fine*3/4, 0+5}, {NX_fine-5, NY_fine-5}, {0+5, NY_fine}}};
+		}
+	} else if (caseType == "D") {
+		if (n < 50000) {
+			externalCues = {{{NX_fine/3, 0+5}, {NX_fine-5, 0+5}, {NX_fine/3, NY_fine-5}}};
+		} else if (n < 90000) {
+			externalCues = {{{NX_fine/2, 0+5}, {0+5, NY_fine-5}}};
+		} else {
+			externalCues = {{{NX_fine/2, 0+5}, {NX_fine*2/5, NY_fine-5}}};
+		}
+	} else if (caseType == "E") {
+		if (n < 80000) {
+			externalCues = {{{0+5, NY_fine/3}, {NX_fine-5, NY_fine*2/3}}};
+		} else if (n < 110000) {
+			externalCues = {{{0+5, NY_fine/3}, {NX_fine-5, NY_fine/3}}};
+		} else {
+			externalCues = {{{0+5, NY_fine-5}, {NX_fine-5, NY_fine*2/3}}};
+		}
+	} else if (caseType == "K") {
+		if (n < 20000) {
+			externalCues = {{{NX_fine/3, NY_fine-5}},
+					{{NX_fine-5, NY_fine/4}}};
+		} else if (n < 80000) {
+			externalCues = {{{0+5, NY_fine*3/4}},
+					{{NX_fine-5, NY_fine/4}}};
+		} else if (n < 90000) {
+			externalCues = {{{0+5, NY_fine*3/4}},
+					{{NX_fine-5, NY_fine/5}, {NX_fine-5, NY_fine/2}}};
+		} else if (n < 110000) {
+			externalCues = {{{0+5, NY_fine*3/4}},
+					{{NX_fine*4/5, NY_fine/5}, {NX_fine-5, NY_fine/3}}};
+		} else {
+			externalCues = {{{0+5, NY_fine*3/4}},
+					{{NX_fine*4/5, 0+5}, {NX_fine-5, NY_fine/3}}};
+		}
+		seed_radius = 12;
+	} else if (caseType == "L") {
+		if (n < 50000) {
+			externalCues = {{{NX_fine-5, NY_fine/2}},
+					{{NX_fine*2/3, 0+5}}};
+		} else if (n < 10000) {
+			externalCues = {{{NX_fine-5, NY_fine/2}, {NX_fine*2/3, NY_fine-5}},
+					{{NX_fine*2/3, 0+5}}};
+		} else {
+			externalCues = {{{NX_fine-5, NY_fine*2/5}},
+					{{NX_fine*2/3, 0+5}}};
+		}
+		seed_radius = 12;
+	} else if (caseType == "M") {
+		if (n < 50000) {
+			externalCues = {{{NX_fine/2, 0+5}},
+					{{0+5, NY_fine/6}}};
+		} else if (n < 80000) {
+			externalCues = {{{NX_fine-5, 0+5}},
+					{{0+5, NY_fine/3}, {NX_fine/4, 0+5}}};
+		} else if (n < 120000) {
+			externalCues = {{{NX_fine*3/5, 0+5}},
+					{{0+5, NY_fine/4}, {NX_fine/4, 0+5}}};
+		} else {
+			externalCues = {{{NX_fine*3/5, 0+5}},
+					{{0+5, NY_fine/5}, {NX_fine/4, 0+5}}};
+		}
+		seed_radius = 12;
+	} else if (caseType == "N") {
+		if (n < 60000) {
+			externalCues = {{{0+5, 0+5}, {NX_fine-5, NY_fine-5}},
+					{{0+5, NY_fine-5}, {NX_fine*2/3, 0+5}},
+					{{NX_fine*4/5, 0+5}, {NX_fine-5, NY_fine-5}}};
+		} else if (n < 80000){
+			externalCues = {{{0+5, 0+5}, {NX_fine-5, NY_fine-5}},
+					{{0+5, NY_fine-5}, {NX_fine*2/3, 0+5}},
+					{{NX_fine-5, 0+5}, {0+5, 0+5}, {NX_fine-5, NY_fine-5}}};
+		} else if (n < 130000){
+			externalCues = {{{NX_fine/5, 0+5}},
+					{{0+5, NY_fine-5}},
+					{{NX_fine-5, 0+5}, {0+5, 0+5}, {NX_fine-5, NY_fine-5}}};
+		} else if (n < 150000){
+			externalCues = {{{NX_fine/3, 0+5}},
+					{{}},
+					{{NX_fine-5, 0+5}, {0+5, 0+5}, {NX_fine-5, NY_fine-5}}};
+		} else {
+			externalCues = {{{NX_fine/2, 0+5}},
+					{{}},
+					{{NX_fine-5, 0+5}, {0+5, 0+5}, {NX_fine-5, NY_fine-5}}};
+		}
+		seed_radius = 12;
+	} else if (caseType == "O") {
+		if (n < 50000) {
+			externalCues = {{{0+5, NY_fine*4/5}, {NX_fine/2, 0+5}, {NX_fine-5, NY_fine*3/4}},
+					{{0+5, 0+5}},
+					{{NX_fine*2/3, NY_fine-5}}};
+		} else if (n < 100000){
+			externalCues = {{{0+5, NY_fine*3/5}, {NX_fine*2/3, 0+5}, {NX_fine-5, NY_fine*2/3}},
+					{{0+5, NY_fine/4}},
+					{{NX_fine*2/3, NY_fine-5}}};
+		} else {
+			externalCues = {{{0+5, NY_fine-5}},
+					{{0+5, NY_fine/5}},
+					{{NX_fine/2, NY_fine-5}}};
+		}
+		seed_radius = 12;
+	} else if (caseType == "P") {
+		if (n < 60000) {
+			externalCues = {{{NX_fine*2/3, NY_fine-5}}};
+		} else if (n < 90000) {
+			externalCues = {{{NX_fine/3, NY_fine-5}, {NX_fine-5, NY_fine}}};
+		} else {
+			externalCues = {{{0+5, NY_fine-5}, {NX_fine-5, NY_fine*2/3}}};
+		}
+	} else if (caseType == "Q") {
+		if (n < 20000) {
+			externalCues = {{{0+5, NY_fine-5}}};
+		} else if (n < 80000) {
+			externalCues = {{{NX_fine/2, NY_fine-5}}};
+		} else if (n < 100000) {
+			externalCues = {{{NX_fine-5, NY_fine-5}}};
+		} else {
+			externalCues = {{{0+5, NY_fine*3/4}, {NX_fine-5, NY_fine-5}}};
+		}
+	} else if (caseType == "R") {
+		if (n < 20000) {
+			externalCues = {{{NX_fine-5, NY_fine-5}}};
+		} else if (n < 80000) {
+			externalCues = {{{NX_fine-5, NY_fine/2}}};
+		} else if (n < 110000) {
+			externalCues = {{{NX_fine-5, 0}, {NX_fine-5, NY_fine-5}}};
+		} else {
+			externalCues = {{{NX_fine*3/4, 0}, {NX_fine-5, NY_fine/2}, {NX_fine-5, NY_fine-5}}};
+		}
+	} else if (caseType == "S") {
+		if (n < 60000) {
+			externalCues = {{{NX_fine-5, 0+5}, {NX_fine/2, NY_fine-5}}};
+		} else {
+			externalCues = {{{NX_fine-5, 0+5}, {NX_fine/3, NY_fine-5}, {NX_fine-5, NY_fine-5}}};
+		}
+	} else if (caseType == "T") {
+		if (n < 60000) {
+			externalCues = {{{NX_fine*2/3, NY_fine-5}}};
+		} else {
+			externalCues = {{{NX_fine*4/5, NY_fine-5}}};
+		}
+	} else if (caseType == "U") {
+		if (n < 80000) {
+			externalCues = {{{NX_fine-5, NY_fine-5}}};
+		} else if (n < 100000) {
+			externalCues = {{{NX_fine*3/4, NY_fine-5}}};
+		} else {
+			externalCues = {{{NX_fine/3, NY_fine-5}, {NX_fine-5, NY_fine-5}}};
+		}
+	} else if (caseType == "V") {
+		if (n < 50000) {
+			externalCues = {{{NX_fine/2, NY_fine-5}}};
+		} else {
+			externalCues = {{{NX_fine*3/5, NY_fine-5}}};
+		}
+	} else if (caseType == "W") {
+		if (n < 100000) {
+			externalCues = {{{NX_fine/2, 0+5}, {NX_fine/2, NY_fine-5}}};
+		} else {
+			externalCues = {{{NX_fine/2+5, 0+5}, {NX_fine/2, NY_fine-5}}};
+		}
+	} else if (caseType == "X") {
+		if (n < 80000) {
+			externalCues = {{{NX_fine-5, NY_fine/2}}};
+		} else if (n < 110000) {
+			externalCues = {{{NX_fine-5, NY_fine*3/5}}};
+		} else {
+			externalCues = {{{NX_fine-5, NY_fine-5}}};
+		}
+	} else if (caseType == "Y") {
+		if (n < 40000) {
+			externalCues = {{{NX_fine/2, NY_fine-5}}};
+		} else if (n < 80000) {
+			externalCues = {{{0+5, NY_fine-5}}};
+		} else if (n < 150000) {
+			externalCues = {{{0+5, NY_fine/3}}};
+		} else if (n < 200000) {
+			externalCues = {{{0+5, NY_fine/3}}};
+		} else {
+			externalCues = {{{0+5, NY_fine-5}}};
+		}
+	} else if (caseType == "F") {
+		if (n < 20000) {
+			externalCues = {{{NX_fine/2, NY_fine-5}}};
+		} else if (n < 100000) {
+			externalCues = {{{0+5, NY_fine-5}}};
+		} else {
+			externalCues = {{{0+5, NY_fine-5}, {NX_fine/2, NY_fine-5}}};
+		}
+	} else if (caseType == "G") {
+		if (n < 20000) {
+			externalCues = {{{0+5, NY_fine/2}, {0+5, 0+5}, {NX_fine-5, 0+5}}};
+		} else if (n < 40000) {
+			externalCues = {{{0+5, NY_fine/2}, {0+5, 0+5}, {NX_fine/2, 0+5}, {NX_fine-5, 0+5}}};
+		} else {
+			externalCues = {{{0+5, NY_fine/2}, {0+5, 0+5}, {NX_fine/2, 0+5}, {NX_fine-5, 0+5}}};
+		}
+	} else {}
+	
+	if (n > 250000) {
+		c_opt = 0;
+	} else {
+		c_opt = 1;
+	}
 }
 
 PetscErrorCode FormFunction_phi(SNES snes, Vec x, Vec F, void *ctx)
@@ -4194,6 +4424,23 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 	kdTree_prev.buildIndex();
 	kdTree_prev_fine.buildIndex();
 
+	/*==============================================================================*/
+	// Pre-allocate variables for tip detections (will be used every iter)
+	int NX_fine(2 * NX + 1), NY_fine(2 * NY + 1);
+	int totalSize = NX_fine * NY_fine;  // Total number of elements in the flattened 2D grid
+	// Allocate neurons matrix as a single flat vector
+	vector<int> neurons(totalSize, 0);
+	// Allocate distances 3D matrix: vector of 2D matrices, each represented by a flat vector<float>
+	vector<vector<float>> distances(NG.numNeuron, vector<float>(totalSize, 0.0f));
+	// Allocate vectors for phi_fine, id, tip, and localMaximaMatrix
+	vector<float> phi_fine(cpts_fine.size(), 0), id(cpts_fine.size(), 0), tip(cpts_fine.size(), 0), localMaximaMatrix(cpts_fine.size(), 0);
+	// Allocate geodist and axonTip matrices
+	vector<vector<float>> geodist(NG.numNeuron, vector<float>(totalSize, 0));
+	PetscPrintf(PETSC_COMM_WORLD, "Pre-allocated vectors!-------------------------------------------------------\n");
+	// For experimental comparison cases. "No" is not running compare cases.
+	vector<vector<vector<int>>> externalCues;
+	NG.SetupExternalCue(caseType, externalCues, NX_fine, NY_fine);
+
 	// Initialize the Neuron Growth problem with the provided parameters and KDTree for previous points
 	NG.InitializeProblemNG(n_bzmesh, cpts, prev_cpts, kdTree_prev, cpts_fine, prev_cpts_fine, kdTree_prev_fine, NGvars, seed, NX, NY);
 	// Assign processing elements for the simulation
@@ -4233,212 +4480,6 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 	NG.prepareTerm_source();
 	PetscPrintf(PETSC_COMM_WORLD, "Prepared source terms!-------------------------------------------------------\n");
 
-	/*==============================================================================*/
-	// Pre-allocate variables for tip detections (will be used every iter)
-	int NX_fine(2 * NX + 1), NY_fine(2 * NY + 1);
-	int totalSize = NX_fine * NY_fine;  // Total number of elements in the flattened 2D grid
-	// Allocate neurons matrix as a single flat vector
-	vector<int> neurons(totalSize, 0);
-	// Allocate distances 3D matrix: vector of 2D matrices, each represented by a flat vector<float>
-	vector<vector<float>> distances(NG.numNeuron, vector<float>(totalSize, 0.0f));
-	// Allocate vectors for phi_fine, id, tip, and localMaximaMatrix
-	vector<float> phi_fine(cpts_fine.size(), 0), id(cpts_fine.size(), 0), tip(cpts_fine.size(), 0), localMaximaMatrix(cpts_fine.size(), 0);
-	// Allocate geodist and axonTip matrices
-	vector<vector<float>> geodist(NG.numNeuron, vector<float>(totalSize, 0));
-
-	PetscPrintf(PETSC_COMM_WORLD, "Pre-allocated vectors!-------------------------------------------------------\n");
-
-	// For experimental comparison cases. "No" is not running compare cases.
-	vector<vector<vector<int>>> externalCues;
-	if (caseType == "A") {
-		if (NG.n < 35000) {
-			externalCues = {{{NX_fine/2, 0+5}, {NX_fine/2, NY_fine-5}}};
-		} else if (NG.n < 60000) {
-			externalCues = {{{}, {NX_fine-5, NY_fine-5}}};
-		} else {
-			externalCues = {{{}, {NX_fine*2/3, NY_fine-5}}};
-		}
-	} else if (caseType == "B") {
-		if (NG.n < 50000) {
-			externalCues = {{{NX_fine*2/3, NY_fine-5}}};
-		} else if (NG.n < 90000) {
-			externalCues = {{{NX_fine-5, NY_fine-5}}};
-		} else if (NG.n < 120000) {
-			externalCues = {{{NX_fine*2/3, NY_fine-5}}};
-		} else {
-			externalCues = {{{NX_fine-5, NY_fine-5}}};
-		}
-	} else if (caseType == "C") {
-		if (NG.n < 40000) {
-			externalCues = {{{NX_fine*2/3, 0+5}, {NX_fine-5, NY_fine*4/5}, {0+5, NY_fine*2/3}}};
-		} else {
-			externalCues = {{{NX_fine*3/4, 0+5}, {NX_fine-5, NY_fine-5}, {0+5, NY_fine}}};
-		}
-	} else if (caseType == "D") {
-		if (NG.n < 50000) {
-			externalCues = {{{NX_fine/3, 0+5}, {NX_fine-5, 0+5}, {NX_fine/3, NY_fine-5}}};
-		} else if (NG.n < 90000) {
-			externalCues = {{{NX_fine/2, 0+5}, {0+5, NY_fine-5}}};
-		} else {
-			externalCues = {{{NX_fine/2, 0+5}, {NX_fine*2/5, NY_fine-5}}};
-		}
-	} else if (caseType == "E") {
-		if (NG.n < 100000) {
-			externalCues = {{{0+5, NY_fine/3}, {NX_fine-5, NY_fine*2/3}}};
-		} else if (NG.n < 140000) {
-			externalCues = {{{0+5, NY_fine/3}, {NX_fine-5, NY_fine/3}}};
-		} else {
-			externalCues = {{{0+5, NY_fine-5}, {NX_fine-5, NY_fine*2/3}}};
-		}
-	// } else if (caseType == "E") {
-	// 	if (NG.n < 60000) {
-	// 		externalCues = {{{0+5, NY_fine/3}, {NX_fine-5, NY_fine*2/3}}};
-	// 	} else if (NG.n < 70000) {
-	// 		externalCues = {{{0+5, NY_fine*2/3}, {NX_fine-5, 0+5}}};
-	// 	} else {
-	// 		externalCues = {{{0+5, NY_fine}, {NX_fine-5, NY_fine-5}}};
-	// 	}
-	} else if (caseType == "K") {
-		if (NG.n < 20000) {
-			externalCues = {{{NX_fine/3, NY_fine-5}},
-					{{NX_fine-5, NY_fine/4}}};
-		} else if (NG.n < 80000) {
-			externalCues = {{{0+5, NY_fine}},
-					{{NX_fine-5, NY_fine/4}}};
-		} else if (NG.n < 90000) {
-			externalCues = {{{0+5, NY_fine}},
-					{{NX_fine-5, 0+5}, {NX_fine-5, NY_fine/2}}};
-		} else if (NG.n < 110000) {
-			externalCues = {{{0+5, NY_fine*2/3}},
-					{{NX_fine*3/4, 0+5}, {NX_fine-5, NY_fine/3}}};
-		} else {
-			externalCues = {{{0+5, NY_fine*3/4}},
-					{{NX_fine*3/4, 0+5}, {NX_fine-5, NY_fine/3}}};
-		}
-	} else if (caseType == "L") {
-		if (NG.n < 50000) {
-			externalCues = {{{NX_fine-5, NY_fine*3/4}},
-					{{NX_fine*2/3, 0+5}}};
-		} else if (NG.n < 10000) {
-			externalCues = {{{NX_fine-5, NY_fine*2/3}, {NX_fine/2, NY_fine-5}},
-					{{NX_fine*2/3, 0+5}}};
-		} else {
-			externalCues = {{{NX_fine-5, NY_fine*2/3}},
-					{{NX_fine*2/3, 0+5}}};
-		}
-	} else if (caseType == "M") {
-		if (NG.n < 50000) {
-			externalCues = {{{NX_fine*2/3, 0+5}},
-					{{0+5, NY_fine/6}}};
-		} else if (NG.n < 80000) {
-			externalCues = {{{NX_fine-5, 0+5}},
-					{{0+5, NY_fine/3}, {NX_fine/4, 0+5}}};
-		} else {
-			externalCues = {{{NX_fine*2/3, 0+5}},
-					{{0+5, NY_fine/3}, {NX_fine/4, 0+5}}};
-		}
-	} else if (caseType == "N") {
-		if (NG.n < 60000) {
-			externalCues = {{{0+5, 0+5}, {NX_fine-5, NY_fine-5}},
-					{{0+5, NY_fine-5}, {NX_fine*2/3, 0+5}},
-					{{NX_fine*4/5, 0+5}, {NX_fine-5, NY_fine-5}}};
-		} else if (NG.n < 100000){
-			externalCues = {{{0+5, 0+5}, {NX_fine-5, NY_fine-5}},
-					{{0+5, NY_fine-5}, {NX_fine*2/3, 0+5}},
-					{{NX_fine-5, 0+5}, {0+5, 0+5}, {NX_fine-5, NY_fine-5}}};
-		} else if (NG.n < 130000){
-			externalCues = {{{NX_fine/5, 0+5}},
-					{{0+5, NY_fine-5}},
-					{{NX_fine-5, 0+5}, {0+5, 0+5}, {NX_fine-5, NY_fine-5}}};
-		} else if (NG.n < 150000){
-			externalCues = {{{NX_fine/3, 0+5}},
-					{{}},
-					{{NX_fine-5, 0+5}, {0+5, 0+5}, {NX_fine-5, NY_fine-5}}};
-		} else {
-			externalCues = {{{NX_fine/2, 0+5}},
-					{{}},
-					{{NX_fine-5, 0+5}, {0+5, 0+5}, {NX_fine-5, NY_fine-5}}};
-		}
-	} else if (caseType == "O") {
-		if (NG.n < 50000) {
-			externalCues = {{{0+5, NY_fine*4/5}, {NX_fine*2/3, 0+5}, {NX_fine-5, NY_fine/3}},
-					{{0+5, NY_fine/2}},
-					{{NX_fine*4/5, NY_fine-5}}};
-		} else if (NG.n < 100000){
-			externalCues = {{{0+5, NY_fine*3/5}, {NX_fine*2/3, 0+5}, {NX_fine-5, NY_fine/3}},
-					{{0+5, NY_fine/4}},
-					{{NX_fine*2/3, NY_fine-5}}};
-		} else {
-			externalCues = {{{0+5, NY_fine*2/3}},
-					{{0+5, 0+5}},
-					{{NX_fine*3/4, NY_fine-5}}};
-		}
-	} else if (caseType == "P") {
-		if (NG.n < 80000) {
-			externalCues = {{{NX_fine/2, NY_fine-5}}};
-		} else {
-			externalCues = {{{0+5, NY_fine-5}, {NX_fine-5, NY_fine-5}}};
-		}
-	} else if (caseType == "Q") {
-		if (NG.n < 20000) {
-			externalCues = {{{0+5, NY_fine-5}}};
-		} else if (NG.n < 80000) {
-			externalCues = {{{NX_fine-5, NY_fine-5}}};
-		} else {
-			externalCues = {{{0+5, NY_fine-5}}};
-		}
-	} else if (caseType == "R") {
-		if (NG.n < 20000) {
-			externalCues = {{{NX_fine-5, NY_fine-5}}};
-		} else if (NG.n < 80000) {
-			externalCues = {{{NX_fine-5, NY_fine/2}}};
-		} else {
-			externalCues = {{{NX_fine-5, 0}, {NX_fine-5, NY_fine-5}}};
-		}
-	} else if (caseType == "S") {
-		if (NG.n < 60000) {
-			externalCues = {{{NX_fine*3/4, 0+5}, {NX_fine/2, NY_fine-5}}};
-		} else {
-			externalCues = {{{NX_fine*3/4, 0+5}, {0+5, 0+5}, {NX_fine-5, NY_fine-5}}};
-		}
-	} else if (caseType == "T") {
-		if (NG.n < 20000) {
-			externalCues = {{{NX_fine-5, NY_fine*2/3}}};
-		} else {
-			externalCues = {{{NX_fine-5, NY_fine-5}}};
-		}
-	} else if (caseType == "U") {
-		if (NG.n < 80000) {
-			externalCues = {{{0+5, NY_fine-5}}};
-		} else {
-			externalCues = {{{0+5, NY_fine/3}, {NX_fine/3, NY_fine-5}}};
-		}
-	} else if (caseType == "V") {
-		if (NG.n < 50000) {
-			externalCues = {{{NX_fine/2, 0+5}, {NX_fine/2, NY_fine-5}}};
-		} else {
-			externalCues = {{{NX_fine/2, 0+5}, {NX_fine*2/3, NY_fine-5}}};
-		}
-	} else if (caseType == "W") {
-		if (NG.n < 100000) {
-			externalCues = {{{0+5, NY_fine*3/5}, {NX_fine-5, NY_fine*2/5}}};
-		} else {
-			externalCues = {{{0+5, NY_fine*2/5}, {NX_fine-5, NY_fine*3/5}}};
-		}
-	} else if (caseType == "X") {
-		externalCues = {{{0+5, NY_fine/3}, {NX_fine-5, NY_fine/3}, {NX_fine-5, NY_fine*2/3}}};
-	} else if (caseType == "Y") {
-		if (NG.n < 40000) {
-			externalCues = {{{NX_fine-5, NY_fine/3}, {NX_fine-5, NY_fine-5}}};
-		} else {
-			externalCues = {{{NX_fine-5, NY_fine/2}, {NX_fine-5, NY_fine*3/4}}};
-		}
-	} else {}
-
-	
-	if (NG.n > 50000) {
-		NG.c_opt = 0;
-	}
 	/*==============================================================================*/
 	// Main time iterations
 	while (iter <= NG.end_iter) {

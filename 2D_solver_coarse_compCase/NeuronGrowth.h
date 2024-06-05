@@ -282,6 +282,7 @@ public:
 	void PrintOutNeurons(const vector<int>& neurons, const vector<float>& localMax, int NX_fine, int NY_fine);
 	bool ReadPointData(const string& filename, vector<float>& dataVector1, vector<float>& dataVector2, vector<float>& dataVector3, vector<float>& dataVector4, vector<float>& dataVector5);
 	bool ParsePointData(ifstream& file, vector<float>& dataVector1, vector<float>& dataVector2, vector<float>& dataVector3, vector<float>& dataVector4, vector<float>& dataVector5);
+	void SetupExternalCue(const string& caseType, vector<vector<vector<int>>>& externalCues, const int& NX_fine, const int& NY_fine);
 
 };
 

@@ -406,7 +406,7 @@ void InitializeSoma_customizedCases(const string& caseType, vector<array<float, 
 	if (caseType == "K") {
 		NX = 50;
 		NY = 50;
-		seed = {{32, 70}, {72, 30}};
+		seed = {{40, 65}, {72, 30}};
 	} else if (caseType == "L") {
 		NX = 100;
 		NY = 50;
