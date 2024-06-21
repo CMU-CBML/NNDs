@@ -3628,7 +3628,7 @@ vector<float> NeuronGrowth::PickNearestTip(vector<float>& tip, int width, int he
 
 		// Set the nearest tip pixel to the cue in the output matrix
 		if (nearestTipIndex != -1) {
-			tempMatrix[nearestTipIndex] = 5;
+			tempMatrix[nearestTipIndex] = -5;
 		}
 
 		// Find the index of the cue directly since its position is known
@@ -3929,10 +3929,10 @@ void NeuronGrowth::SetupExternalCue(const string& caseType, vector<vector<vector
 	} else if (caseType == "K") {
 		if (n < 20000) {
 			externalCues = {{{NX_fine/3, NY_fine-5}},
-					{{NX_fine-5, NY_fine/4}}};
+					{{NX_fine-5, 0+5}}};
 		} else if (n < 80000) {
 			externalCues = {{{0+5, NY_fine*3/4}},
-					{{NX_fine-5, NY_fine/4}}};
+					{{NX_fine-5, NY_fine/5}}};
 		} else if (n < 90000) {
 			externalCues = {{{0+5, NY_fine*3/4}},
 					{{NX_fine-5, NY_fine/5}, {NX_fine-5, NY_fine/2}}};
@@ -3941,18 +3941,18 @@ void NeuronGrowth::SetupExternalCue(const string& caseType, vector<vector<vector
 					{{NX_fine*4/5, NY_fine/5}, {NX_fine-5, NY_fine/3}}};
 		} else {
 			externalCues = {{{0+5, NY_fine*3/4}},
-					{{NX_fine*4/5, 0+5}, {NX_fine-5, NY_fine/3}}};
+					{{NX_fine*3/5, 0+5}, {NX_fine-5, NY_fine/3}}};
 		}
 		seed_radius = 12;
 	} else if (caseType == "L") {
 		if (n < 50000) {
-			externalCues = {{{NX_fine-5, NY_fine/2}},
+			externalCues = {{{NX_fine-5, NY_fine*2/3}},
 					{{NX_fine*2/3, 0+5}}};
-		} else if (n < 10000) {
-			externalCues = {{{NX_fine-5, NY_fine/2}, {NX_fine*2/3, NY_fine-5}},
+		} else if (n < 100000) {
+			externalCues = {{{NX_fine-5, NY_fine*2/3}, {NX_fine, NY_fine-5}},
 					{{NX_fine*2/3, 0+5}}};
 		} else {
-			externalCues = {{{NX_fine-5, NY_fine*2/5}},
+			externalCues = {{{NX_fine-5, NY_fine/2}, {NX_fine*2/3, NY_fine-5}},
 					{{NX_fine*2/3, 0+5}}};
 		}
 		seed_radius = 12;
@@ -3981,16 +3981,16 @@ void NeuronGrowth::SetupExternalCue(const string& caseType, vector<vector<vector
 					{{0+5, NY_fine-5}, {NX_fine*2/3, 0+5}},
 					{{NX_fine-5, 0+5}, {0+5, 0+5}, {NX_fine-5, NY_fine-5}}};
 		} else if (n < 130000){
-			externalCues = {{{NX_fine/5, 0+5}},
-					{{0+5, NY_fine-5}},
+			externalCues = {{{NX_fine/5, 0+5}, {NX_fine-5, NY_fine-5}},
+					{{0+5, NY_fine-5}, {NX_fine*2/3, 0+5}},
 					{{NX_fine-5, 0+5}, {0+5, 0+5}, {NX_fine-5, NY_fine-5}}};
 		} else if (n < 150000){
-			externalCues = {{{NX_fine/3, 0+5}},
-					{{}},
+			externalCues = {{{NX_fine/3, 0+5}, {NX_fine-5, NY_fine-5}},
+					{{0+5, NY_fine-5}, {NX_fine*2/3, 0+5}},
 					{{NX_fine-5, 0+5}, {0+5, 0+5}, {NX_fine-5, NY_fine-5}}};
 		} else {
-			externalCues = {{{NX_fine/2, 0+5}},
-					{{}},
+			externalCues = {{{NX_fine/3, 0+5}, {NX_fine-5, NY_fine-5}},
+					{{0+5, NY_fine-5}, {NX_fine*2/3, 0+5}},
 					{{NX_fine-5, 0+5}, {0+5, 0+5}, {NX_fine-5, NY_fine-5}}};
 		}
 		seed_radius = 12;
@@ -3999,14 +3999,14 @@ void NeuronGrowth::SetupExternalCue(const string& caseType, vector<vector<vector
 			externalCues = {{{0+5, NY_fine*4/5}, {NX_fine/2, 0+5}, {NX_fine-5, NY_fine*3/4}},
 					{{0+5, 0+5}},
 					{{NX_fine*2/3, NY_fine-5}}};
-		} else if (n < 100000){
+		} else if (n < 120000){
 			externalCues = {{{0+5, NY_fine*3/5}, {NX_fine*2/3, 0+5}, {NX_fine-5, NY_fine*2/3}},
 					{{0+5, NY_fine/4}},
 					{{NX_fine*2/3, NY_fine-5}}};
 		} else {
-			externalCues = {{{0+5, NY_fine-5}},
-					{{0+5, NY_fine/5}},
-					{{NX_fine/2, NY_fine-5}}};
+			externalCues = {{{0+5, NY_fine*3/5}, {NX_fine*2/3, 0+5}, {NX_fine-5, NY_fine*2/3}},
+					{{0+5, NY_fine/4}},
+					{{NX_fine*2/3, NY_fine-5}}};
 		}
 		seed_radius = 12;
 	} else if (caseType == "P") {
@@ -4016,6 +4016,13 @@ void NeuronGrowth::SetupExternalCue(const string& caseType, vector<vector<vector
 			externalCues = {{{NX_fine/3, NY_fine-5}, {NX_fine-5, NY_fine}}};
 		} else {
 			externalCues = {{{0+5, NY_fine-5}, {NX_fine-5, NY_fine*2/3}}};
+		}
+		if (n > 140000) {
+			// c_opt = 0;
+			Dc = 1;
+		} else {
+			// c_opt = 1;
+			Dc = 7;
 		}
 	} else if (caseType == "Q") {
 		if (n < 20000) {
@@ -4027,6 +4034,13 @@ void NeuronGrowth::SetupExternalCue(const string& caseType, vector<vector<vector
 		} else {
 			externalCues = {{{0+5, NY_fine*3/4}, {NX_fine-5, NY_fine-5}}};
 		}
+		if (n > 130000) {
+			// c_opt = 0;
+			Dc = 1;
+		} else {
+			// c_opt = 1;
+			Dc = 7;
+		}
 	} else if (caseType == "R") {
 		if (n < 20000) {
 			externalCues = {{{NX_fine-5, NY_fine-5}}};
@@ -4037,11 +4051,25 @@ void NeuronGrowth::SetupExternalCue(const string& caseType, vector<vector<vector
 		} else {
 			externalCues = {{{NX_fine*3/4, 0}, {NX_fine-5, NY_fine/2}, {NX_fine-5, NY_fine-5}}};
 		}
+		if (n > 170000) {
+			// c_opt = 0;
+			Dc = 1;
+		} else {
+			// c_opt = 1;
+			Dc = 7;
+		}
 	} else if (caseType == "S") {
 		if (n < 60000) {
 			externalCues = {{{NX_fine-5, 0+5}, {NX_fine/2, NY_fine-5}}};
 		} else {
 			externalCues = {{{NX_fine-5, 0+5}, {NX_fine/3, NY_fine-5}, {NX_fine-5, NY_fine-5}}};
+		}
+		if (n > 150000) {
+			// c_opt = 0;
+			Dc = 1;
+		} else {
+			// c_opt = 1;
+			Dc = 7;
 		}
 	} else if (caseType == "T") {
 		if (n < 60000) {
@@ -4049,25 +4077,56 @@ void NeuronGrowth::SetupExternalCue(const string& caseType, vector<vector<vector
 		} else {
 			externalCues = {{{NX_fine*4/5, NY_fine-5}}};
 		}
-	} else if (caseType == "U") {
-		if (n < 80000) {
-			externalCues = {{{NX_fine-5, NY_fine-5}}};
-		} else if (n < 100000) {
-			externalCues = {{{NX_fine*3/4, NY_fine-5}}};
+		if (n > 170000) {
+			// c_opt = 0;
+			Dc = 1;
 		} else {
-			externalCues = {{{NX_fine/3, NY_fine-5}, {NX_fine-5, NY_fine-5}}};
+			// c_opt = 1;
+			Dc = 7;
+		}
+	} else if (caseType == "U") {
+		if (n < 120000) {
+			externalCues = {{{NX_fine-5, NY_fine-5}}};
+		} else if (n < 160000) {
+			externalCues = {{{NX_fine*4/5, NY_fine-5}, {NX_fine-5, NY_fine-5}}};
+		} else if (n < 180000) {
+			externalCues = {{{NX_fine*2/3, NY_fine-5}, {NX_fine-5, NY_fine-5}}};
+		} else {
+			externalCues = {{{NX_fine/2, NY_fine-5}, {NX_fine-5, NY_fine-5}}};
+		}
+		if (n > 200000) {
+			// c_opt = 0;
+			Dc = 1;
+		} else {
+			// c_opt = 1;
+			Dc = 7;
 		}
 	} else if (caseType == "V") {
-		if (n < 50000) {
-			externalCues = {{{NX_fine/2, NY_fine-5}}};
+		externalCues = {{{NX_fine-5, NY_fine-5}}};
+		// if (n < 50000) {
+		// 	externalCues = {{{NX_fine/2, NY_fine-5}}};
+		// } else {
+		// 	externalCues = {{{NX_fine*3/5, NY_fine-5}}};
+		// }
+		if (n > 200000) {
+			// c_opt = 0;
+			Dc = 1;
 		} else {
-			externalCues = {{{NX_fine*3/5, NY_fine-5}}};
+			// c_opt = 1;
+			Dc = 7;
 		}
 	} else if (caseType == "W") {
 		if (n < 100000) {
 			externalCues = {{{NX_fine/2, 0+5}, {NX_fine/2, NY_fine-5}}};
 		} else {
 			externalCues = {{{NX_fine/2+5, 0+5}, {NX_fine/2, NY_fine-5}}};
+		}
+		if (n > 200000) {
+			// c_opt = 0;
+			Dc = 1;
+		} else {
+			// c_opt = 1;
+			Dc = 7;
 		}
 	} else if (caseType == "X") {
 		if (n < 80000) {
@@ -4077,17 +4136,29 @@ void NeuronGrowth::SetupExternalCue(const string& caseType, vector<vector<vector
 		} else {
 			externalCues = {{{NX_fine-5, NY_fine-5}}};
 		}
+		if (n > 200000) {
+			// c_opt = 0;
+			Dc = 1;
+		} else {
+			// c_opt = 1;
+			Dc = 7;
+		}
 	} else if (caseType == "Y") {
 		if (n < 40000) {
-			externalCues = {{{NX_fine/2, NY_fine-5}}};
-		} else if (n < 80000) {
 			externalCues = {{{0+5, NY_fine-5}}};
-		} else if (n < 150000) {
-			externalCues = {{{0+5, NY_fine/3}}};
+		} else if (n < 170000) {
+			externalCues = {{{0+5, NY_fine*3/4}}};
 		} else if (n < 200000) {
 			externalCues = {{{0+5, NY_fine/3}}};
 		} else {
 			externalCues = {{{0+5, NY_fine-5}}};
+		}
+		if (n > 200000) {
+			c_opt = 0;
+			// Dc = 1;
+		} else {
+			c_opt = 1;
+			// Dc = 7;
 		}
 	} else if (caseType == "F") {
 		if (n < 20000) {
@@ -4097,6 +4168,15 @@ void NeuronGrowth::SetupExternalCue(const string& caseType, vector<vector<vector
 		} else {
 			externalCues = {{{0+5, NY_fine-5}, {NX_fine/2, NY_fine-5}}};
 		}
+
+		// if (n > 200000) {
+		// 	// c_opt = 0;
+		// 	Dc = 1;
+		// } else {
+		// 	// c_opt = 1;
+		// 	Dc = 7;
+		// }
+
 	} else if (caseType == "G") {
 		if (n < 20000) {
 			externalCues = {{{0+5, NY_fine/2}, {0+5, 0+5}, {NX_fine-5, 0+5}}};
@@ -4105,13 +4185,21 @@ void NeuronGrowth::SetupExternalCue(const string& caseType, vector<vector<vector
 		} else {
 			externalCues = {{{0+5, NY_fine/2}, {0+5, 0+5}, {NX_fine/2, 0+5}, {NX_fine-5, 0+5}}};
 		}
+
+		// if (n > 120000) {
+		// 	// c_opt = 0;
+		// 	Dc = 1;
+		// } else {
+		// 	// c_opt = 1;
+		// 	Dc = 7;
+		// }
 	} else {}
 	
-	if (n > 250000) {
-		c_opt = 0;
-	} else {
-		c_opt = 1;
-	}
+	//if (n > 250000) {
+	//	c_opt = 0;
+	//} else {
+	//	c_opt = 1;
+	//}
 }
 
 PetscErrorCode FormFunction_phi(SNES snes, Vec x, Vec F, void *ctx)
