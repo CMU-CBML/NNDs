@@ -25,8 +25,10 @@ Based on truncated T-spline with local refinements and dynamic domain expansion,
     * make clean
     * make all
 3. [petsc mpirun path] -n [number of threads] ./2DNG [number of neurons] [number of iterations] [input/output path] | tee -a [log file path]
-    * example: /.../petsc/arch-linux-c-opt/bin/mpirun -n 32 ./2DNG 1 350000 ../io2D/ | tee -a ../io2D/log.txt
-    * for comparison cases, replace number of neurons with case ID: /.../petsc/arch-linux-c-opt/bin/mpirun -n 32 ./2DNG K 350000 ../io2D/ | tee -a ../io2D/log.txt
+    * example:
+        ` /.../petsc/arch-linux-c-opt/bin/mpirun -n 32 ./2DNG 1 350000 ../io2D/ | tee -a ../io2D/log.txt`
+    * for comparison cases, replace number of neurons with case ID:
+        ` /.../petsc/arch-linux-c-opt/bin/mpirun -n 32 ./2DNG K 350000 ../io2D/ | tee -a ../io2D/log.txt`
 
 ## Reference
 1. K. Qian, G. O. Suarez, T. Nambara, T. Kanekiyo, V. A. Webster-Wood, Y. J. Zhang. Neurodevelopmental disorders modeling using innovative isogeometric analysis, dynamic domain expansion and local refinement. In preparation.
