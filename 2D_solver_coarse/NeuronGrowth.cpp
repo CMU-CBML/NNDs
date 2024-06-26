@@ -1704,6 +1704,36 @@ void NeuronGrowth::EvaluateOrientation(const uint& nen, const vector<float>& Nx,
 		eleEpsilon[i] += epsilonb * (1.0 + delta * cos(aniso * (atan2(elePhi[i] * dNdx[i][0], elePhi[i] * dNdx[i][1]) - eleTheta[i] * Nx[i])));
 		eleEpsilonP[i] += -epsilonb * (aniso * delta * sin(aniso * (atan2(elePhi[i] * dNdx[i][0], elePhi[i] * dNdx[i][1]) - eleTheta[i] * Nx[i])));
 	}
+	// for (int i = 0; i < rows; i++) {
+	// 	for (int j = 0; j < cols; j++) {
+	// 		// Calculate angle:
+	// 		double atheta = atan2(phidy[i][j], phidx[i][j]);
+	// 		double xtheta = 2 * M_PI * theta[i][j];
+
+	// 		double diff = atheta - xtheta;
+
+	// 		// Normalize the angle to be within the range [0, 2*pi)
+	// 		while (diff < 0) diff += 2 * M_PI;
+	// 		while (diff >= 2 * M_PI) diff -= 2 * M_PI;
+
+	// 		if (M_PI / 4 <= diff && diff <= 3 * M_PI / 4) {
+	// 			epsilon[i][j] = epsilonb * (1.0 + delta * cos(aniso * diff));
+	// 			epsilon_deriv[i][j] = -epsilonb * aniso * delta * sin(aniso * diff);
+	// 		}
+	// 		else if (-M_PI / 4 < diff && diff < M_PI / 4) {
+	// 			epsilon[i][j] = (epsilon1 / cos(M_PI / 4)) * cos(diff);
+	// 			n_deriv[i][j] = -(epsilon1 / cos(M_PI / 4)) * sin(diff);
+	// 		}
+	// 		else if (5 * M_PI / 4 <= diff && diff <= 7 * M_PI / 4) {
+	// 			epsilon[i][j] = epsilonb * (1.0 + delta * cos(aniso * diff));
+	// 			epsilon_deriv[i][j] = -epsilonb * aniso * delta * sin(aniso * diff);
+	// 		}
+	// 		else if (3 * M_PI / 4 < diff && diff < 5 * M_PI / 4) {
+	// 			epsilon[i][j] = (epsilon1 / cos(M_PI / 4)) * cos(diff);
+	// 			epsilon_deriv[i][j] = -(epsilon1 / cos(M_PI / 4)) * sin(diff);
+	// 		}
+	// 	}
+	// }
 }
 
 void NeuronGrowth::BuildLinearSystemProcessNG_phi()
@@ -4162,6 +4192,9 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 	NG.numNeuron = seed.size();  	// Set the number of neurons based on the size of 'seed'
 	NG.end_iter = end_iter_in;  	// Set the ending iteration
 
+	if (NG.comRank == 0) {
+		std::cout << cpts_initial.size() << " " << cpts.size() << " " << cpts_fine.size() << std::endl;
+	}
 	// Initialize vertex clouds for the current, fine, and previous configurations
 	Vertex2DCloud cloud(cpts);        		// Cloud for current points
 	Vertex2DCloud cloud_fine(cpts_fine); 		// Cloud for finer resolution points
@@ -4203,6 +4236,8 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 	if (NG.n == 0) {
 		NG.VisualizeVTK_PhysicalDomain_All(0, path_out);
 		PetscPrintf(PETSC_COMM_WORLD, "Saving all variables!--------------------------------------------------------\n");	
+		string tmpvar = "phi_running_";
+		NG.VisualizeVTK_ControlMesh(cpts, tmesh, NG.n, path_out, NG.phi, tmpvar); // solution on control points
 	}
 
 	/*==============================================================================*/
@@ -4594,6 +4629,7 @@ int RunNG(int& n_bzmesh, vector<vector<int>> ele_process_in, vector<Vertex2D>& c
 			// 	varName = "id_running_";
 			// 	NG.VisualizeVTK_ControlMesh(cpts_fine, tmesh_fine, NG.n, path_out, id, varName); // solution on control points
 			} else {}
+
 
 			toc(t_write);
 			tic();
