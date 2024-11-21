@@ -38,7 +38,7 @@ Based on truncated T-spline with local refinements and dynamic domain expansion,
 
 
 ## Reference
-1. **K. Qian**, G. O. Suarez, T. Nambara, T. Kanekiyo, A. S. Liao, V. A. Webster-Wood, Y. J. Zhang. **[Neurodevelopmental disorders modeling using innovative isogeometric analysis, dynamic domain expansion and local refinement](https://arxiv.org/abs/2407.00810)**. In preparation.
+1. **K. Qian**, G. O. Suarez, T. Nambara, T. Kanekiyo, A. S. Liao, V. A. Webster-Wood, Y. J. Zhang. **[Neurodevelopmental disorders modeling using innovative isogeometric analysis, dynamic domain expansion and local refinement](https://arxiv.org/abs/2407.00810)**. Computer Methods in Applied Mechanics and Engineering, 117534, 2025.
 2. **K. Qian**, A. Liao, S. Gu, V. Webster-Wood, Y. J. Zhang. **[Biomimetic IGA Neuron Growth Modeling with Neurite Morphometric Features and CNN-Based Prediction](https://www.sciencedirect.com/science/article/pii/S0045782523003377)**, Computer Methods in Applied Mechanics and Engineering, 116213, 2023.
 3. A. S. Liao, W. Cui, Y. J. Zhang, V. A. Webster-Wood, **[Semi-automated quantitative evaluation of neuron developmental morphology in vitro using the change-point test](https://pubmed.ncbi.nlm.nih.gov/36070028/)**, Neuroinformatics 21:163–176, 2022.
 4. **K. Qian**, A. Pawar, A. Liao, C. Anitescu, V. Webster-Wood, A. W. Feinberg, T. Rabczuk, Y. J. Zhang, **[Modeling neuron growth using isogeometric collocation based phase field method](https://www.nature.com/articles/s41598-022-12073-z)**, Scientific Reports 12:8120, 2020.
